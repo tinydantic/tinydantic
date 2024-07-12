@@ -5,7 +5,7 @@
 
 -----
 
-**Table of Contents**
+## Table of Contents
 
 - [Installation](#installation)
 - [License](#license)
@@ -18,4 +18,4 @@ pip install tinydantic
 
 ## License
 
-`tinydantic` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) OR [Apache-2.0](https://spdx.org/licenses/Apache-2.0.html) licenses.
+See the [LICENSE](https://github.com/cgnd/cgnd.dev/blob/main/LICENSE.md) file for copyright & license information.

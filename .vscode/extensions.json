@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "tamasfe.even-better-toml",
+    "ms-python.python",
+    "ms-python.mypy-type-checker",
+    "charliermarsh.ruff",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "trond-snekvik.simple-rst",
+    "redhat.vscode-yaml"
+  ]
+}

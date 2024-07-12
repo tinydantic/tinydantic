@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Chris Wilson <christopher.david.wilson@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+SPDX-PackageDownloadLocation = "https://github.com/cdwilson/tinydantic/"
+SPDX-PackageName = "tinydantic"
+SPDX-PackageSupplier = "Chris Wilson <christopher.david.wilson@gmail.com>"
+version = 1
+
+[[annotations]]
+SPDX-FileCopyrightText = "Chris Wilson <christopher.david.wilson@gmail.com>"
+SPDX-License-Identifier = "Apache-2.0 OR MIT"
+path = [
+  "**.json",
+  "**.yml",
+]
+precedence = "aggregate"
+
+[[annotations]]
+SPDX-FileCopyrightText = "Chris Wilson <christopher.david.wilson@gmail.com>"
+SPDX-License-Identifier = "CC-BY-4.0"
+path = [
+  "*.md",
+]
+precedence = "aggregate"
