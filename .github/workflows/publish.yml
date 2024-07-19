@@ -56,6 +56,8 @@ jobs:
     if: github.repository_owner == 'cdwilson'
     needs:
       - publish-to-pypi
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Download package dists
