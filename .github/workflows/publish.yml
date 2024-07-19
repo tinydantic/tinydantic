@@ -4,7 +4,9 @@
 
 name: Publish Python package distributions
 
-on: push
+on:
+  push:
+    branches: [main]
 
 jobs:
   build:
