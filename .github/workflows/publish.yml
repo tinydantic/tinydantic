@@ -7,6 +7,7 @@ name: Publish Python package distributions
 on:
   push:
     branches: [main]
+    tags: ["*"]
 
 env:
   PYTHONUNBUFFERED: "1"
@@ -95,6 +96,7 @@ jobs:
 
   publish-to-testpypi:
     name: Publish Python package distributions to TestPyPI
+    if: github.ref == 'refs/heads/main'
     needs:
       - build
     runs-on: ubuntu-latest
