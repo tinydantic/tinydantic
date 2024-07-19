@@ -9,6 +9,11 @@ on:
     branches: [main]
     tags: ["*"]
 
+permissions:
+  attestations: write
+  contents: read
+  id-token: write
+
 env:
   PYTHONUNBUFFERED: "1"
   FORCE_COLOR: "1"
@@ -16,25 +21,15 @@ env:
 
 jobs:
   build:
-    name: Build package dists
+    name: Build & verify package dists
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # https://github.com/actions/checkout/issues/249
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: hynek/build-and-inspect-python-package@v2
         with:
-          python-version: "3.x"
-      - name: Install pypa/build
-        run: python3 -m pip install build --user
-      - name: Build package dists
-        run: python3 -m build
-      - name: Upload package dists
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-package-distributions
-          path: dist/
+          attest-build-provenance-github: 'true'
 
   publish-to-pypi:
     name: Publish to PyPI
@@ -44,16 +39,14 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/tinydantic # Replace <package-name> with your PyPI project name
-    permissions:
-      id-token: write # IMPORTANT: mandatory for trusted publishing
+      url: https://pypi.org/p/tinydantic
     steps:
       - name: Download package dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
-          path: dist/
-      - name: Publish to PyPI
+          name: Packages
+          path: dist
+      - name: Publish dists to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
   # Sign the Python package distributions with Sigstore and upload them to a
@@ -64,21 +57,12 @@ jobs:
     needs:
       - publish-to-pypi
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # IMPORTANT: mandatory for making GitHub Releases
-      id-token: write # IMPORTANT: mandatory for sigstore
     steps:
       - name: Download package dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
-          path: dist/
-      - name: Sign dists with Sigstore
-        uses: sigstore/gh-action-sigstore-python@v2.1.1
-        with:
-          inputs: >-
-            ./dist/*.tar.gz
-            ./dist/*.whl
+          name: Packages
+          path: dist
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -107,15 +91,13 @@ jobs:
     environment:
       name: testpypi
       url: https://test.pypi.org/p/tinydantic
-    permissions:
-      id-token: write # IMPORTANT: mandatory for trusted publishing
     steps:
       - name: Download package dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
-          path: dist/
-      - name: Publish to TestPyPI
+          name: Packages
+          path: dist
+      - name: Publish dists to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
