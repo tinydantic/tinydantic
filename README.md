@@ -18,4 +18,4 @@ pip install tinydantic
 
 ## License
 
-See the [LICENSE](https://github.com/cgnd/cgnd.dev/blob/main/LICENSE.md) file for copyright & license information.
+See the [LICENSE](LICENSE.md) file for copyright & license information.
