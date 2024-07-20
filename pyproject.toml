@@ -189,3 +189,10 @@ ban-relative-imports = "all" # https://docs.astral.sh/ruff/settings/#lint_flake8
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false
 mark-parentheses = false
+
+[tool.commitizen]
+major_version_zero = true
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_provider = "scm"
+version_scheme = "semver2"
