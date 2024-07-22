@@ -42,6 +42,26 @@ name = "tinydantic"
 readme = "README.md"
 requires-python = ">=3.8"
 
+[project.optional-dependencies]
+dev = [
+  "commitizen",
+  "reuse>=4.0.0",
+  "ruff",
+  "tinydantic[pre-commit,test,types]",
+  "uv",
+]
+pre-commit = [
+  "pre-commit",
+]
+test = [
+  "packaging",
+  "pytest",
+]
+types = [
+  "mypy>=1.0.0",
+  "packaging",   # TODO(cdwilson): this is duplicated in test
+]
+
 [project.urls]
 Documentation = "https://github.com/cdwilson/tinydantic#readme"
 Issues = "https://github.com/cdwilson/tinydantic/issues"
@@ -52,20 +72,32 @@ raw-options = { local_scheme = "no-local-version" }
 source = "vcs"
 
 [tool.hatch.envs.default]
-dependencies = [
-  "packaging",
-  "pytest",
-  "reuse",
-  'typing-extensions; python_version < "3.11"',
+features = [
+  "dev",
+]
+
+# TODO(cdwilson): remove this when https://github.com/pypa/hatch/issues/1553
+# is implemented
+[tool.hatch.envs.hatch-test]
+features = [
+  "test",
 ]
 
 [tool.hatch.envs.types]
-extra-dependencies = [
-  "mypy>=1.0.0",
+features = [
+  "types",
 ]
 
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/tinydantic tests}"
+
+[tool.hatch.envs.pre-commit]
+features = [
+  "pre-commit",
+]
+
+[tool.hatch.envs.pre-commit.scripts]
+check = "pre-commit run --all-files"
 
 [tool.coverage.run]
 branch = true
