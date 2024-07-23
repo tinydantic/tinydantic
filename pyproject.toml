@@ -57,7 +57,6 @@ pre-commit = [
 ]
 test = [
   "packaging",
-  "pytest",
 ]
 types = [
   "mypy>=1.0.0",
