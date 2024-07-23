@@ -111,9 +111,6 @@ check = "pre-commit run --all-files"
 
 [tool.coverage.run]
 branch = true
-omit = [
-  "src/tinydantic/__about__.py",
-]
 parallel = true
 source_pkgs = [
   "tests",
