@@ -43,11 +43,13 @@ readme = "README.md"
 requires-python = ">=3.8"
 
 [project.optional-dependencies]
+compliance = [
+  "reuse>=4.0.0",
+]
 dev = [
   "commitizen",
-  "reuse>=4.0.0",
   "ruff",
-  "tinydantic[pre-commit,test,types]",
+  "tinydantic[compliance,pre-commit,test,types]",
   "uv",
 ]
 pre-commit = [
@@ -70,6 +72,15 @@ Source = "https://github.com/cdwilson/tinydantic"
 [tool.hatch.version]
 raw-options = { local_scheme = "no-local-version" }
 source = "vcs"
+
+[tool.hatch.envs.compliance]
+features = [
+  "compliance",
+]
+
+[tool.hatch.envs.compliance.scripts]
+check = "reuse lint"
+sbom = "reuse spdx -o reuse.spdx"
 
 [tool.hatch.envs.default]
 features = [
