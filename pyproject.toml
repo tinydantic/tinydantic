@@ -49,12 +49,27 @@ compliance = [
 dev = [
   "commitizen",
   "ruff",
-  "tinydantic[compliance,pre-commit,test,types]",
+  "tinydantic[compliance,doc,pre-commit,test,types]",
   "uv",
+]
+# "doc" is the reserved feature name to mark dependencies needed for generating
+# documentation:
+# https://packaging.python.org/en/latest/specifications/core-metadata/#provides-extra-multiple-use
+#
+# TODO(cdwilson): should this be changed to "docs"? "docs" appears to be more
+# popular than "doc":
+# https://github.com/scientific-python/specs/pull/324#issuecomment-2150738534
+doc = [
+  "mike",
+  "mkdocs-material",
+  "mkdocstrings",
 ]
 pre-commit = [
   "pre-commit",
 ]
+# "test" is the reserved feature name to mark dependencies needed for running
+# automated tests:
+# https://packaging.python.org/en/latest/specifications/core-metadata/#provides-extra-multiple-use
 test = [
   "packaging",
 ]
@@ -84,6 +99,11 @@ sbom = "reuse spdx -o reuse.spdx"
 [tool.hatch.envs.default]
 features = [
   "dev",
+]
+
+[tool.hatch.envs.doc]
+features = [
+  "doc",
 ]
 
 # TODO(cdwilson): remove this when https://github.com/pypa/hatch/issues/1553

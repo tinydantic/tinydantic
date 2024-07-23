@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Chris Wilson <christopher.david.wilson@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+site_name: tinydantic
+site_url: https://cdwilson.github.io/tinydantic
+theme:
+  name: material
+plugins:
+  - search
+  - mkdocstrings
+  - mike
+extra:
+  version:
+    provider: mike
