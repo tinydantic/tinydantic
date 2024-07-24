@@ -51,3 +51,8 @@ repos:
     rev: v3.28.0
     hooks:
       - id: commitizen
+  - repo: https://github.com/econchick/interrogate
+    rev: 1.7.0
+    hooks:
+      - id: interrogate
+        pass_filenames: false
