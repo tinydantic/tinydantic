@@ -61,7 +61,6 @@ dev = [
 # popular than "doc":
 # https://github.com/scientific-python/specs/pull/324#issuecomment-2150738534
 doc = [
-  "mike",
   "mkdocs-material",
   "mkdocstrings",
 ]

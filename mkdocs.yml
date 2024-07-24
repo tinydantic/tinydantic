@@ -9,7 +9,3 @@ theme:
 plugins:
   - search
   - mkdocstrings
-  - mike
-extra:
-  version:
-    provider: mike
