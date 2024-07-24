@@ -195,10 +195,6 @@ ignore = [
   "Q002",   # https://docs.astral.sh/ruff/rules/bad-quotes-docstring/
   "Q003",   # https://docs.astral.sh/ruff/rules/avoidable-escaped-quote/
   "W191",   # https://docs.astral.sh/ruff/rules/tab-indentation/
-
-  # TODO @cdwilson: these are temporary, remove them before release
-  "D",
-  "ERA001",
 ]
 select = [
   "ALL",
