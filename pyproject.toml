@@ -48,6 +48,7 @@ compliance = [
 ]
 dev = [
   "commitizen",
+  "interrogate",
   "ruff",
   "tinydantic[compliance,doc,pre-commit,test,types]",
   "uv",
@@ -255,3 +256,14 @@ name = "cz_conventional_commits"
 tag_format = "v$version"
 version_provider = "scm"
 version_scheme = "semver2"
+
+[tool.interrogate]
+exclude = [
+  ".hatch",
+]
+fail-under = 100
+ignore-private = true
+ignore-semiprivate = true
+omit-covered-files = true
+style = "google"
+verbose = 2
