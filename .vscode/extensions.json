@@ -8,6 +8,7 @@
     "ms-python.debugpy",
     "trond-snekvik.simple-rst",
     "redhat.vscode-yaml",
-    "kennethlove.interrogate"
+    "kennethlove.interrogate",
+    "vivaxy.vscode-conventional-commits"
   ]
 }
