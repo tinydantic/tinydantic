@@ -4,8 +4,33 @@
 
 site_name: tinydantic
 site_url: https://tinydantic.dev
+repo_url: https://github.com/cdwilson/tinydantic
+repo_name: cdwilson/tinydantic
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; Chris Wilson
 theme:
   name: material
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+  features:
+    - content.action.view
+    - content.action.edit
+    - navigation.tabs
+    - navigation.footer
 plugins:
   - search
   - mkdocstrings
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+nav:
+  - Get Started:
+      - index.md
+      - installation.md
