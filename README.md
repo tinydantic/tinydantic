@@ -3,7 +3,10 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/tinydantic.svg)](https://pypi.org/project/tinydantic)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/tinydantic.svg)](https://pypi.org/project/tinydantic)
 
------
+> [!WARNING]  
+> `tinydantic` is currently a work in progress :building_construction:
+>
+> There's not much to see here yet, but feel free to grab your hard hat and have a look around! :construction_worker:
 
 ## Table of Contents
 
