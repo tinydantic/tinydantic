@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
 site_name: tinydantic
-site_url: https://cdwilson.github.io/tinydantic
+site_url: https://tinydantic.dev
 theme:
   name: material
 plugins:
