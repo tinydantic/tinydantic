@@ -80,7 +80,7 @@ types = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/tinydantic/tinydantic#readme"
+Documentation = "https://tinydantic.dev"
 Issues = "https://github.com/tinydantic/tinydantic/issues"
 Source = "https://github.com/tinydantic/tinydantic"
 
