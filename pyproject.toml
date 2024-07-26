@@ -80,9 +80,9 @@ types = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/cdwilson/tinydantic#readme"
-Issues = "https://github.com/cdwilson/tinydantic/issues"
-Source = "https://github.com/cdwilson/tinydantic"
+Documentation = "https://github.com/tinydantic/tinydantic#readme"
+Issues = "https://github.com/tinydantic/tinydantic/issues"
+Source = "https://github.com/tinydantic/tinydantic"
 
 [tool.hatch.version]
 raw-options = { local_scheme = "no-local-version" }

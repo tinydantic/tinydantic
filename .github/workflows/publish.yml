@@ -33,7 +33,7 @@ jobs:
 
   publish-to-pypi:
     name: Publish to PyPI
-    if: github.repository_owner == 'cdwilson' && startsWith(github.ref, 'refs/tags/') # only publish to PyPI on tag pushes
+    if: github.repository_owner == 'tinydantic' && startsWith(github.ref, 'refs/tags/') # only publish to PyPI on tag pushes
     needs:
       - build
     runs-on: ubuntu-latest
@@ -53,7 +53,7 @@ jobs:
   # GitHub Release
   github-release:
     name: Create GitHub Release
-    if: github.repository_owner == 'cdwilson'
+    if: github.repository_owner == 'tinydantic'
     needs:
       - publish-to-pypi
     permissions:
@@ -86,7 +86,7 @@ jobs:
 
   publish-to-testpypi:
     name: Publish to TestPyPI
-    if: github.repository_owner == 'cdwilson' && github.ref == 'refs/heads/main'
+    if: github.repository_owner == 'tinydantic' && github.ref == 'refs/heads/main'
     needs:
       - build
     runs-on: ubuntu-latest

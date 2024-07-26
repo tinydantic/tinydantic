@@ -4,8 +4,8 @@
 
 site_name: tinydantic
 site_url: https://tinydantic.dev
-repo_url: https://github.com/cdwilson/tinydantic
-repo_name: cdwilson/tinydantic
+repo_url: https://github.com/tinydantic/tinydantic
+repo_name: tinydantic/tinydantic
 edit_uri: edit/main/docs/
 copyright: Copyright &copy; Chris Wilson
 theme:
