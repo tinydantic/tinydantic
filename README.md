@@ -21,4 +21,4 @@ pip install tinydantic
 
 ## License
 
-See the [LICENSE](https://github.com/cdwilson/tinydantic/blob/main/LICENSE.md) file for copyright & license information.
+See the [LICENSE](https://github.com/tinydantic/tinydantic/blob/main/LICENSE.md) file for copyright & license information.

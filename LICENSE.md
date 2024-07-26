@@ -19,7 +19,7 @@ under the [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) license.*
 ## SPDX & REUSE Compliance
 
  [![REUSE
- status](https://api.reuse.software/badge/github.com/cdwilson/tinydantic)](https://api.reuse.software/info/github.com/cdwilson/tinydantic)
+ status](https://api.reuse.software/badge/github.com/tinydantic/tinydantic)](https://api.reuse.software/info/github.com/tinydantic/tinydantic)
 
 This repository is compliant with version 3.2 of the [REUSE
 Specification](https://reuse.software/spec/).

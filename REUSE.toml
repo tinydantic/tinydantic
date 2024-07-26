@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-SPDX-PackageDownloadLocation = "https://github.com/cdwilson/tinydantic/"
+SPDX-PackageDownloadLocation = "https://github.com/tinydantic/tinydantic/"
 SPDX-PackageName = "tinydantic"
 SPDX-PackageSupplier = "Chris Wilson <christopher.david.wilson@gmail.com>"
 version = 1
