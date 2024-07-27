@@ -6,8 +6,11 @@ name: Test Python package
 
 on:
   push:
-    branches: [main]
-  pull_request:
+    branches:
+      - main
+    tags:
+      - '**'
+  pull_request: {}
   workflow_dispatch:
 
 concurrency:
@@ -15,19 +18,55 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHONUNBUFFERED: "1"
-  FORCE_COLOR: "1"
-  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: '1'
+  FORCE_COLOR: '1'
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
 
 jobs:
-  run:
+  build-docs:
+    name: Build Docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # Netlify default Python version is 3.8
+          # https://docs.netlify.com/configure-builds/available-software-at-build-time/#languages
+          python-version: '3.8'
+
+      - name: Install Hatch
+        run: pip install --upgrade hatch
+
+      - name: Build docs
+        run: hatch run doc:build
+
+  # pre-commit can modify files so we can't just run this in the matrix tests
+  # below. There is no way to disable this behavior, see
+  # https://github.com/pre-commit/pre-commit-hooks/issues/108
+  pre-commit:
+    name: Run pre-commit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+
+      - uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: --all-files --verbose
+
+  test:
     name: Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
 
     steps:
       - uses: actions/checkout@v4
@@ -41,9 +80,6 @@ jobs:
 
       - name: Install Hatch
         run: pip install --upgrade hatch
-
-      - name: Run pre-commit checks
-        run: hatch run pre-commit:check
 
       - name: Run static analysis
         run: hatch fmt --check

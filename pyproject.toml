@@ -107,6 +107,9 @@ features = [
   "doc",
 ]
 
+[tool.hatch.envs.doc.scripts]
+build = "mkdocs build"
+
 # TODO(cdwilson): remove this when https://github.com/pypa/hatch/issues/1553
 # is implemented
 [tool.hatch.envs.hatch-test]
@@ -128,7 +131,7 @@ features = [
 ]
 
 [tool.hatch.envs.pre-commit.scripts]
-check = "pre-commit run --all-files"
+run = "pre-commit run --all-files --verbose"
 
 [tool.coverage.run]
 branch = true
