@@ -1,14 +1,18 @@
 {
   "recommendations": [
-    "tamasfe.even-better-toml",
-    "ms-python.python",
-    "ms-python.mypy-type-checker",
     "charliermarsh.ruff",
-    "ms-python.vscode-pylance",
-    "ms-python.debugpy",
-    "trond-snekvik.simple-rst",
-    "redhat.vscode-yaml",
+    "editorconfig.editorconfig",
+    "esbenp.prettier-vscode",
     "kennethlove.interrogate",
-    "vivaxy.vscode-conventional-commits"
+    "ms-python.debugpy",
+    "ms-python.mypy-type-checker",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "redhat.vscode-yaml",
+    "tamasfe.even-better-toml",
+    "trond-snekvik.simple-rst",
+    "vivaxy.vscode-conventional-commits",
+    "njpwerner.autodocstring",
+    "donjayamanne.python-environment-manager"
   ]
 }

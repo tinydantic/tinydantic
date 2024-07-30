@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
+---
 default_install_hook_types:
   - pre-commit
   - commit-msg
@@ -26,13 +27,16 @@ repos:
       - id: debug-statements
       - id: destroyed-symlinks
       - id: detect-aws-credentials
-        args: [--allow-missing-credentials]
+        args:
+          - --allow-missing-credentials
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: name-tests-test
-        args: [--pytest-test-first]
+        args:
+          - --pytest-test-first
       - id: trailing-whitespace
-        args: [--markdown-linebreak-ext=md]
+        args:
+          - --markdown-linebreak-ext=md
   - repo: https://github.com/fsfe/reuse-tool
     rev: v4.0.3
     hooks:
@@ -41,7 +45,8 @@ repos:
     rev: v0.5.4
     hooks:
       - id: ruff
-        args: [--fix]
+        args:
+          - --fix
       - id: ruff-format
   # Experimental taplo support
   # https://github.com/ComPWA/mirrors-taplo/issues/13#issuecomment-1930749688
@@ -58,3 +63,18 @@ repos:
     hooks:
       - id: interrogate
         pass_filenames: false
+  # https://github.com/pre-commit/mirrors-prettier was archived Apr 11, 2024
+  # See also https://github.com/prettier/prettier/issues/15742
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.3.3
+    hooks:
+      - id: prettier
+        stages:
+          # Prevents "[error] No matching files. Patterns: .git/COMMIT_EDITMSG"
+          - commit
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args:
+          - --strict

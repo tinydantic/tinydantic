@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: Chris Wilson <christopher.david.wilson@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+---
+extends: default
+
+ignore-from-file: .gitignore
+
+yaml-files:
+  - "*.yaml"
+  - "*.yml"
+  - .yamllint
+
+rules:
+  anchors: enable
+  braces:
+    forbid: non-empty
+  brackets:
+    forbid: non-empty
+  colons: enable
+  commas: enable
+  comments:
+    level: warning
+    min-spaces-from-content: 1 # needed for compatibility with Prettier
+  comments-indentation:
+    level: warning
+  document-end: disable
+  document-start:
+    level: warning
+  empty-lines: enable
+  empty-values: disable
+  float-values:
+    require-numeral-before-decimal: true
+  hyphens: enable
+  indentation:
+    spaces: 2
+  key-duplicates: enable
+  key-ordering: disable
+  line-length:
+    allow-non-breakable-inline-mappings: true
+  new-line-at-end-of-file: enable
+  new-lines: enable
+  octal-values: disable
+  quoted-strings:
+    required: only-when-needed
+    allow-quoted-quotes: true
+    quote-type: double
+  trailing-spaces: enable
+  truthy:
+    level: warning
