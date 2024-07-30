@@ -2,15 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
+---
 name: CI
 
-on:
+on: # yamllint disable-line rule:truthy
   push:
     branches:
       - main
     tags:
-      - '**'
-  pull_request: {}
+      - "**"
+  pull_request:
   workflow_dispatch:
 
 concurrency:
@@ -18,71 +19,77 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHONUNBUFFERED: '1'
-  FORCE_COLOR: '1'
-  PIP_DISABLE_PIP_VERSION_CHECK: '1'
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
 jobs:
   build-docs:
     name: Build Docs
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           # Netlify default Python version is 3.8
           # https://docs.netlify.com/configure-builds/available-software-at-build-time/#languages
-          python-version: '3.8'
-
+          python-version: "3.8"
       - name: Install Hatch
         run: pip install --upgrade hatch
-
       - name: Build docs
         run: hatch run doc:build
 
-  # pre-commit can modify files so we can't just run this in the matrix tests
-  # below. There is no way to disable this behavior, see
+  # pre-commit can modify files so we can't just run this as a step in the
+  # matrix tests below. There is no way to disable this behavior, see
   # https://github.com/pre-commit/pre-commit-hooks/issues/108
   pre-commit:
     name: Run pre-commit
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
-
       - uses: pre-commit/action@v3.0.1
         with:
           extra_args: --all-files --verbose
 
   test:
-    name: Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    name: >-
+      Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-')
+      && 'macOS' || startsWith(matrix.os, 'windows-')
+      && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # https://github.com/actions/checkout/issues/249
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Install Hatch
         run: pip install --upgrade hatch
-
       - name: Run static analysis
         run: hatch fmt --check
-
       - name: Run tests
-        run: hatch test --python ${{ matrix.python-version }} --cover --randomize --parallel --retries 2 --retry-delay 1
+        run: >-
+          hatch test
+          --python ${{ matrix.python-version }}
+          --cover
+          --randomize
+          --parallel
+          --retries 2
+          --retry-delay 1

@@ -12,13 +12,13 @@ All other content (e.g. documentation and images) is licensed under the [CC-BY-4
 When you contribute to this repository you are doing so under the above
 licenses, without any additional terms or conditions.
 
-*The text above is adapted from
+_The text above is adapted from
 https://github.com/github/opensource.guide/blob/main/notices.md#licenses used
-under the [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) license.*
+under the [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) license._
 
 ## SPDX & REUSE Compliance
 
- [![REUSE
+[![REUSE
  status](https://api.reuse.software/badge/github.com/tinydantic/tinydantic)](https://api.reuse.software/info/github.com/tinydantic/tinydantic)
 
 This repository is compliant with version 3.2 of the [REUSE
