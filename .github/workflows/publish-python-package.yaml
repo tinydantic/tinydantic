@@ -92,10 +92,10 @@ jobs:
 
   publish-to-testpypi:
     name: Publish to TestPyPI
-    # only publish to TestPyPI on pushes to the main branch
+    # only publish to TestPyPI on pushes to the main branch or tag pushes
     if: >-
-      github.repository_owner == 'tinydantic'
-      && github.ref == 'refs/heads/main'
+      github.repository_owner == 'tinydantic' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
     needs:
       - build
     runs-on: ubuntu-latest
