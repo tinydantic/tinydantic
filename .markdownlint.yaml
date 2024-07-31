@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Chris Wilson <christopher.david.wilson@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+# https://github.com/DavidAnson/markdownlint/blob/main/schema/.markdownlint.yaml
+
+---
+# Default state for all rules
+default: true
+
+# MD013/line-length : Line length
+# https://github.com/DavidAnson/markdownlint/blob/v0.34.0/doc/md013.md
+MD013: false
