@@ -160,6 +160,7 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = 79
+pydocstyle.convention = "google"
 
 [tool.ruff.format]
 docstring-code-format = true
