@@ -9,6 +9,8 @@ repo_url: https://github.com/tinydantic/tinydantic
 repo_name: tinydantic/tinydantic
 edit_uri: edit/main/docs/
 copyright: Copyright &copy; Chris Wilson
+extra_css:
+  - css/code_select.css
 theme:
   name: material
   icon:
@@ -18,12 +20,79 @@ theme:
   features:
     - content.action.view
     - content.action.edit
+    - content.code.annotate
+    - content.code.copy
+    - content.tooltips
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.footer
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.sections
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+  palette:
+    # Palette toggle for automatic mode
+    - media: (prefers-color-scheme)
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+validation: # https://www.mkdocs.org/user-guide/configuration/#validation
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
 plugins:
-  - search
-  - mkdocstrings
-  - mike:
+  - search # https://squidfunk.github.io/mkdocs-material/plugins/search/
+  - autorefs # https://github.com/mkdocstrings/autorefs
+  - gen-files: # https://github.com/oprypin/mkdocs-gen-files
+      scripts:
+        - scripts/gen_api_docs.py
+  - literate-nav: # https://github.com/oprypin/mkdocs-literate-nav
+  - mkdocstrings: # https://mkdocstrings.github.io/
+      default_handler: python
+      enable_inventory: true
+      handlers:
+        python:
+          paths:
+            - src
+          options:
+            docstring_options:
+              ignore_init_summary: true
+            heading_level: 1
+            inherited_members: true
+            merge_init_into_class: true
+            group_by_category: true
+            separate_signature: true
+            show_category_heading: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_signature_annotations: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
+          import:
+            - https://docs.python.org/3/objects.inv
+            - https://tinydb.readthedocs.io/en/latest/objects.inv
+  - mike: # https://github.com/jimporter/mike
       alias_type: symlink
       redirect_template: null
       deploy_prefix: ""
@@ -39,11 +108,71 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-nav:
-  - Get Started:
-      - index.md
-      - installation.md
+  - pymdownx.highlight:
+      use_pygments: true
+      pygments_lang_class: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: ¤
 extra:
   version:
     provider: mike
     default: latest
+nav:
+  - Get Started:
+      - index.md
+      - installation.md
+  - Reference:
+      - reference/index.md
+      # When the navigation.sections feature is enabled in the material theme,
+      # top-level sections are rendered as groups in the sidebar for viewports
+      # above 1220px. When the navigation.indexes and navigation.tabs features
+      # are also enabled, the top-level Python package's index.md page can end
+      # up being directly attached to the package's section if a single-level
+      # nav like the following is used:
+      #
+      # nav:
+      #   - API Documentation: api/
+      #
+      # As a result, any pages generated for the child modules and subpackages
+      # immediately under the top-level package will not be indented relative to
+      # the package. At a quick glance, this can be confusing.
+      #
+      # For example, given a Python package like the following:
+      #
+      #   package/
+      #     __init__.py
+      #     module.py
+      #     subpackage/
+      #       module2.py
+      #
+      # If the API docs are located at the /api/ path, the following nav would
+      # be generated:
+      #
+      # API Documentation (Top-level section for tab)
+      #   [mod] package (Section linked to <API_DOC_DIR>/index.md)
+      #   [mod] module (Page linked to <API_DOC_DIR>/module.md)
+      #   [mod] subpackage (Page linked to <API_DOC_DIR>/subpackage/index.md)
+      #     [mod] module2 (Page linked to <API_DOC_DIR>/subpackage/module2.md)
+      #
+      # It's not obvious that "module" and "subpackage" are nested under the
+      # "package" namespace (i.e package.module & package.subpackage).
+      #
+      # By nesting the generated API docs under an additional section (e.g.
+      # "Reference"), the Python package name is not associated with a section
+      # in the nav, and the modules/subpackages are correctly indented under the
+      # top-level package:
+      #
+      # Reference (Top-level section for tab)
+      #   API Documentation (section)
+      #   [mod] package (Section linked to <API_DOC_DIR>/index.md)
+      #     [mod] module (Page linked to <API_DOC_DIR>/module.md)
+      #     [mod] subpackage (Page linked to <API_DOC_DIR>/subpackage/index.md)
+      #       [mod] module2 (Page linked to <API_DOC_DIR>/subpackage/module2.md)
+      - API Documentation: reference/api/
+watch:
+  - src/tinydantic/
+  - scripts/gen_api_docs.py
