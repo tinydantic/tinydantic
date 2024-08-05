@@ -25,3 +25,7 @@ max_line_length = 80
 [*.py]
 indent_size = 4
 max_line_length = 79
+
+# Markdown
+[*.md]
+max_line_length = unset
