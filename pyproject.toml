@@ -61,9 +61,13 @@ dev = [
 # popular than "doc":
 # https://github.com/scientific-python/specs/pull/324#issuecomment-2150738534
 doc = [
+  "black",
   "mike",
+  "mkdocs-gen-files",
+  "mkdocs-literate-nav",
   "mkdocs-material",
   "mkdocstrings",
+  "mkdocstrings-python",
 ]
 pre-commit = [
   "pre-commit",
@@ -108,7 +112,8 @@ features = [
 ]
 
 [tool.hatch.envs.doc.scripts]
-build = "mkdocs build"
+build = "mkdocs build --strict"
+serve = "mkdocs serve --strict"
 
 # TODO(cdwilson): remove this when https://github.com/pypa/hatch/issues/1553
 # is implemented

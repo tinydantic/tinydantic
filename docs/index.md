@@ -1,4 +1,6 @@
-# About
+---
+title: Get Started
+---
 
 !!! warning "Warning"
 

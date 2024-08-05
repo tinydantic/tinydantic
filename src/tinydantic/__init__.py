@@ -2,11 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""A Python object-document mapper (ODM) for TinyDB."""
+"""`tinydantic` is a Python object-document mapper (ODM) for [TinyDB](https://tinydb.readthedocs.io/en/latest/).
+
+Attributes:
+    __version__: The `tinydantic` package version.
+"""
 
 from importlib import metadata
 
-__version__ = metadata.version("tinydantic")
+__version__: str = metadata.version("tinydantic")
 
 __all__ = [
     "__version__",
