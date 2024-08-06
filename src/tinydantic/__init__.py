@@ -4,7 +4,9 @@
 
 """A Python object-document mapper (ODM) for TinyDB."""
 
-from tinydantic.__about__ import __version__
+from importlib import metadata
+
+__version__ = metadata.version("tinydantic")
 
 __all__ = [
     "__version__",
