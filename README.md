@@ -1,7 +1,6 @@
 # tinydantic
 
-[![PyPI - Version](https://img.shields.io/pypi/v/tinydantic.svg)](https://pypi.org/project/tinydantic)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/tinydantic.svg)](https://pypi.org/project/tinydantic)
+[![PyPI - Version](https://img.shields.io/pypi/v/tinydantic.svg)](https://pypi.org/project/tinydantic) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/tinydantic.svg)](https://pypi.org/project/tinydantic)
 
 > [!WARNING]  
 > `tinydantic` is currently a work in progress 🏗️

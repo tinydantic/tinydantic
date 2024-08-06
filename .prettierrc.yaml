@@ -3,4 +3,19 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
 ---
-proseWrap: never
+overrides:
+  - files:
+      - "*.yaml"
+      - "*.yml"
+      - .yamllint
+    options:
+      # For compatibility with yamllint default config which imposes a max line
+      # length of 80 characters. This is set to "preserve" instead of "always"
+      # to preserve manual formatting of block scalars.
+      proseWrap: preserve
+  - files: "*.md"
+    options:
+      # Reformat prose in Markdown files to never allow wrapping using hard line
+      # breaks. This enables compatibility with GUI Markdown editors (like
+      # Typora) which do not support reformatting using hard line breaks.
+      proseWrap: never
