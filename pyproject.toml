@@ -63,8 +63,8 @@ dev = [
 doc = [
   "black",
   "mike",
+  "mkdocs-awesome-pages-plugin",
   "mkdocs-gen-files",
-  "mkdocs-literate-nav",
   "mkdocs-material",
   "mkdocstrings",
   "mkdocstrings-python",

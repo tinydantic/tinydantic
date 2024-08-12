@@ -5,6 +5,7 @@
 ---
 overrides:
   - files:
+      - .pages
       - "*.yaml"
       - "*.yml"
       - .yamllint

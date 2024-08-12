@@ -5,6 +5,12 @@
 ---
 extends: default
 
+yaml-files:
+  - .pages
+  - "*.yaml"
+  - "*.yml"
+  - .yamllint
+
 ignore-from-file: .gitignore
 
 rules:
