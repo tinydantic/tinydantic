@@ -48,11 +48,11 @@ jobs:
       - name: Set the version of docs to publish
         run: python scripts/set_release_version.py
       - name: Build documentation
-        run: hatch -v run docs:build-check
+        run: hatch -v run doc:build-check
       - name: Commit documentation
         run: >-
           hatch -v run
-          docs:ci-publish
+          doc:ci-publish
           $(python -c "
           from packaging.version import Version;
           version = Version(\"$(hatch version)\");

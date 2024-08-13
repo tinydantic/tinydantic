@@ -47,9 +47,9 @@ jobs:
       - name: Display full version
         run: hatch version
       - name: Build documentation
-        run: hatch -v run docs:build-check
+        run: hatch -v run doc:build-check
       - name: Commit documentation
-        run: hatch -v run docs:ci-publish dev
+        run: hatch -v run doc:ci-publish dev
       - name: Create archive
         run: git archive -o site.zip gh-pages
       - uses: actions/upload-artifact@v4
