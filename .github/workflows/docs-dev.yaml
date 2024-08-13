@@ -23,6 +23,8 @@ jobs:
   build-and-publish:
     name: Build and Publish Docs
     if: github.repository_owner == 'tinydantic'
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
