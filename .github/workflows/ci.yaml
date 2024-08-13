@@ -66,3 +66,18 @@ jobs:
           --parallel
           --retries 2
           --retry-delay 1
+
+  required-checks-pass:
+    name: Ensure everything required is passing for branch protection
+    if: always()
+
+    needs:
+      - test
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
