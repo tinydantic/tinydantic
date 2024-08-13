@@ -50,6 +50,7 @@ dev = [
   "commitizen",
   "interrogate",
   "ruff",
+  "semver",
   "tinydantic[compliance,doc,pre-commit,test,types]",
   "uv",
 ]
@@ -106,6 +107,9 @@ sbom = "reuse spdx -o reuse.spdx"
 features = [
   "dev",
 ]
+
+[tool.hatch.envs.default.scripts]
+release = 'pysemver check {args} && git tag -a v{args} -m "Release version {args}" && git push --tags'
 
 [tool.hatch.envs.doc]
 features = [
