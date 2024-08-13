@@ -62,6 +62,7 @@ dev = [
 # https://github.com/scientific-python/specs/pull/324#issuecomment-2150738534
 doc = [
   "black",
+  "linkchecker",
   "mike",
   "mkdocs-awesome-pages-plugin",
   "mkdocs-gen-files",
@@ -111,9 +112,20 @@ features = [
   "doc",
 ]
 
+[tool.hatch.envs.doc.env-vars]
+MKDOCS_CONFIG = "mkdocs.yaml"
+PYTHONUNBUFFERED = "1"
+SOURCE_DATE_EPOCH = "1580601600"
+
 [tool.hatch.envs.doc.scripts]
-build = "mkdocs build --strict"
-serve = "mkdocs serve --strict"
+build = "mkdocs build --config-file {env:MKDOCS_CONFIG} --clean --strict {args}"
+build-check = [
+  "build --no-directory-urls",
+  "check",
+]
+check = "linkchecker --config .linkcheckerrc site"
+ci-publish = "mike deploy --config-file {env:MKDOCS_CONFIG} --update-aliases --push {args}"
+serve = "mkdocs serve --config-file {env:MKDOCS_CONFIG} --dev-addr localhost:8000 {args}"
 
 # TODO(cdwilson): remove this when https://github.com/pypa/hatch/issues/1553
 # is implemented

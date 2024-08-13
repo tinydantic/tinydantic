@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: Chris Wilson <christopher.david.wilson@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+---
+name: Docs (Dev)
+
+on: # yamllint disable-line rule:truthy
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: docs-deploy
+
+env:
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  build-and-publish:
+    name: Build and Publish Docs
+    if: github.repository_owner == 'tinydantic'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # https://github.com/actions/checkout/issues/249
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # Netlify default Python version is 3.8
+          # https://docs.netlify.com/configure-builds/available-software-at-build-time/#languages
+          python-version: "3.8"
+      - name: Install UV
+        run: curl -LsSf https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh | sh # yamllint disable-line rule:line-length
+      - name: Install Hatch
+        run: uv pip install --upgrade hatch
+      - name: Configure Git for GitHub Actions bot
+        # yamllint disable rule:line-length
+        run: >-
+          git config --local user.name 'github-actions[bot]'
+          git config --local user.email 'github-actions[bot]@users.noreply.github.com'
+        # yamllint enable rule:line-length
+      - name: Display full version
+        run: hatch version
+      - name: Build documentation
+        run: hatch -v run docs:build-check
+      - name: Commit documentation
+        run: hatch -v run docs:ci-publish dev
+      - name: Create archive
+        run: git archive -o site.zip gh-pages
+      - uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: site.zip

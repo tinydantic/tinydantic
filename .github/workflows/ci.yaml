@@ -24,22 +24,6 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
 jobs:
-  build-docs:
-    name: Build Docs
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          # Netlify default Python version is 3.8
-          # https://docs.netlify.com/configure-builds/available-software-at-build-time/#languages
-          python-version: "3.8"
-      - name: Install Hatch
-        run: pip install --upgrade hatch
-      - name: Build docs
-        run: hatch run doc:build
-
   # pre-commit can modify files so we can't just run this as a step in the
   # matrix tests below. There is no way to disable this behavior, see
   # https://github.com/pre-commit/pre-commit-hooks/issues/108
@@ -80,8 +64,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install UV
+        run: curl -LsSf https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh | sh # yamllint disable-line rule:line-length
       - name: Install Hatch
-        run: pip install --upgrade hatch
+        run: uv pip install --upgrade hatch
       - name: Run static analysis
         run: hatch fmt --check
       - name: Run tests
