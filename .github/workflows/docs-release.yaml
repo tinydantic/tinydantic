@@ -47,8 +47,6 @@ jobs:
         # yamllint enable rule:line-length
       - name: Display full version
         run: hatch version
-      - name: Set the version of docs to publish
-        run: python scripts/set_release_version.py
       - name: Build documentation
         run: hatch -v run doc:build-check
       - name: Commit documentation
