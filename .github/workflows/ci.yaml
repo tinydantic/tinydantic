@@ -67,7 +67,7 @@ jobs:
       - name: Install UV
         run: curl -LsSf https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh | sh # yamllint disable-line rule:line-length
       - name: Install Hatch
-        run: uv pip install --upgrade hatch
+        run: uv pip install --system --upgrade hatch
       - name: Run static analysis
         run: hatch fmt --check
       - name: Run tests
