@@ -52,13 +52,9 @@ jobs:
       - name: Commit documentation
         run: >-
           hatch -v run
-          doc:ci-publish
-          $(python -c "
-          from packaging.version import Version;
+          doc:ci-publish $(python -c "from packaging.version import Version;
           version = Version(\"$(hatch version)\");
-          print(f\"{version.major}.{version.minor}\")
-          ")
-          latest
+          print(f\"{version.major}.{version.minor}\")") latest
       - name: Create archive
         run: git archive -o site.zip gh-pages
       - uses: actions/upload-artifact@v4
