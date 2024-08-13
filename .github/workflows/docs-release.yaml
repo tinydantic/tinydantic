@@ -36,7 +36,7 @@ jobs:
           # https://docs.netlify.com/configure-builds/available-software-at-build-time/#languages
           python-version: "3.8"
       - name: Install UV
-        run: curl -LsSf https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh | sh # yamllint disable-line rule:line-length
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install Hatch
         run: uv pip install --system --upgrade hatch
       - name: Configure Git for GitHub Actions bot
