@@ -71,6 +71,11 @@ jobs:
         with:
           name: Packages
           path: dist
+      - name: Get release version
+        run: |
+          echo "VERSION=${GITHUB_REF#v}" >> $GITHUB_ENV
+      - name: Get repository name
+        run: echo "REPOSITORY_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -78,6 +83,7 @@ jobs:
           gh release create
           '${{ github.ref_name }}'
           --repo '${{ github.repository }}'
+          --title "$REPOSITORY_NAME $VERSION"
           --notes ""
       - name: Upload artifact signatures
         env:
@@ -87,7 +93,7 @@ jobs:
         # sigstore-produced signatures and certificates.
         run: >-
           gh release upload
-          '${{ github.ref_name }}' dist/**
+          "$VERSION" dist/**
           --repo '${{ github.repository }}'
 
   publish-to-testpypi:
