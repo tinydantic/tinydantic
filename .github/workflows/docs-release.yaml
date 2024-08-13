@@ -39,7 +39,7 @@ jobs:
         run: uv pip install --system --upgrade hatch
       - name: Configure Git for GitHub Actions bot
         # yamllint disable rule:line-length
-        run: >-
+        run: |
           git config --local user.name 'github-actions[bot]'
           git config --local user.email 'github-actions[bot]@users.noreply.github.com'
         # yamllint enable rule:line-length
