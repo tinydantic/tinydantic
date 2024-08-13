@@ -49,12 +49,14 @@ jobs:
         run: hatch version
       - name: Build documentation
         run: hatch -v run doc:build-check
+      - name: Get doc version
+        run: |
+          TAG_NAME=${{ github.event.release.tag_name }}
+          DOC_VERSION=${TAG_NAME#v}
+          echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
       - name: Commit documentation
         run: >-
-          hatch -v run
-          doc:ci-publish $(python -c "from packaging.version import Version;
-          version = Version(\"$(hatch version)\");
-          print(f\"{version.major}.{version.minor}\")") latest
+          hatch -v run doc:ci-publish "$DOC_VERSION" latest
       - name: Create archive
         run: git archive -o site.zip gh-pages
       - uses: actions/upload-artifact@v4
