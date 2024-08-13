@@ -8,7 +8,7 @@ name: Docs (Release)
 on: # yamllint disable-line rule:truthy
   push:
     tags:
-      - v*
+      - v[0-9]+.[0-9]+.[0-9]+
 
 concurrency:
   group: docs-deploy
