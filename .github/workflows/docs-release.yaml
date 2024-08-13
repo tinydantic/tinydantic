@@ -51,7 +51,7 @@ jobs:
         run: hatch -v run doc:build-check
       - name: Get doc version
         run: |
-          TAG_NAME=${{ github.event.release.tag_name }}
+          TAG_NAME=${{ github.ref_name }}
           DOC_VERSION=${TAG_NAME#v}
           echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
       - name: Commit documentation
