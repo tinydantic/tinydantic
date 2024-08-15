@@ -6,7 +6,22 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://tinydantic.dev/latest/installation/</loc>
+         <loc>https://tinydantic.dev/latest/changelog/</loc>
+         <lastmod>2020-02-02</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://tinydantic.dev/latest/get_started/</loc>
+         <lastmod>2020-02-02</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://tinydantic.dev/latest/get_started/installation/</loc>
+         <lastmod>2020-02-02</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://tinydantic.dev/latest/license/</loc>
          <lastmod>2020-02-02</lastmod>
          <changefreq>daily</changefreq>
     </url>
