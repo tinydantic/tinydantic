@@ -27,6 +27,9 @@ classifiers = [
   "Programming Language :: Python",
 ]
 dependencies = [
+  "PyYAML",
+  "pydantic>=2.0",
+  "tinydb>=4.0",
 ]
 description = ""
 dynamic = [
@@ -58,15 +61,19 @@ dev = [
 # documentation:
 # https://packaging.python.org/en/latest/specifications/core-metadata/#provides-extra-multiple-use
 #
-# TODO(cdwilson): should this be changed to "docs"? "docs" appears to be more
+# TODO @cdwilson: should this be changed to "docs"? "docs" appears to be more
 # popular than "doc":
 # https://github.com/scientific-python/specs/pull/324#issuecomment-2150738534
 doc = [
+  # black is used by separate_signature option in mkdocstrings-python to format
+  # function signatures
   "black",
   "linkchecker",
   "mike",
   "mkdocs-awesome-pages-plugin",
   "mkdocs-gen-files",
+  "mkdocs-github-admonitions-plugin",
+  "mkdocs-include-markdown-plugin",
   "mkdocs-material",
   "mkdocstrings",
   "mkdocstrings-python",
@@ -79,13 +86,17 @@ pre-commit = [
 # https://packaging.python.org/en/latest/specifications/core-metadata/#provides-extra-multiple-use
 test = [
   "packaging",
+  "pytest",
 ]
 types = [
   "mypy>=1.0.0",
-  "packaging",   # TODO(cdwilson): this is duplicated in test
+  "packaging",         # TODO @cdwilson: this is duplicated in test
+  "types-PyYAML",
+  "typing-extensions",
 ]
 
 [project.urls]
+Changelog = "https://github.com/tinydantic/tinydantic/blob/main/CHANGELOG.md"
 Documentation = "https://tinydantic.dev"
 Issues = "https://github.com/tinydantic/tinydantic/issues"
 Source = "https://github.com/tinydantic/tinydantic"
@@ -115,6 +126,7 @@ release = 'pysemver check {args} && git tag -a v{args} -m "Release version {args
 features = [
   "doc",
 ]
+python = "3.12"
 
 [tool.hatch.envs.doc.env-vars]
 MKDOCS_CONFIG = "mkdocs.yaml"
@@ -131,9 +143,15 @@ check = "linkchecker --config .linkcheckerrc site"
 ci-publish = "mike deploy --config-file {env:MKDOCS_CONFIG} --update-aliases --push {args}"
 serve = "mkdocs serve --config-file {env:MKDOCS_CONFIG} --dev-addr localhost:8000 {args}"
 
-# TODO(cdwilson): remove this when https://github.com/pypa/hatch/issues/1553
+# TODO @cdwilson: remove this when https://github.com/pypa/hatch/issues/1553
 # is implemented
 [tool.hatch.envs.hatch-test]
+default-args = [
+  # hatch test ignores [tool.pytest.ini_options] table
+  # https://github.com/pypa/hatch/issues/1551
+  # https://github.com/pypa/hatch/issues/1452#issuecomment-2153447373
+  "--config-file=pyproject.toml",
+]
 features = [
   "test",
 ]
@@ -264,6 +282,9 @@ known-first-party = [
 ]
 lines-between-types = 1
 
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 72
+
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all" # https://docs.astral.sh/ruff/settings/#lint_flake8-tidy-imports_ban-relative-imports
 
@@ -288,3 +309,11 @@ ignore-semiprivate = true
 omit-covered-files = true
 style = "google"
 verbose = 2
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --doctest-continue-on-failure"
+minversion = "6.0"
+testpaths = [
+  "src",
+  "tests",
+]

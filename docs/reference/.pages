@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
+title: Reference # sets the section name in the left and top nav
 nav:
-  - index.md
+  - Reference: index.md # sets the link title in the footer nav
   # When the navigation.sections feature is enabled in the material theme,
   # top-level sections are rendered as groups in the sidebar for viewports
   # above 1220px. When the navigation.indexes and navigation.tabs features

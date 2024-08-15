@@ -4,6 +4,7 @@
 
 ---
 site_name: tinydantic
+site_description: A simple Python object-document mapper (ODM) for TinyDB
 site_url: https://tinydantic.dev
 repo_url: https://github.com/tinydantic/tinydantic
 repo_name: tinydantic/tinydantic
@@ -66,6 +67,8 @@ plugins:
   - gen-files: # https://github.com/oprypin/mkdocs-gen-files
       scripts:
         - scripts/gen_api_docs.py
+  - include-markdown # https://github.com/mondeja/mkdocs-include-markdown-plugin
+  - gh-admonitions # https://github.com/PGijsbers/admonitions
   - awesome-pages # https://github.com/lukasgeiter/mkdocs-awesome-pages-plugin
   - mkdocstrings: # https://mkdocstrings.github.io/
       default_handler: python
@@ -77,6 +80,7 @@ plugins:
           options:
             docstring_options:
               ignore_init_summary: true
+            docstring_section_style: table
             heading_level: 1
             inherited_members: true
             merge_init_into_class: true
@@ -105,12 +109,17 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.superfences
   - attr_list
+  - footnotes
+  - pymdownx.keys
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
       use_pygments: true
       pygments_lang_class: true
+  - pymdownx.inlinehilite
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tabbed:
