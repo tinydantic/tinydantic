@@ -20,7 +20,7 @@ repos:
       - id: check-symlinks
       - id: check-toml
       - id: check-xml
-      # TODO(cdwilson): breaks with `could not determine a constructor for the
+      # TODO @cdwilson: breaks with `could not determine a constructor for the
       # tag 'tag:yaml.org,2002:python/name:materialx.emoji.twemoji'`
       # - id: check-yaml
       #   args: [--allow-multiple-documents]

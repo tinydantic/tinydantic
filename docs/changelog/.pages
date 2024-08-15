@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Chris Wilson <christopher.david.wilson@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+title: Changelog # sets the section name in the left and top nav
+nav:
+  - index.md

@@ -1,9 +1,9 @@
----
-title: Get Started
----
+# tinydantic
 
-!!! warning "Warning"
+{%
+   include-markdown "../README.md"
+   start="<!-- overview-start -->"
+   end="<!-- overview-end -->"
+%}
 
-    `tinydantic` is currently a work in progress 🏗️
-
-    There's not much to see here yet, but feel free to grab your hard hat and have a look around! 👷
+[Get started](get_started/index.md){ .md-button .md-button--primary }
