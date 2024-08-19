@@ -7,5 +7,6 @@ nav:
       - Home: index.md # sets the link title in the footer nav
   - get_started
   - reference
+  - contributing
   - changelog
   - license

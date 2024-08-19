@@ -1,0 +1,71 @@
+{
+  // Python
+  "python.testing.pytestArgs": ["--config-file=pyproject.toml"],
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.rulers": [72, 79],
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    },
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "rewrap.autoWrap.enabled": true,
+    "rewrap.wrappingColumn": 72
+  },
+
+  // Markdown
+  "[markdown]": {
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint",
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.markdownlint": "explicit"
+    }
+  },
+
+  // YAML
+  "yaml.style.flowMapping": "forbid",
+  "yaml.style.flowSequence": "forbid",
+  "yaml.format.bracketSpacing": false,
+  "yaml.schemas": {
+    "https://squidfunk.github.io/mkdocs-material/schema.json": "mkdocs.yaml",
+    "https://json.schemastore.org/github-workflow.json": [
+      "*.github/workflows/*.yaml",
+      "*.github/workflows/*.yml"
+    ],
+    "https://json.schemastore.org/github-action.json": [
+      "action.yaml",
+      "action.yml"
+    ]
+  },
+  "yaml.customTags": [
+    "!ENV scalar",
+    "!ENV sequence",
+    "!relative scalar",
+    "tag:yaml.org,2002:python/name:material.extensions.emoji.to_svg",
+    "tag:yaml.org,2002:python/name:material.extensions.emoji.twemoji",
+    "tag:yaml.org,2002:python/name:pymdownx.superfences.fence_code_format"
+  ],
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file"
+  },
+
+  // TOML
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml",
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file"
+  },
+
+  // JSON
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file"
+  }
+}

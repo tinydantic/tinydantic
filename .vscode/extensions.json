@@ -13,6 +13,8 @@
     "trond-snekvik.simple-rst",
     "vivaxy.vscode-conventional-commits",
     "njpwerner.autodocstring",
-    "donjayamanne.python-environment-manager"
+    "donjayamanne.python-environment-manager",
+    "stkb.rewrap",
+    "streetsidesoftware.code-spell-checker"
   ]
 }

@@ -1,6 +1,6 @@
 # License
 
 {%
-   include-markdown "../../LICENSE.md"
-   start="# License"
+  include-markdown "../../LICENSE.md"
+  start="# License"
 %}

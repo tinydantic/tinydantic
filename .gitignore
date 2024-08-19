@@ -169,3 +169,7 @@ cython_debug/
 # VS Code
 .vscode/*
 !.vscode/extensions.json
+!.vscode/default_settings.json
+
+# Node
+node_modules/

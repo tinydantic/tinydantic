@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-title: Get Started # sets the section name in the left and top nav
+title: Contributing # sets the section name in the left and top nav
 nav:
   - index.md
-  - installation.md
-  - basic_example.md
+  - code_of_conduct.md

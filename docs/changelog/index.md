@@ -1,6 +1,6 @@
 # Changelog
 
 {%
-   include-markdown "../../CHANGELOG.md"
-   start="# Changelog"
+  include-markdown "../../CHANGELOG.md"
+  start="# Changelog"
 %}

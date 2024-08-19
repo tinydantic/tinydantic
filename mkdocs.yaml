@@ -24,15 +24,15 @@ theme:
     - content.code.annotate
     - content.code.copy
     - content.tooltips
-    - navigation.tabs
-    - navigation.tabs.sticky
+    # - navigation.tabs
+    # - navigation.tabs.sticky
     - navigation.footer
     - navigation.expand
     - navigation.top
     - navigation.indexes
     - navigation.instant
     - navigation.instant.progress
-    - navigation.sections
+    # - navigation.sections
     - navigation.tracking
     - search.highlight
     - search.share
@@ -82,11 +82,13 @@ plugins:
               ignore_init_summary: true
             docstring_section_style: table
             heading_level: 1
-            inherited_members: true
+            preload_modules:
+              - pydantic
+              - tinydb
+            inherited_members: false
             merge_init_into_class: true
             group_by_category: true
             separate_signature: true
-            show_category_heading: true
             show_root_heading: true
             show_root_full_path: true
             show_signature_annotations: true
@@ -95,6 +97,7 @@ plugins:
             signature_crossrefs: true
           import:
             - https://docs.python.org/3/objects.inv
+            - https://docs.pydantic.dev/latest/objects.inv
             - https://tinydb.readthedocs.io/en/latest/objects.inv
   - mike: # https://github.com/jimporter/mike
       alias_type: symlink
