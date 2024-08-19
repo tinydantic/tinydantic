@@ -15,7 +15,7 @@
 #   3. Click the "Restart Extensions" button
 #   4. Click the "Enable" button
 
-#:schema "taplo://taplo.toml"
+#:schema taplo://taplo.toml
 
 [formatting]
 align_comments = true

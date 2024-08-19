@@ -12,12 +12,20 @@ Unlike the original recipe, this script does not depend on the
 [mkdocs-literate-nav][2] and [mkdocs-section-index][3] dependencies.
 
 See <https://github.com/mkdocstrings/mkdocstrings/discussions/686> for
-some additional context on the original motivation for this.
+some additional context on the original motivation for this, and
+<https://github.com/mkdocstrings/mkdocstrings/discussions/687> where
+this script was originally posted.
 
 [1]: https://github.com/lukasgeiter/mkdocs-awesome-pages-plugin
 [2]: https://github.com/oprypin/mkdocs-literate-nav
 [3]: https://github.com/oprypin/mkdocs-section-index
+
+Warning:
+    This script currently only works for packages using the [src
+    layout](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/).
 """
+
+from __future__ import annotations
 
 from pathlib import Path
 
@@ -37,17 +45,13 @@ API_DOC_DIR = "reference/api"
 # config option in mkdocs.yaml (defaults to ".pages").
 AWESOME_PAGES_FILE_NAME = ".pages"
 
-# Is the Python project using a src layout?
-# https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/
-src_layout = True  # default True
-
 # Control the display of the "mod" (module) symbol in the nav.
 #
 # Note: these options provide additional control over the display of
 # the mod symbol beyond the config options built into mkdostrings:
 # https://mkdocstrings.github.io/python/usage/configuration/headings/
-show_mod_symbol_left_nav = True  # default True
-show_mod_symbol_footer_nav = True  # default True
+show_mod_symbol_left_nav = True
+show_mod_symbol_footer_nav = True
 
 # Control the display of the full path for the Python module object in
 # the nav.
@@ -55,8 +59,21 @@ show_mod_symbol_footer_nav = True  # default True
 # Note: these options provide additional control over the display of
 # the module path beyond the config options built into mkdocstrings:
 # https://mkdocstrings.github.io/python/usage/configuration/headings/
-show_mod_full_path_left_nav = False  # default False
-show_mod_full_path_footer_nav = True  # default True
+show_full_path_left_nav = False
+show_full_path_footer_nav = True
+
+# Generate a section index page for __init__.py modules
+init_as_section_index_page = True
+
+# Skip generating pages for __main__.py modules
+skip_main_modules = True
+
+# Skip generating pages for magic modules (e.g. __module__.py)
+# Note: this does not include __init__.py or __main__.py (see above)
+skip_magic_modules = False
+
+# Skip generating pages for private modules (e.g. _module.py)
+skip_private_modules = True
 
 # --- End User Configurable Options ---
 
@@ -71,54 +88,95 @@ root = Path(__file__).parent.parent
 src = root / Path("src")
 api_doc_path = Path(API_DOC_DIR)
 
-for path in sorted(src.rglob("*.py")):
+
+def sort_init_first(path: Path) -> tuple[Path, bool, str]:
+    """Custom sort key which places __init__.py files first."""
+    # Check if the file name is __init__.py
+    is_init = path.name == "__init__.py"
+    # Create a tuple with the directory part and whether it's
+    # __init__.py
+    return (path.parent, not is_init, path.name)
+
+
+for path in sorted(sorted(src.rglob("*.py")), key=sort_init_first):
     module_path = path.relative_to(src).with_suffix("")
     doc_path = path.relative_to(src).with_suffix(".md")
     full_doc_path = api_doc_path / Path(doc_path)
 
-    parts = tuple(module_path.parts)
-    ident = ".".join(parts)
+    module_parts = tuple(module_path.parts)
+    module_ident = ".".join(module_parts)
+    module_name = module_parts[-1]
+    module_ref = module_ident
 
-    if parts[-1] == "__init__":
-        parts = parts[:-1]
-        doc_path = doc_path.with_name(INDEX_FILE_NAME)
-        full_doc_path = full_doc_path.with_name(INDEX_FILE_NAME)
-        ident = ".".join(parts)
+    if module_name == "__init__":
+        package_parts = module_parts[:-1]
+        package_ident = ".".join(package_parts)
+        package_name = package_parts[-1]
+        module_ref = package_ident
 
-        mod_path_left_nav = ident if show_mod_full_path_left_nav else parts[-1]
-        mod_path_footer_nav = (
-            ident if show_mod_full_path_footer_nav else parts[-1]
+        package_path_left_nav = (
+            package_ident if show_full_path_left_nav else package_name
+        )
+        package_path_footer_nav = (
+            package_ident if show_full_path_footer_nav else package_name
         )
 
-        # Generate an awesome-pages file for the package and include
-        # the index file in the nav.
+        package_awesome_pages_file_content = (
+            f"title: {mod_symbol_left_nav}{package_path_left_nav}\nnav:\n"
+        )
+
+        if init_as_section_index_page:
+            full_doc_path = full_doc_path.with_name(INDEX_FILE_NAME)
+            package_awesome_pages_file_content += f"  - {mod_symbol_footer_nav}{package_path_footer_nav}: {INDEX_FILE_NAME}\n"  # noqa: E501
+
+        # Generate an awesome-pages file for the package
         with mkdocs_gen_files.open(
             full_doc_path.with_name(AWESOME_PAGES_FILE_NAME),
             "w",
         ) as fd:
-            # fmt: off
-            fd.write(
-                f"title: {mod_symbol_left_nav}{mod_path_left_nav}\n"
-                "nav:\n"
-                f"  - {mod_symbol_footer_nav}{mod_path_footer_nav}: {INDEX_FILE_NAME}\n"  # noqa: E501
-            )
-            # fmt: on
+            fd.write(package_awesome_pages_file_content)
 
-        if len(parts) > 1:
+        if len(package_parts) > 1:
             # If the package is a subpackage, append the package name
             # to the nav in the parent package's awesome-pages file.
             with mkdocs_gen_files.open(
                 full_doc_path.parent.with_name(AWESOME_PAGES_FILE_NAME),
                 "a",
             ) as fd:
-                fd.write(f"  - {parts[-1]}\n")
-    elif parts[-1] == "__main__":
-        # Skip generating docs for __main__.py files.
+                fd.write(f"  - {package_name}\n")
+
+    if module_name == "__main__" and skip_main_modules:
+        # Skip generating pages for __main__.py modules
         continue
+
+    if (
+        module_name not in ("__init__", "__main__")
+        and module_name.startswith("__")
+        and module_name.endswith("__")
+        and skip_magic_modules
+    ):
+        # Skip generating pages for magic modules (e.g. __module__.py)
+        continue
+
+    if (
+        module_name not in ("__init__", "__main__")
+        and not (module_name.startswith("__") and module_name.endswith("__"))
+        and module_name.startswith("_")
+        and skip_private_modules
+    ):
+        # Skip generating pages for private modules (e.g. _module.py)
+        continue
+
+    if module_name == "__init__" and init_as_section_index_page:
+        module_parts = module_parts[:-1]
+        module_ident = ".".join(module_parts)
+        module_name = module_parts[-1]
     else:
-        mod_path_left_nav = ident if show_mod_full_path_left_nav else parts[-1]
+        mod_path_left_nav = (
+            module_ident if show_full_path_left_nav else module_name
+        )
         mod_path_footer_nav = (
-            ident if show_mod_full_path_footer_nav else parts[-1]
+            module_ident if show_full_path_footer_nav else module_name
         )
 
         # Append the module name to the package's awesome-pages file.
@@ -126,7 +184,7 @@ for path in sorted(src.rglob("*.py")):
             full_doc_path.with_name(AWESOME_PAGES_FILE_NAME),
             "a",
         ) as fd:
-            fd.write(f"  - {parts[-1]}\n")
+            fd.write(f"  - {module_name}\n")
 
         # For more control over module documentation, a separate dir
         # is created for each module with an index and an awesome-pages
@@ -152,10 +210,9 @@ for path in sorted(src.rglob("*.py")):
 
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         # Generate the documentation page for the python module.
-        fd.write(f"::: {ident}")
+        fd.write(f"::: {module_ref}\n")
 
     # See Note in https://mkdocstrings.github.io/recipes/#generate-pages-on-the-fly
-    if src_layout:
-        mkdocs_gen_files.set_edit_path(
-            full_doc_path, Path("../") / path.relative_to(root)
-        )
+    mkdocs_gen_files.set_edit_path(
+        full_doc_path, Path("../") / path.relative_to(root)
+    )

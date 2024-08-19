@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-#:schema "https://json.schemastore.org/pyproject.json"
+#:schema https://json.schemastore.org/pyproject.json
 
 [build-system]
 build-backend = "hatchling.build"
@@ -38,7 +38,8 @@ classifiers = [
 ]
 dependencies = [
   "PyYAML",
-  "pydantic>=2.0",
+  "eval_type_backport;python_version<='3.9'",
+  "pydantic[email]>=2.0",
   "tinydb>=4.0",
 ]
 description = ""
@@ -47,10 +48,12 @@ dynamic = [
 ]
 keywords = [
 ]
-license = "Apache-2.0 OR MIT"
-license-files = { globs = [
-  "LICENSES/*",
-] }
+license = { text = "Apache-2.0 OR MIT" }
+# TODO @cdwilson: uncomment this when license-files is supported in the JSON
+# schema https://json.schemastore.org/pyproject.json
+# license-files = { globs = [
+#   "LICENSES/*",
+# ] }
 name = "tinydantic"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -60,8 +63,13 @@ compliance = [
   "reuse>=4.0.0",
 ]
 dev = [
+  "check-jsonschema",
   "commitizen",
+  "editorconfig-checker",
   "interrogate",
+  "jsonschema[format]",
+  "pre-commit-ci-config",
+  "pyclean",
   "ruff>=0.6",
   "semver",
   "tinydantic[compliance,doc,pre-commit,test,types]",
@@ -78,6 +86,7 @@ doc = [
   # black is used by separate_signature option in mkdocstrings-python to format
   # function signatures
   "black",
+  "griffe>=1.1.1",
   "linkchecker",
   "mike",
   "mkdocs-awesome-pages-plugin",
@@ -130,7 +139,10 @@ features = [
 ]
 
 [tool.hatch.envs.default.scripts]
+clean = "pyclean . --debris --verbose"
 release = 'pysemver check {args} && git tag -a v{args} -m "Release version {args}" && git push --tags'
+spell-check = "npx cspell --gitignore --dot ."
+update-project-words = 'npx cspell --gitignore --dot --words-only --unique . | sort --ignore-case >> project-words.txt'
 
 [tool.hatch.envs.doc]
 features = [
@@ -209,7 +221,6 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = 79
-pydocstyle.convention = "google"
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -249,6 +260,7 @@ ignore = [
   "Q003",   # https://docs.astral.sh/ruff/rules/avoidable-escaped-quote/
   "W191",   # https://docs.astral.sh/ruff/rules/tab-indentation/
 ]
+pydocstyle.convention = "google"
 select = [
   "ALL",
 ]
@@ -306,20 +318,27 @@ version_provider = "scm"
 version_scheme = "semver2"
 
 [tool.interrogate]
-exclude = [
-  ".hatch",
-]
+# exclude = [
+#   ".hatch",
+# ]
 fail-under = 100
 ignore-private = true
+ignore-regex = [
+  # tinydantic.document
+  "DocumentMeta",
+]
 ignore-semiprivate = true
 omit-covered-files = true
 style = "google"
 verbose = 2
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --doctest-continue-on-failure"
+addopts = "--doctest-modules --doctest-glob '*.md'"
+doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL"
 minversion = "6.0"
 testpaths = [
+  "README.md",
+  "doc",
   "src",
   "tests",
 ]

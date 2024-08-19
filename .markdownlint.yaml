@@ -11,3 +11,22 @@ default: true
 # MD013/line-length : Line length
 # https://github.com/DavidAnson/markdownlint/blob/v0.34.0/doc/md013.md
 MD013: false
+
+# MD052/reference-links-images : Reference links and images should use a label
+# that is defined
+#
+# This is disabled because mkdocstrings uses reference links to refer to
+# documented objects. For example, if docs were inserted via:
+#
+# ::: my_package.my_module.MyClass
+#
+# this could be referenced in the docs using the following reference link:
+#
+# [my_package.my_module.MyClass][]
+#
+# For these reference links, no associated label is defined, causing the linter
+# to flag them.
+#
+# TODO @cdwilson: investigate a way to avoid having to disable this for all
+# reference links and images.
+MD052: false

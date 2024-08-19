@@ -13,17 +13,16 @@ repos:
     hooks:
       - id: check-ast
       - id: check-docstring-first
-      - id: check-executables-have-shebangs
       - id: check-json
       - id: check-merge-conflict
       - id: check-shebang-scripts-are-executable
-      - id: check-symlinks
       - id: check-toml
-      - id: check-xml
-      # TODO @cdwilson: breaks with `could not determine a constructor for the
-      # tag 'tag:yaml.org,2002:python/name:materialx.emoji.twemoji'`
-      # - id: check-yaml
-      #   args: [--allow-multiple-documents]
+      - id: check-yaml
+        args:
+          # TODO @cdwilson: without `--unsafe`, this check fails with `could not
+          # determine a constructor for the tag
+          # 'tag:yaml.org,2002:python/name:materialx.emoji.twemoji'`
+          - --unsafe
       - id: debug-statements
       - id: destroyed-symlinks
       - id: detect-aws-credentials
@@ -34,6 +33,7 @@ repos:
       - id: name-tests-test
         args:
           - --pytest-test-first
+        exclude: tests/document/models.py
       - id: trailing-whitespace
         args:
           - --markdown-linebreak-ext=md
@@ -48,12 +48,44 @@ repos:
         args:
           - --fix
       - id: ruff-format
-  # Experimental taplo support
-  # https://github.com/ComPWA/mirrors-taplo/issues/13#issuecomment-1930749688
-  - repo: https://github.com/redeboer/taplo-pre-commit
-    rev: 0.9.1rc1
+  - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
+    rev: 2.7.3
     hooks:
-      - id: taplo
+      - id: editorconfig-checker
+        alias: ec
+        exclude: LICENSES
+  - repo: https://github.com/pre-commit-ci/pre-commit-ci-config
+    rev: v1.6.1
+    hooks:
+      - id: check-pre-commit-ci-config
+  - repo: https://github.com/henryiii/validate-pyproject-schema-store
+    rev: 2024.08.19
+    hooks:
+      - id: validate-pyproject
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.29.1
+    hooks:
+      - id: check-github-workflows
+        args:
+          - --builtin-schema=vendor.github-workflows
+  # Experimental taplo support
+  # This may change in the future depending on the status of this PR:
+  # https://github.com/tamasfe/taplo/pull/549
+  - repo: https://github.com/ComPWA/mirrors-taplo
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format
+      # TODO @cdwilson: re-enable this when this issue is fixed
+      # https://github.com/tamasfe/taplo/issues/657
+      # - id: taplo-lint
+      #   args:
+      # yamllint disable rule:line-length
+      #     # This hook tries to download schemas for validation, which fails
+      #     # because pre-commit.ci doesn't allow network access at runtime for
+      #     # free tier:
+      #     # https://github.com/pre-commit-ci/issues/issues/47#issuecomment-804481763
+      #     - --no-schema
+      # yamllint enable rule:line-length
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.28.0
     hooks:
@@ -62,7 +94,6 @@ repos:
     rev: 1.7.0
     hooks:
       - id: interrogate
-        pass_filenames: false
   # https://github.com/pre-commit/mirrors-prettier was archived Apr 11, 2024
   # See also https://github.com/prettier/prettier/issues/15742
   - repo: https://github.com/rbubley/mirrors-prettier
@@ -82,3 +113,12 @@ repos:
     rev: v0.13.0
     hooks:
       - id: markdownlint-cli2
+  - repo: https://github.com/streetsidesoftware/cspell-cli
+    rev: v8.13.3
+    hooks:
+      - id: cspell
+        exclude: LICENSES
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes

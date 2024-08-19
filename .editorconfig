@@ -4,6 +4,11 @@
 
 # EditorConfig is awesome: https://editorconfig.org
 
+# Note: max_line_length is not specified here because it's enforced by linters,
+# which provide more flexibility (like allowing non-breakable text such as
+# URLs). If max_line_length was set in this file, the EditorConfig pre-commit
+# hook will fail with a bunch of incorrect "Line too long" errors.
+
 # top-most EditorConfig file
 root = true
 
@@ -19,13 +24,13 @@ end_of_line = lf
 indent_style = space
 indent_size = 2
 # tab_width defaults to indent_size when unset
-max_line_length = 80
 
 # Python
 [*.py]
+# Prettier will parse the following properties and use them as config
+# https://prettier.io/docs/en/configuration.html#editorconfig
 indent_size = 4
-max_line_length = 79
+# tab_width defaults to indent_size when unset
 
-# Markdown
-[*.md]
-max_line_length = unset
+[Makefile]
+indent_style = tab
