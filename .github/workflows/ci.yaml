@@ -127,6 +127,7 @@ jobs:
     name: Ensure everything required is passing for branch protection
     if: always()
     needs:
+      - online-checks
       - test
     runs-on: ubuntu-latest
     steps:
