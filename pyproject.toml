@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-#:schema "https://json.schemastore.org/pyproject.json"
+#:schema https://json.schemastore.org/pyproject.json
 
 [build-system]
 build-backend = "hatchling.build"
@@ -15,8 +15,15 @@ requires = [
 authors = [
   { name = "Chris Wilson", email = "christopher.david.wilson@gmail.com" },
 ]
+# https://pypi.org/classifiers/
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 2 - Pre-Alpha",
+  "Framework :: Pydantic :: 2",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -25,10 +32,14 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
   "Programming Language :: Python",
+  "Topic :: Database",
+  "Topic :: Software Development :: Libraries",
+  "Typing :: Typed",
 ]
 dependencies = [
   "PyYAML",
-  "pydantic>=2.0",
+  "eval_type_backport;python_version<='3.9'",
+  "pydantic[email]>=2.0",
   "tinydb>=4.0",
 ]
 description = ""
@@ -37,10 +48,12 @@ dynamic = [
 ]
 keywords = [
 ]
-license = "Apache-2.0 OR MIT"
-license-files = { globs = [
-  "LICENSES/*",
-] }
+license = { text = "Apache-2.0 OR MIT" }
+# TODO @cdwilson: uncomment this when license-files is supported in the JSON
+# schema https://json.schemastore.org/pyproject.json
+# license-files = { globs = [
+#   "LICENSES/*",
+# ] }
 name = "tinydantic"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -50,9 +63,14 @@ compliance = [
   "reuse>=4.0.0",
 ]
 dev = [
+  "check-jsonschema",
   "commitizen",
+  "editorconfig-checker",
   "interrogate",
-  "ruff",
+  "jsonschema[format]",
+  "pre-commit-ci-config",
+  "pyclean",
+  "ruff>=0.6",
   "semver",
   "tinydantic[compliance,doc,pre-commit,test,types]",
   "uv",
@@ -68,6 +86,7 @@ doc = [
   # black is used by separate_signature option in mkdocstrings-python to format
   # function signatures
   "black",
+  "griffe>=1.1.1",
   "linkchecker",
   "mike",
   "mkdocs-awesome-pages-plugin",
@@ -120,7 +139,10 @@ features = [
 ]
 
 [tool.hatch.envs.default.scripts]
+clean = "pyclean . --debris --verbose"
 release = 'pysemver check {args} && git tag -a v{args} -m "Release version {args}" && git push --tags'
+spell-check = "npx cspell --gitignore --dot ."
+update-project-words = 'npx cspell --gitignore --dot --words-only --unique . | sort --ignore-case >> project-words.txt'
 
 [tool.hatch.envs.doc]
 features = [
@@ -197,101 +219,6 @@ exclude_lines = [
   "no cov",
 ]
 
-[tool.ruff]
-line-length = 79
-pydocstyle.convention = "google"
-
-[tool.ruff.format]
-docstring-code-format = true
-
-[tool.ruff.lint]
-ignore = [
-  # flake8-annotations (ANN)
-  "ANN003", # https://docs.astral.sh/ruff/rules/missing-type-kwargs/
-  "ANN101", # https://docs.astral.sh/ruff/rules/missing-type-self/
-  "ANN102", # https://docs.astral.sh/ruff/rules/missing-type-cls/
-  "ANN401", # https://docs.astral.sh/ruff/rules/any-type/
-
-  # flake8-fixme (FIX)
-  "FIX002", # https://docs.astral.sh/ruff/rules/line-contains-todo/
-
-  # flake8-todos (TD)
-  "TD003", # https://docs.astral.sh/ruff/rules/missing-todo-link/
-
-  # pydocstyle (D)
-  "D203", # https://docs.astral.sh/ruff/rules/one-blank-line-before-class/
-  "D213", # https://docs.astral.sh/ruff/rules/multi-line-summary-second-line/
-
-  # Conflicting lint rules
-  # See https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
-  "COM812", # https://docs.astral.sh/ruff/rules/missing-trailing-comma/
-  "COM819", # https://docs.astral.sh/ruff/rules/prohibited-trailing-comma/
-  "D206",   # https://docs.astral.sh/ruff/rules/indent-with-spaces/
-  "D300",   # https://docs.astral.sh/ruff/rules/triple-single-quotes/
-  "E111",   # https://docs.astral.sh/ruff/rules/indentation-with-invalid-multiple/
-  "E114",   # https://docs.astral.sh/ruff/rules/indentation-with-invalid-multiple-comment/
-  "E117",   # https://docs.astral.sh/ruff/rules/over-indented/
-  "ISC001", # https://docs.astral.sh/ruff/rules/single-line-implicit-string-concatenation/
-  "ISC002", # https://docs.astral.sh/ruff/rules/multi-line-implicit-string-concatenation/
-  "Q000",   # https://docs.astral.sh/ruff/rules/bad-quotes-inline-string/
-  "Q001",   # https://docs.astral.sh/ruff/rules/bad-quotes-multiline-string/
-  "Q002",   # https://docs.astral.sh/ruff/rules/bad-quotes-docstring/
-  "Q003",   # https://docs.astral.sh/ruff/rules/avoidable-escaped-quote/
-  "W191",   # https://docs.astral.sh/ruff/rules/tab-indentation/
-]
-select = [
-  "ALL",
-]
-
-[tool.ruff.lint.per-file-ignores]
-"**/scripts/*" = [
-  # flake8-no-pep420 (INP)
-  "INP001", # https://docs.astral.sh/ruff/rules/implicit-namespace-package/
-
-  # flake8-print (T20)
-  "T201", # https://docs.astral.sh/ruff/rules/print/
-  "T203", # https://docs.astral.sh/ruff/rules/p-print/
-]
-"**/tests/**/*" = [
-  # flake8-annotations (ANN)
-  "ANN201", # https://docs.astral.sh/ruff/rules/missing-return-type-undocumented-public-function/
-
-  # Pylint (PL)
-  "PLC1901", # https://docs.astral.sh/ruff/rules/compare-to-empty-string/
-
-  # Refactor (R)
-  "PLR2004", # https://docs.astral.sh/ruff/rules/magic-value-comparison/
-
-  # flake8-bandit (S)
-  "S", # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
-
-  # flake8-tidy-imports (TID)
-  "TID252", # https://docs.astral.sh/ruff/rules/relative-imports/
-]
-"docs/conf.py" = [
-  # flake8-no-pep420 (INP)
-  "INP001", # https://docs.astral.sh/ruff/rules/implicit-namespace-package/
-]
-
-[tool.ruff.lint.pyupgrade]
-keep-runtime-typing = true
-
-[tool.ruff.lint.isort]
-known-first-party = [
-  "tinydantic",
-]
-lines-between-types = 1
-
-[tool.ruff.lint.pycodestyle]
-max-doc-length = 72
-
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all" # https://docs.astral.sh/ruff/settings/#lint_flake8-tidy-imports_ban-relative-imports
-
-[tool.ruff.lint.flake8-pytest-style]
-fixture-parentheses = false
-mark-parentheses = false
-
 [tool.commitizen]
 major_version_zero = true
 name = "cz_conventional_commits"
@@ -300,20 +227,27 @@ version_provider = "scm"
 version_scheme = "semver2"
 
 [tool.interrogate]
-exclude = [
-  ".hatch",
-]
+# exclude = [
+#   ".hatch",
+# ]
 fail-under = 100
 ignore-private = true
+ignore-regex = [
+  # tinydantic.document
+  "DocumentMeta",
+]
 ignore-semiprivate = true
 omit-covered-files = true
 style = "google"
 verbose = 2
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --doctest-continue-on-failure"
+addopts = "--doctest-modules --doctest-glob '*.md'"
+doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL"
 minversion = "6.0"
 testpaths = [
+  "README.md",
+  "doc",
   "src",
   "tests",
 ]

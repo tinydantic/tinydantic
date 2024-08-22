@@ -16,7 +16,9 @@ This repository is compliant with version 3.2 of the [REUSE Specification](https
 
 License files are contained in the [LICENSES/](https://github.com/tinydantic/tinydantic/tree/main/LICENSES) directory and additional copyright & license information can be found in [REUSE.toml](https://github.com/tinydantic/tinydantic/blob/main/REUSE.toml).
 
-Install the [reuse tool](https://github.com/fsfe/reuse-tool) and run the following commands to create a software bill of materials (SBOM) in [SPDX](https://spdx.dev) format:
+You can download the [SPDX](https://spdx.dev) software bill of materials (SBOM) in `Tag:Value` format for this repository: [tinydantic.spdx](https://api.reuse.software/sbom/github.com/tinydantic/tinydantic.spdx)
+
+Alternatively, you can install the [reuse tool](https://github.com/fsfe/reuse-tool) and run the following commands to generate the SPDX SBOM directly from this repository:
 
 ```sh
 reuse spdx
