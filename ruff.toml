@@ -1,0 +1,93 @@
+# SPDX-FileCopyrightText: Chris Wilson <christopher.david.wilson@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+line-length = 79
+
+[format]
+docstring-code-format = true
+
+[lint]
+ignore = [
+  # flake8-annotations (ANN)
+  "ANN003", # https://docs.astral.sh/ruff/rules/missing-type-kwargs/
+  "ANN101", # https://docs.astral.sh/ruff/rules/missing-type-self/
+  "ANN102", # https://docs.astral.sh/ruff/rules/missing-type-cls/
+  "ANN401", # https://docs.astral.sh/ruff/rules/any-type/
+
+  # flake8-fixme (FIX)
+  "FIX002", # https://docs.astral.sh/ruff/rules/line-contains-todo/
+
+  # flake8-todos (TD)
+  "TD003", # https://docs.astral.sh/ruff/rules/missing-todo-link/
+
+  # pydocstyle (D)
+  "D203", # https://docs.astral.sh/ruff/rules/one-blank-line-before-class/
+  "D213", # https://docs.astral.sh/ruff/rules/multi-line-summary-second-line/
+
+  # Conflicting lint rules
+  # See https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+  "COM812", # https://docs.astral.sh/ruff/rules/missing-trailing-comma/
+  "COM819", # https://docs.astral.sh/ruff/rules/prohibited-trailing-comma/
+  "D206",   # https://docs.astral.sh/ruff/rules/indent-with-spaces/
+  "D300",   # https://docs.astral.sh/ruff/rules/triple-single-quotes/
+  "E111",   # https://docs.astral.sh/ruff/rules/indentation-with-invalid-multiple/
+  "E114",   # https://docs.astral.sh/ruff/rules/indentation-with-invalid-multiple-comment/
+  "E117",   # https://docs.astral.sh/ruff/rules/over-indented/
+  "ISC001", # https://docs.astral.sh/ruff/rules/single-line-implicit-string-concatenation/
+  "ISC002", # https://docs.astral.sh/ruff/rules/multi-line-implicit-string-concatenation/
+  "Q000",   # https://docs.astral.sh/ruff/rules/bad-quotes-inline-string/
+  "Q001",   # https://docs.astral.sh/ruff/rules/bad-quotes-multiline-string/
+  "Q002",   # https://docs.astral.sh/ruff/rules/bad-quotes-docstring/
+  "Q003",   # https://docs.astral.sh/ruff/rules/avoidable-escaped-quote/
+  "W191",   # https://docs.astral.sh/ruff/rules/tab-indentation/
+]
+pydocstyle.convention = "google"
+select = [
+  "ALL",
+]
+
+[lint.per-file-ignores]
+"**/scripts/*" = [
+  # flake8-no-pep420 (INP)
+  "INP001", # https://docs.astral.sh/ruff/rules/implicit-namespace-package/
+
+  # flake8-print (T20)
+  "T201", # https://docs.astral.sh/ruff/rules/print/
+  "T203", # https://docs.astral.sh/ruff/rules/p-print/
+]
+"**/tests/**/*" = [
+  # flake8-annotations (ANN)
+  "ANN201", # https://docs.astral.sh/ruff/rules/missing-return-type-undocumented-public-function/
+
+  # Pylint (PL)
+  "PLC1901", # https://docs.astral.sh/ruff/rules/compare-to-empty-string/
+
+  # Refactor (R)
+  "PLR2004", # https://docs.astral.sh/ruff/rules/magic-value-comparison/
+
+  # flake8-bandit (S)
+  "S", # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
+
+  # flake8-tidy-imports (TID)
+  "TID252", # https://docs.astral.sh/ruff/rules/relative-imports/
+]
+"docs/conf.py" = [
+  # flake8-no-pep420 (INP)
+  "INP001", # https://docs.astral.sh/ruff/rules/implicit-namespace-package/
+]
+
+[lint.pyupgrade]
+keep-runtime-typing = true
+
+[lint.isort]
+known-first-party = [
+  "tinydantic",
+]
+lines-between-types = 1
+
+[lint.pycodestyle]
+max-doc-length = 72
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "all" # https://docs.astral.sh/ruff/settings/#lint_flake8-tidy-imports_ban-relative-imports
