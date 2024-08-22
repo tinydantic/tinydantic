@@ -36,6 +36,62 @@ jobs:
       - uses: pre-commit-ci/lite-action@v1.0.2
         if: always()
 
+  # These checks are not included in pre-commit because they require network
+  # access at runtime (e.g. to download schema files).
+  online-checks:
+    name: Checks that require network access
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install UV
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      # Check JSON & YAML files
+      - name: Install check-jsonschema
+        run: uv tool install check-jsonschema --with jsonschema[format]
+      - name: Check .markdownlint.yaml
+        run: >-
+          check-jsonschema
+          --schemafile=https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json
+          .markdownlint.yaml
+      - name: Check .pre-commit-config.yaml
+        run: >-
+          check-jsonschema
+          --schemafile=https://json.schemastore.org/pre-commit-config.json
+          .pre-commit-config.yaml
+      - name: Check .prettierrc.yaml
+        run: >-
+          check-jsonschema
+          --schemafile=https://json.schemastore.org/prettierrc.json
+          .prettierrc.yaml
+      - name: Check .yamllint.yaml
+        run: >-
+          check-jsonschema
+          --schemafile=https://json.schemastore.org/yamllint.json
+          .yamllint.yaml
+      - name: Check cspell.config.yaml
+        run: >-
+          check-jsonschema
+          --schemafile=https://raw.githubusercontent.com/streetsidesoftware/cspell/main/packages/cspell-types/cspell.schema.json
+          cspell.config.yaml
+      - name: Check package.json & package-lock.json
+        run: >-
+          check-jsonschema
+          --schemafile=https://json.schemastore.org/package.json
+          package.json
+          package-lock.json
+      - name: Check package.json & package-lock.json
+        run: >-
+          check-jsonschema
+          --schemafile=https://json.schemastore.org/package.json
+          package.json
+          package-lock.json
+      # Check TOML files
+      # Note: taplo format is run as part of pre-commit
+      - name: Install taplo
+        run: uv tool install taplo
+      - name: Lint TOML files
+        run: taplo lint
+
   test:
     name: >-
       Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-')
