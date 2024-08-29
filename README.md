@@ -27,6 +27,7 @@
 
 - [Installation](#installation)
 - [Introduction](#introduction)
+- [Basic Example](#basic-example)
 - [License](#license)
 
 ## Introduction
