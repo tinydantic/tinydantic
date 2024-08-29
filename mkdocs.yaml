@@ -12,6 +12,7 @@ edit_uri: edit/main/docs/
 copyright: Copyright &copy; Chris Wilson
 extra_css:
   - css/code_select.css
+  - css/admonitions.css
 theme:
   name: material
   icon:
@@ -68,7 +69,6 @@ plugins:
       scripts:
         - scripts/gen_api_docs.py
   - include-markdown # https://github.com/mondeja/mkdocs-include-markdown-plugin
-  - gh-admonitions # https://github.com/PGijsbers/admonitions
   - awesome-pages # https://github.com/lukasgeiter/mkdocs-awesome-pages-plugin
   - mkdocstrings: # https://mkdocstrings.github.io/
       default_handler: python
@@ -114,6 +114,8 @@ markdown_extensions:
   - attr_list
   - footnotes
   - pymdownx.keys
+  - markdown_gfm_admonition
+  - mdx_truly_sane_lists
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
