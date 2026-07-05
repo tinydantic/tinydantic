@@ -50,4 +50,4 @@ nav:
   #     [mod] module (Page linked to <API_DOC_DIR>/module.md)
   #     [mod] subpackage (Page linked to <API_DOC_DIR>/subpackage/index.md)
   #       [mod] module2 (Page linked to <API_DOC_DIR>/subpackage/module2.md)
-  - API Documentation: api
+  - api

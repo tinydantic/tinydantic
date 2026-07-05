@@ -97,3 +97,9 @@ venv
 viewports
 vivaxy
 webassets
+callouts
+docstrings
+kwds
+peasy
+pipx
+squeezy

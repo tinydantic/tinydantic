@@ -2,7 +2,7 @@
 
 <!-- overview-start -->
 
-[![PyPI - Version](https://img.shields.io/pypi/v/tinydantic.svg)](https://pypi.org/project/tinydantic) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/tinydantic.svg)](https://pypi.org/project/tinydantic)
+[![PyPI - Version](https://img.shields.io/pypi/v/tinydantic.svg)](https://pypi.org/project/tinydantic) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/tinydantic.svg)](https://pypi.org/project/tinydantic) [![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
 
 `tinydantic` is a simple Python object-document mapper (ODM) for the [TinyDB](https://tinydb.readthedocs.io/en/latest/) document database. It uses [Pydantic](https://docs.pydantic.dev/latest/)—the most widely used data validation library—for document model definition and validation.
 
@@ -34,7 +34,7 @@
 
 <!-- introduction-start -->
 
-`tinydantic` is a wrapper library around [TinyDB](https://tinydb.readthedocs.io/en/latest/) that enables using [Pydantic](https://docs.pydantic.dev/) models to manage documents stored in a TinyDB database. By specifying Python type annotations for each field in a document model, validation is handled automatically by Pydantic when instantiating a model from the database.
+`tinydantic` is a wrapper library around [TinyDB](https://tinydb.readthedocs.io/en/latest/) that enables using [Pydantic](https://docs.pydantic.dev/) models to manage documents stored in a TinyDB database. By specifying Python type annotations for each field in a document model, data validation is handled automatically by Pydantic when instantiating a model from the database.
 
 <!-- introduction-end -->
 
@@ -42,7 +42,7 @@
 
 <!-- installation-start -->
 
-`tinydantic` is [available on PyPI](https://pypi.org/project/tinydantic/) and can be installed with [pip](https://github.com/pypa/pip).
+`tinydantic` is [available on PyPI](https://pypi.org/project/tinydantic/) and can be installed with [pip](https://github.com/pypa/pip). Easy peasy lemon squeezy 🍋
 
 ```sh
 pip install tinydantic
@@ -67,7 +67,11 @@ First, create a TinyDB database where the documents will be stored. In this exam
 
 ```
 
-Create a `User` document model, configuring it to store documents in the `users` table of the `db` database. Since `User` is a subclass of [Document][tinydantic.Document] (which itself is a subclass of [pydantic.BaseModel][]), `User` is also a Pydantic model! You have all the power of Pydantic models when creating a `tinydantic` document model.
+Create a `User` document model, configuring it to store documents in the `users` table of the `db` database.
+
+> [!TIP]
+>
+> Since `User` is a subclass of [Document][tinydantic.Document] (which itself is a subclass of [pydantic.BaseModel][]), `User` is also a Pydantic model! You have all the power of Pydantic models when creating a `tinydantic` document model.
 
 ```pycon
 >>> from pydantic import EmailStr
@@ -105,17 +109,17 @@ User(id=1, name='Alice', email='alice@example.com')
 
 ### Comparison to TinyDB
 
-Since `tinydantic` is built on top of TinyDB, you can still use the `tinydb` package to interact with the database directly.
+Since `tinydantic` is built on top of TinyDB, you can still use `tinydb` to interact with the database directly if needed.
 
 For comparison, let's try to accomplish the same task as shown above using only TinyDB _without_ `tinydantic`. For this example, we'll continue using the same database (`db`) we created earlier.
 
 ```pycon
 >>> users_table = db.table('users')
->>> users_table.insert({'name': 'Alice', 'email': 'alice@example.com'})
+>>> users_table.insert({'name': 'Bob', 'email': 'bob@example.com'})
 2
 >>> from tinydb import where
->>> users_table.get(where('name') == 'Alice')
-{'name': 'Alice', 'email': 'alice@example.com'}
+>>> users_table.get(where('name') == 'Bob')
+{'name': 'Bob', 'email': 'bob@example.com'}
 
 ```
 
@@ -130,7 +134,7 @@ Let's set up a contrived example to test the automatic Pydantic validation.
 First, we'll manually insert a document that is missing the `email` field from the `User` model we created earlier.
 
 ```pycon
->>> users_table.insert({'name': 'Bob'})
+>>> users_table.insert({'name': 'Carol'})
 3
 
 ```
@@ -138,12 +142,12 @@ First, we'll manually insert a document that is missing the `email` field from t
 Next, we'll query for users named "Bob" using the tinydantic model we created earlier.
 
 ```pycon
->>> User.get(User.name == 'Bob')
+>>> User.get(User.name == 'Carol')
 Traceback (most recent call last):
   ...
 pydantic_core._pydantic_core.ValidationError: 1 validation error for User
 email
-  Field required [type=missing, input_value={'name': 'Bob'}, input_type=Document]
+  Field required [type=missing, input_value={'name': 'Carol'}, input_type=Document]
 ```
 
 As you can see, Pydantic produced a `ValidationError` because the document returned from the database is missing the `email` field required by the `User` model.

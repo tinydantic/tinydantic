@@ -8,5 +8,6 @@ nav:
   - get_started
   - reference
   - contributing
+  - FAQ.md
   - changelog
   - license
