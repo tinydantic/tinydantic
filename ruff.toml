@@ -11,8 +11,6 @@ docstring-code-format = true
 ignore = [
   # flake8-annotations (ANN)
   "ANN003", # https://docs.astral.sh/ruff/rules/missing-type-kwargs/
-  "ANN101", # https://docs.astral.sh/ruff/rules/missing-type-self/
-  "ANN102", # https://docs.astral.sh/ruff/rules/missing-type-cls/
   "ANN401", # https://docs.astral.sh/ruff/rules/any-type/
 
   # flake8-fixme (FIX)
