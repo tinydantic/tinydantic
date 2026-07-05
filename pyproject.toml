@@ -59,21 +59,20 @@ readme = "README.md"
 requires-python = ">=3.8"
 
 [project.optional-dependencies]
-compliance = [
-  "reuse>=4.0.0",
-]
 dev = [
   "check-jsonschema",
   "commitizen",
+  "coverage",
   "editorconfig-checker",
   "interrogate",
   "jsonschema[format]",
+  "pre-commit",
   "pre-commit-ci-config",
   "pyclean",
+  "reuse>=4.0.0",
   "ruff>=0.6",
   "semver",
-  "tinydantic[compliance,doc,pre-commit,test,types]",
-  "uv",
+  "tinydantic[doc,pre-commit,test,types]",
 ]
 # "doc" is the reserved feature name to mark dependencies needed for generating
 # documentation:
@@ -127,23 +126,21 @@ Source = "https://github.com/tinydantic/tinydantic"
 raw-options = { local_scheme = "no-local-version" }
 source = "vcs"
 
-[tool.hatch.envs.compliance]
-features = [
-  "compliance",
-]
-
-[tool.hatch.envs.compliance.scripts]
-check = "reuse lint"
-sbom = "reuse spdx -o reuse.spdx"
-
 [tool.hatch.envs.default]
 features = [
   "dev",
 ]
 
 [tool.hatch.envs.default.scripts]
+check = [
+  "hatch fmt",
+  "sbom-check",
+  "spell-check",
+]
 clean = "pyclean . --debris --verbose"
 release = 'pysemver check {args} && git tag -a v{args} -m "Release version {args}" && git push --tags'
+sbom = "reuse spdx -o reuse.spdx"
+sbom-check = "reuse lint"
 spell-check = "npx cspell --gitignore --dot ."
 update-project-words = 'npx cspell --gitignore --dot --words-only --unique . | sort --ignore-case >> project-words.txt'
 
@@ -168,8 +165,6 @@ check = "linkchecker --config .linkcheckerrc site"
 ci-publish = "mike deploy --config-file {env:MKDOCS_CONFIG} --update-aliases --push {args}"
 serve = "mkdocs serve --config-file {env:MKDOCS_CONFIG} --dev-addr localhost:8000 {args}"
 
-# TODO @cdwilson: remove this when https://github.com/pypa/hatch/issues/1553
-# is implemented
 [tool.hatch.envs.hatch-test]
 default-args = [
   # hatch test ignores [tool.pytest.ini_options] table
@@ -177,6 +172,8 @@ default-args = [
   # https://github.com/pypa/hatch/issues/1452#issuecomment-2153447373
   "--config-file=pyproject.toml",
 ]
+# TODO @cdwilson: remove this when https://github.com/pypa/hatch/issues/1553
+# is implemented
 features = [
   "test",
 ]
@@ -230,13 +227,9 @@ version_provider = "scm"
 version_scheme = "semver2"
 
 [tool.interrogate]
-# exclude = [
-#   ".hatch",
-# ]
 fail-under = 100
 ignore-private = true
 ignore-regex = [
-  # tinydantic.document
   "DocumentMeta",
 ]
 ignore-semiprivate = true
