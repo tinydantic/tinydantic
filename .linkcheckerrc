@@ -4,5 +4,6 @@
 
 # https://linkchecker.github.io/linkchecker/man/linkcheckerrc.html
 [filtering]
+ignore=sitemap.xml.gz
 
 [AnchorCheck]
