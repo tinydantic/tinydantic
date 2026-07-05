@@ -88,6 +88,7 @@ doc = [
   "black",
   "griffe>=1.1.1",
   "linkchecker",
+  "markdown-callouts",
   "markdown-gfm-admonition",
   "mdx_truly_sane_lists",
   "mike",
@@ -248,8 +249,9 @@ addopts = "--doctest-modules --doctest-glob '*.md'"
 doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL"
 minversion = "6.0"
 testpaths = [
+  "CONTRIBUTING.md",
   "README.md",
-  "doc",
+  "docs",
   "src",
   "tests",
 ]

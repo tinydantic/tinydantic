@@ -10,5 +10,6 @@
 {%
   include-markdown "../../CONTRIBUTING.md"
   start="<!-- toc-end -->"
+  end="<!-- development-guide-start -->"
   rewrite-relative-urls=false
 %}

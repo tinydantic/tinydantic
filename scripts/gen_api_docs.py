@@ -45,6 +45,9 @@ API_DOC_DIR = "reference/api"
 # config option in mkdocs.yaml (defaults to ".pages").
 AWESOME_PAGES_FILE_NAME = ".pages"
 
+# Title for the API Documentation section
+API_DOC_TITLE = "API Documentation"
+
 # Control the display of the "mod" (module) symbol in the nav.
 #
 # Note: these options provide additional control over the display of
@@ -66,14 +69,14 @@ show_full_path_footer_nav = True
 init_as_section_index_page = True
 
 # Skip generating pages for __main__.py modules
-skip_main_modules = True
+skip_main_modules = False
 
 # Skip generating pages for magic modules (e.g. __module__.py)
 # Note: this does not include __init__.py or __main__.py (see above)
 skip_magic_modules = False
 
 # Skip generating pages for private modules (e.g. _module.py)
-skip_private_modules = True
+skip_private_modules = False
 
 # --- End User Configurable Options ---
 
@@ -97,6 +100,26 @@ def sort_init_first(path: Path) -> tuple[Path, bool, str]:
     # __init__.py
     return (path.parent, not is_init, path.name)
 
+
+# Generate an awesome-pages file for API Documentation section
+with mkdocs_gen_files.open(
+    api_doc_path / Path(AWESOME_PAGES_FILE_NAME),
+    "w",
+) as fd:
+    fd.write(
+        f"title: {API_DOC_TITLE}\n"
+        "nav:\n"
+        f"  - {API_DOC_TITLE}: {INDEX_FILE_NAME}\n"
+    )
+
+# Generate an index page for the API Documentation section
+with mkdocs_gen_files.open(
+    api_doc_path / Path(INDEX_FILE_NAME),
+    "w",
+) as fd:
+    fd.write(
+        "Auto-generated API documentation for the following packages:\n\n"
+    )
 
 for path in sorted(sorted(src.rglob("*.py")), key=sort_init_first):
     module_path = path.relative_to(src).with_suffix("")
@@ -144,6 +167,24 @@ for path in sorted(sorted(src.rglob("*.py")), key=sort_init_first):
                 "a",
             ) as fd:
                 fd.write(f"  - {package_name}\n")
+        else:
+            # Append the top-level package to the nav in the top-level
+            # awesome-pages file.
+            with mkdocs_gen_files.open(
+                api_doc_path / Path(AWESOME_PAGES_FILE_NAME),
+                "a",
+            ) as fd:
+                fd.write(f"  - {package_name}\n")
+
+            # Append the top-level package name to the API Documentation
+            # index page.
+            with mkdocs_gen_files.open(
+                api_doc_path / Path(INDEX_FILE_NAME),
+                "a",
+            ) as fd:
+                fd.write(
+                    f"- [{package_name}](./{package_name}/{INDEX_FILE_NAME})\n"
+                )
 
     if module_name == "__main__" and skip_main_modules:
         # Skip generating pages for __main__.py modules
