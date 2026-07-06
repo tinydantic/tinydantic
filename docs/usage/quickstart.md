@@ -77,6 +77,40 @@ None
 
 ```
 
+## Using TinyDB directly
+
+Because `tinydantic` is built on top of TinyDB, you can always drop down to TinyDB itself — the database and its tables are ordinary TinyDB objects. For comparison, here is the same kind of insert-and-query flow against the `users` table directly, without `tinydantic`:
+
+```pycon
+>>> users_table = db.table('users')
+>>> users_table.insert({'name': 'Bob', 'email': 'bob@example.com'})
+2
+>>> from tinydb import where
+>>> users_table.get(where('name') == 'Bob')
+{'name': 'Bob', 'email': 'bob@example.com'}
+
+```
+
+Notice that TinyDB does not restrict what you insert, and the raw document comes back as a plain dict — no parsing, no validation, no model.
+
+## Pydantic validation in action
+
+So what happens if an invalid document somehow ends up in the database? Let's insert one directly with TinyDB — bypassing the model — that is missing the `email` field the `User` model requires:
+
+```pycon
+>>> users_table.insert({'name': 'Carol'})
+3
+>>> User.get(User.name == 'Carol')
+Traceback (most recent call last):
+  ...
+pydantic_core._pydantic_core.ValidationError: 1 validation error for User
+email
+  Field required [type=missing, input_value={'name': 'Carol'}, input_type=Document]
+
+```
+
+Pydantic refuses to hand you a `User` that does not satisfy the model, so data problems surface at the boundary instead of propagating through your code.
+
 ## Where next
 
 - [CRUD tour](crud.md) — the full set of create, read, update, and delete methods, with the sharp edges spelled out.
