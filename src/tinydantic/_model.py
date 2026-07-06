@@ -259,9 +259,12 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         return [cls.from_tinydb_document(doc) for doc in iter(cls.get_table())]
 
     @classmethod
-    def search(cls, condition: QueryLike) -> list[Self]:
-        """TODO: needs docstring."""
-        raise NotImplementedError
+    def search(cls, cond: QueryLike) -> list[Self]:
+        """Get all documents matching ``cond`` as validated models."""
+        return [
+            cls.from_tinydb_document(doc)
+            for doc in cls.get_table().search(cond)
+        ]
 
     @overload
     @classmethod
@@ -342,21 +345,41 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     @classmethod
     def contains(
         cls,
-        condition: QueryLike | None = None,
-        document_id: int | None = None,
+        cond: QueryLike | None = None,
+        *,
+        doc_id: int | None = None,
     ) -> bool:
-        """TODO: needs docstring."""
-        raise NotImplementedError
+        """Check whether a matching document exists.
+
+        Raises:
+            ValueError: If both ``cond`` and ``doc_id`` are provided.
+        """
+        if cond is not None and doc_id is not None:
+            msg = "Provide at most one of cond or doc_id"
+            raise ValueError(msg)
+        return cls.get_table().contains(cond=cond, doc_id=doc_id)
 
     @classmethod
     def update(
         cls,
         fields: Mapping | Callable[[Mapping], None],
-        condition: QueryLike | None = None,
-        document_ids: Iterable[int] | None = None,
+        cond: QueryLike | None = None,
+        *,
+        doc_ids: Iterable[int] | None = None,
     ) -> list[int]:
-        """TODO: needs docstring."""
-        raise NotImplementedError
+        """Update matching documents with new fields or a transform.
+
+        Returns:
+            The ids of all updated documents.
+        """
+        return cls.get_table().update(
+            # See replace() for why this cast is needed.
+            # TODO @cdwilson: remove this cast once the annotation is
+            # fixed in TinyDB.
+            cast("Callable[[Mapping], None]", fields),
+            cond=cond,
+            doc_ids=doc_ids,
+        )
 
     @classmethod
     def update_multiple(
@@ -368,8 +391,18 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             ]
         ],
     ) -> list[int]:
-        """TODO: needs docstring."""
-        raise NotImplementedError
+        """Apply several (fields_or_transform, cond) updates at once.
+
+        Returns:
+            The ids of all updated documents.
+        """
+        return cls.get_table().update_multiple(
+            # See replace() for why this cast is needed.
+            cast(
+                "Iterable[tuple[Callable[[Mapping], None], QueryLike]]",
+                updates,
+            ),
+        )
 
     @classmethod
     def upsert(
@@ -377,17 +410,29 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         document: Self,
         cond: QueryLike | None = None,
     ) -> list[int]:
-        """TODO: needs docstring."""
-        raise NotImplementedError
+        """Update documents matching ``cond``, or insert ``document``.
+
+        Returns:
+            The ids of the updated (or inserted) documents.
+        """
+        return cls.get_table().upsert(
+            document.to_tinydb_document(force_dict=cond is not None),
+            cond,
+        )
 
     @classmethod
     def remove(
         cls,
-        condition: QueryLike | None = None,
-        document_ids: Iterable[int] | None = None,
+        cond: QueryLike | None = None,
+        *,
+        doc_ids: Iterable[int] | None = None,
     ) -> list[int]:
-        """TODO: needs docstring."""
-        raise NotImplementedError
+        """Remove matching documents.
+
+        Returns:
+            The ids of all removed documents.
+        """
+        return cls.get_table().remove(cond=cond, doc_ids=doc_ids)
 
     @classmethod
     def truncate(cls) -> None:
@@ -395,9 +440,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         cls.get_table().truncate()
 
     @classmethod
-    def count(cls, condition: QueryLike) -> int:
+    def count(cls, cond: QueryLike) -> int:
         """TODO: needs docstring."""
-        return cls.get_table().count(condition)
+        return cls.get_table().count(cond)
 
     @classmethod
     def clear_cache(cls) -> None:
