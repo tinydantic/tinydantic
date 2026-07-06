@@ -206,6 +206,9 @@ omit-covered-files = true
 style = "google"
 verbose = 2
 
+[tool.mypy]
+python_version = "3.11"
+
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --doctest-glob '*.md'"
 doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL"

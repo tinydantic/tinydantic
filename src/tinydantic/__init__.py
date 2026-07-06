@@ -16,6 +16,6 @@ from tinydantic._document import Document
 __version__: str = metadata.version("tinydantic")
 
 __all__ = [
-    "__version__",
     "Document",
+    "__version__",
 ]
