@@ -6,6 +6,8 @@
 
 `tinydantic` is a simple Python object-document mapper (ODM) for the [TinyDB](https://tinydb.readthedocs.io/en/latest/) document database. It uses [Pydantic](https://docs.pydantic.dev/latest/)—the most widely used data validation library—for document model definition and validation.
 
+📖 Full documentation is available at [tinydantic.dev](https://tinydantic.dev).
+
 <!-- prettier-ignore-start -->
 
 > [!WARNING]

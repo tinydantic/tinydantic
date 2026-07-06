@@ -93,10 +93,9 @@ docs = [
   "mkdocstrings",
   "mkdocstrings-python",
   "poethepoet",
-  # properdocs is a drop-in fork of the abandoned mkdocs core; it provides the
-  # `properdocs` CLI and aliases `mkdocs`/`mkdocs.*` imports to `properdocs`
-  # at runtime. mkdocs-material still pulls in mkdocs 1.6.x as the theme's
-  # declared dependency, but the `properdocs build` command drives the build.
+  # properdocs is the docs build engine (poe docs-build); the transitive
+  # mkdocs package remains installed (mkdocs-material dependency) and is what
+  # mike uses for versioned deploys.
   "properdocs",
 ]
 lint = [
