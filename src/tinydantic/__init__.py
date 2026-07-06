@@ -11,11 +11,14 @@ Attributes:
 
 from importlib import metadata
 
-from tinydantic._document import Document
+from tinydantic._model import TinydanticModel, q
+from tinydantic.config import TinydanticConfig
 
 __version__: str = metadata.version("tinydantic")
 
 __all__ = [
-    "Document",
+    "TinydanticConfig",
+    "TinydanticModel",
     "__version__",
+    "q",
 ]
