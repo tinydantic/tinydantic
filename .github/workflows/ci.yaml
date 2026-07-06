@@ -94,34 +94,26 @@ jobs:
           - windows-latest
           - macos-latest
         python-version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
           - "3.11"
           - "3.12"
+          - "3.13"
+          - "3.14"
     steps:
       - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          fetch-depth: 0 # https://github.com/actions/checkout/issues/249
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
+          enable-cache: true
           python-version: ${{ matrix.python-version }}
-      - name: Install UV
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
-      - name: Install Hatch
-        run: uv pip install --system --upgrade hatch
       - name: Run static analysis
-        run: hatch fmt --check
+        run: uv run --group lint poe lint
       - name: Run tests
         run: >-
-          hatch test
-          --python ${{ matrix.python-version }}
-          --cover
-          --randomize
-          --parallel
-          --retries 2
-          --retry-delay 1
+          uv run --group test poe test
+          --cov --cov-branch
+          -p no:cacheprovider
+          --numprocesses auto
+          --reruns 2 --reruns-delay 1
 
   required-checks-pass:
     name: Ensure everything required is passing for branch protection

@@ -23,13 +23,29 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
 jobs:
+  version-guard:
+    name: Verify tag matches pyproject version
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Check tag == v$(uv version --short)
+        # yamllint disable rule:line-length
+        run: |
+          PYPROJECT_VERSION="v$(uv version --short)"
+          if [ "$PYPROJECT_VERSION" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} != pyproject version ${PYPROJECT_VERSION}" >&2
+            exit 1
+          fi
+        # yamllint enable rule:line-length
+
   build:
     name: Build & verify package dists
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # https://github.com/actions/checkout/issues/249
       - uses: hynek/build-and-inspect-python-package@v2
         with:
           attest-build-provenance-github: "true"
@@ -42,6 +58,7 @@ jobs:
       && startsWith(github.ref, 'refs/tags/')
     needs:
       - build
+      - version-guard
     runs-on: ubuntu-latest
     environment:
       name: pypi

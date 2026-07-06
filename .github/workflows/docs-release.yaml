@@ -29,26 +29,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # https://github.com/actions/checkout/issues/249
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          # Netlify default Python version is 3.8
-          # https://docs.netlify.com/configure-builds/available-software-at-build-time/#languages
-          python-version: "3.8"
-      - name: Install UV
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
-      - name: Install Hatch
-        run: uv pip install --system --upgrade hatch
+          enable-cache: true
+          python-version: "3.12"
       - name: Configure Git for GitHub Actions bot
         # yamllint disable rule:line-length
         run: |
           git config --local user.name 'github-actions[bot]'
           git config --local user.email 'github-actions[bot]@users.noreply.github.com'
         # yamllint enable rule:line-length
-      - name: Display full version
-        run: hatch version
       - name: Build documentation
-        run: hatch -v run doc:build-check
+        run: uv run --group docs poe docs-build-check
       - name: Get doc version
         run: |
           TAG_NAME=${{ github.ref_name }}
@@ -57,7 +50,7 @@ jobs:
           echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
       - name: Commit documentation
         run: >-
-          hatch -v run doc:ci-publish "$DOC_VERSION" latest
+          uv run --group docs poe docs-ci-publish "$DOC_VERSION" latest
       - name: Create archive
         run: git archive -o site.zip gh-pages
       - uses: actions/upload-artifact@v4
