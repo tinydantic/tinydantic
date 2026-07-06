@@ -17,7 +17,7 @@ v0.2.0 is a breaking release (allowed under SemVer 0.y.z; latest release is 0.1.
 
 ### Non-goals for 0.2.0 (documented "future ideas")
 
-- Async support (TinyDB is sync; aiotinydb exists but is out of scope)
+- Async support. Analyzed 2026-07-05: aiotinydb is an unmaintained (since 2023) LGPL lifecycle shim whose `async with`-scoped database conflicts with tinydantic's long-lived class binding, and whose file locking is fcntl-only (silently absent on Windows). Real async ≈ doubles project scope; `to_thread` twins add ~30–50%. Instead, the FastAPI example page (§9.7) documents the correct async usage patterns for sync tinydantic. Revisit for 0.3+ if users ask.
 - Document references/relationships
 - Unique constraints / indexes
 - Custom document ID types (TinyDB `Table.document_id_class`)
@@ -114,11 +114,11 @@ Instance methods:
 
 Class methods: `insert_multiple(docs)`, `all()`, `search(cond)`, `contains(cond=... | doc_id=...)`, `update(fields | transform, cond=..., doc_ids=...)`, `update_multiple(updates)`, `upsert(doc, cond=...)`, `remove(cond=..., doc_ids=...)`, `truncate()`, `count(cond)`, `clear_cache()` — mirroring `tinydb.table.Table` signatures and returning validated model instances where documents come back, doc-id lists where TinyDB returns doc ids.
 
-**Deliberate deviation — `get()` split for sane return types** (TinyDB's overloaded `get()` returns `Document | list[Document] | None`):
+**`get()`: full TinyDB mirror via `@typing.overload`, plus explicit variants** (decided 2026-07-05, revising an earlier split-only design):
 
-- `get(cond) -> Self | None`
-- `get_by_id(doc_id) -> Self | None`
-- `get_by_ids(doc_ids) -> list[Self | None]`
+- `get(cond=..., doc_id=..., doc_ids=...)` keeps TinyDB's full input set for familiarity. Static precision comes from `@overload` signatures — `(cond)` and `(doc_id)` overloads return `Self | None`; the `(doc_ids)` overload returns `list[Self | None]` — so type checkers see exact types per call shape even though the runtime union is `Self | list[Self | None] | None`.
+- Explicit typed variants delegate to it: `get_by_cond(cond) -> Self | None`, `get_by_id(doc_id) -> Self | None`, `get_by_ids(doc_ids) -> list[Self | None]`.
+- One tightening vs TinyDB: passing more than one of `cond`/`doc_id`/`doc_ids` raises `ValueError` (TinyDB silently applies a precedence order); passing none raises like TinyDB does.
 
 Docs note the mapping to TinyDB's single `get()`. Exact `get_by_ids` missing-id behavior mirrors TinyDB 4.8.x (verify against source during implementation).
 
@@ -189,7 +189,7 @@ Add a root `CLAUDE.md`: short project overview, pointer to this spec and the imp
 
 ## 9. Examples set (docs deliverable)
 
-Six doctested pages (pytest already runs `--doctest-glob '*.md'` over `docs/`), so every example is CI-verified:
+Seven doctested pages (pytest already runs `--doctest-glob '*.md'` over `docs/`), so every example is CI-verified:
 
 1. **Quickstart** — README basic example on the new API.
 2. **CRUD tour** — every method incl. `delete()`, `save()`, `upsert()`.
@@ -197,6 +197,7 @@ Six doctested pages (pytest already runs `--doctest-glob '*.md'` over `docs/`), 
 4. **Real Pydantic models** — datetime/UUID/enum/nested models, validators, defaults; round-trip through JSON storage.
 5. **Storage options** — JSON file, in-memory, YAMLStorage, caching middleware.
 6. **Testing your models** — in-memory fixtures, `bind()` vs subclass-in-fixture patterns.
+7. **FastAPI integration** — CRUD endpoints backed by tinydantic models (models double as response models; `id` visible per §3.6), exercised via `TestClient`; includes the async guidance: plain-`def` endpoints run in FastAPI's threadpool, `asyncio.to_thread` for `async def` contexts, and TinyDB's no-concurrency-safety caveats. Adds `fastapi` + `httpx` to the test/docs dependency groups only.
 
 README's basic example is updated to the new API (it's included into docs and doctested).
 
@@ -211,8 +212,8 @@ README's basic example is updated to the new API (it's included into docs and do
 
 1. **Tooling foundation** (new branch): uv migration + poe + dependency updates + Python ≥3.11 + CI matrix — with existing prototype code still passing tests throughout.
 2. **Port the core**: `TinydanticModel`, `TinydanticConfig` + `__init_subclass__` config + ambiguity error + `bind()` + thin metaclass + `q()`; tests updated; old naming and refactor branch deleted.
-3. **Complete the API**: six stubbed methods + `delete()` + `get` split + `save()` fix + JSON-mode serialization + id-serialization fix. TDD.
-4. **Docs & examples**: ProperDocs swap, six example pages, API reference docstrings, configuration-inheritance docs (§3.2), CLAUDE.md.
+3. **Complete the API**: six stubbed methods + `delete()` + overloaded `get` + `get_by_*` variants + `save()` fix + JSON-mode serialization + id-serialization fix. TDD.
+4. **Docs & examples**: ProperDocs swap, seven example pages, API reference docstrings, configuration-inheritance docs (§3.2), CLAUDE.md.
 5. **Release prep**: changelog, classifiers, tag `v0.2.0`, existing pipeline publishes to PyPI + deploys docs.
 
 ## 12. Decision log (for future sessions)
@@ -224,7 +225,7 @@ README's basic example is updated to the new API (it's included into docs and do
 | Config storage | Own `__tinydantic_config__`, MRO lookup + ambiguity error | pydantic#9992 last-wins merge; collision risk; own semantics |
 | Config kwargs plumbing | `__init_subclass__` (public hook) | Verified in pydantic source; kills metaclass config code |
 | Metaclass base | `type(BaseModel)` at runtime | No private import; TYPE_CHECKING-only static hint |
-| `get()` | Split: `get`/`get_by_id`/`get_by_ids` | Sane return types |
+| `get()` | Full TinyDB mirror with `@overload` typing + `get_by_cond`/`get_by_id`/`get_by_ids` variants | TinyDB familiarity AND sane static types |
 | Storage serialization | `model_dump(mode="json", exclude={"id"})` | datetime/UUID round-trip; id visible to FastAPI |
 | Type-checker helper | `q()` | SQLModel `col()` analog; "col" is SQL vocabulary |
 | Python floor | 3.11 | 3.10 near EOL; native `Self`; no typing_extensions |
