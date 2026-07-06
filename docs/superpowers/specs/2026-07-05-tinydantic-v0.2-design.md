@@ -116,11 +116,11 @@ Class methods: `insert_multiple(docs)`, `all()`, `search(cond)`, `contains(cond=
 
 **`get()`: full TinyDB mirror via `@typing.overload`, plus explicit variants** (decided 2026-07-05, revising an earlier split-only design):
 
-- `get(cond=..., doc_id=..., doc_ids=...)` keeps TinyDB's full input set for familiarity. Static precision comes from `@overload` signatures — `(cond)` and `(doc_id)` overloads return `Self | None`; the `(doc_ids)` overload returns `list[Self | None]` — so type checkers see exact types per call shape even though the runtime union is `Self | list[Self | None] | None`.
-- Explicit typed variants delegate to it: `get_by_cond(cond) -> Self | None`, `get_by_id(doc_id) -> Self | None`, `get_by_ids(doc_ids) -> list[Self | None]`.
+- `get(cond=..., doc_id=..., doc_ids=...)` keeps TinyDB's full input set for familiarity. Static precision comes from `@overload` signatures — `(cond)` and `(doc_id)` overloads return `Self | None`; the `(doc_ids)` overload returns `list[Self]` — so type checkers see exact types per call shape even though the runtime union is `Self | list[Self] | None`.
+- Explicit typed variants delegate to it: `get_by_cond(cond) -> Self | None`, `get_by_id(doc_id) -> Self | None`, `get_by_ids(doc_ids) -> list[Self]`.
 - One tightening vs TinyDB: passing more than one of `cond`/`doc_id`/`doc_ids` raises `ValueError` (TinyDB silently applies a precedence order); passing none raises like TinyDB does.
 
-Docs note the mapping to TinyDB's single `get()`. Exact `get_by_ids` missing-id behavior mirrors TinyDB 4.8.x (verify against source during implementation).
+Docs note the mapping to TinyDB's single `get()`. Missing-id behavior (amended 2026-07-06 after verifying TinyDB 4.8.2 source during M3): TinyDB silently _skips_ missing ids in `get(doc_ids=...)` — no `None` placeholders — so the return type is `list[Self]`, mirrored exactly.
 
 ## 5. Errors
 
