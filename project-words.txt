@@ -137,6 +137,7 @@ threadpool
 tightenings
 tinydantic
 tinydb
+tmpdir
 tomli
 traceback
 tracebacks
