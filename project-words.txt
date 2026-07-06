@@ -46,6 +46,7 @@ inlinehilite
 ipynb
 ipython
 isinstance
+isoformat
 isort
 issubclass
 jsonschema
@@ -69,6 +70,7 @@ mkdocs
 mkdocstrings
 mkdostrings
 mypy
+Neuromancer
 njpwerner
 noqa
 nosetests

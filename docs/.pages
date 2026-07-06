@@ -6,6 +6,7 @@ nav:
   - Home: # sets the section name in the left and top nav
       - Home: index.md # sets the link title in the footer nav
   - get_started
+  - usage
   - reference
   - contributing
   - FAQ.md
