@@ -159,3 +159,15 @@ class TestDelete:
         user.delete()
         with pytest.raises(DocumentNotFoundError):
             user.delete()
+
+
+class TestReplace:
+    """replace() overwrites by id with precise errors."""
+
+    def test_replace_missing_document_raises(self, user_class: type[UserBase]):
+        """Replacing a vanished document raises the not-found error."""
+        user = user_class(name="Alice", age=37).insert()
+        user.delete()
+        user.name = "Alicia"
+        with pytest.raises(DocumentNotFoundError):
+            user.replace()
