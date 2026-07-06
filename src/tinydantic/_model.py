@@ -134,7 +134,6 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
     id: int | None = Field(
         default=None,
-        exclude=True,
         description="Document ID",
     )
 
@@ -363,8 +362,20 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         *,
         force_dict: bool = False,
     ) -> dict[str, Any] | Document:
-        """TODO: needs docstring."""
-        doc = self.model_dump()
+        """Convert this model to a TinyDB-storable document.
+
+        Uses JSON-mode serialization so rich pydantic types (datetime,
+        UUID, enums, nested models, ...) become JSON-safe primitives
+        that round-trip through any TinyDB storage (spec 3.7). The
+        ``id`` field is never embedded in the document — it maps to
+        TinyDB's ``doc_id``.
+
+        Args:
+            force_dict: Return a plain dict even when ``id`` is set
+                (otherwise a [Document][tinydb.table.Document] carrying
+                ``doc_id`` is returned).
+        """
+        doc = self.model_dump(mode="json", exclude={"id"})
 
         if (force_dict is False) and (self.id is not None):
             doc = Document(doc, self.id)
@@ -406,6 +417,31 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         if not updated_doc_ids:
             raise DocumentNotFoundError
 
-    def save(self) -> None:
-        """TODO: needs docstring."""
+    def delete(self) -> None:
+        """Remove this model's document from its table.
+
+        Raises:
+            DocumentIDRequiredError: If ``id`` is not set (the model
+                was never inserted).
+            DocumentNotFoundError: If no document with this ``id``
+                exists in the table.
+        """
+        if self.id is None:
+            raise DocumentIDRequiredError
+        try:
+            removed = self.get_table().remove(doc_ids=[self.id])
+        except KeyError:
+            raise DocumentNotFoundError from None
+        if not removed:
+            raise DocumentNotFoundError
+
+    def save(self) -> Self:
+        """Insert this model if it is new, otherwise update it by id.
+
+        Returns:
+            This instance (with ``id`` set if it was newly inserted).
+        """
+        if self.id is None:
+            return self.insert()
         self.id = self.get_table().upsert(self.to_tinydb_document())[0]
+        return self
