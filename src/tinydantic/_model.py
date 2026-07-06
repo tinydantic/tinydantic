@@ -588,26 +588,29 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         if self.id is None:
             raise DocumentIDRequiredError
 
-        updated_doc_ids = self.get_table().update(
-            # In TinyDB, the Table.update/update_multiple methods
-            # currently annotate the fields parameter with the type
-            # Callable[[Mapping], None].
-            #
-            # However, the doc parameter that is passed to this
-            # transform function is actually a python dict (which is a
-            # type of MutableMapping).
-            #
-            # This cast is simply a band-aid to keep the type checker
-            # happy.
-            #
-            # TODO @cdwilson: remove this cast once the annotation is
-            # fixed in TinyDB.
-            cast(
-                "Callable[[Mapping], None]",
-                replace(self.to_tinydb_document(force_dict=True)),
-            ),
-            doc_ids=[self.id],
-        )
+        try:
+            updated_doc_ids = self.get_table().update(
+                # In TinyDB, the Table.update/update_multiple methods
+                # currently annotate the fields parameter with the type
+                # Callable[[Mapping], None].
+                #
+                # However, the doc parameter that is passed to this
+                # transform function is actually a python dict (which
+                # is a type of MutableMapping).
+                #
+                # This cast is simply a band-aid to keep the type
+                # checker happy.
+                #
+                # TODO @cdwilson: remove this cast once the annotation
+                # is fixed in TinyDB.
+                cast(
+                    "Callable[[Mapping], None]",
+                    replace(self.to_tinydb_document(force_dict=True)),
+                ),
+                doc_ids=[self.id],
+            )
+        except KeyError:
+            raise DocumentNotFoundError from None
 
         if not updated_doc_ids:
             raise DocumentNotFoundError
