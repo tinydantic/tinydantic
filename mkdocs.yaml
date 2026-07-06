@@ -96,7 +96,7 @@ plugins:
             show_symbol_type_heading: true
             show_symbol_type_toc: true
             signature_crossrefs: true
-          import:
+          inventories:
             - https://docs.python.org/3/objects.inv
             - https://docs.pydantic.dev/latest/objects.inv
             - https://tinydb.readthedocs.io/en/latest/objects.inv
