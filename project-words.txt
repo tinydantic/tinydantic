@@ -19,6 +19,7 @@ Colvin's
 commitizen
 conftest
 connor
+crossref
 crossrefs
 cython
 debugpy
@@ -79,6 +80,7 @@ pipfile
 pipx
 pkgs
 poethepoet
+properdocs
 pybuilder
 pycache
 pyclean
@@ -102,6 +104,8 @@ pythonunbuffered
 pytype
 pyupgrade
 Quickstart
+Repr
+reprs
 rerunfailures
 ropeproject
 rtype
@@ -117,12 +121,14 @@ spyproject
 squeezy
 stkb
 styleguides
+subclassing
 subpackages
 superfences
 tamasfe
 taplo
 taskipy
 tasklist
+testclient
 testpaths
 testpypi
 threadpool
@@ -142,5 +148,6 @@ venv
 viewports
 vivaxy
 webassets
+worklist
 xdist
 Zensical
