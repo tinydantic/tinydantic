@@ -15,6 +15,7 @@ path = [
   "**.json.default",
   "**.yml",
   "project-words.txt",
+  "src/tinydantic/py.typed",
   "uv.lock",
 ]
 precedence = "aggregate"
