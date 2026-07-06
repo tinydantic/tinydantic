@@ -11,10 +11,10 @@ from typing import TYPE_CHECKING
 import pytest
 
 if TYPE_CHECKING:
-    from tests.document.models import UserBase
+    from tests.model.models import UserBase
 
 
-class TestDocumentInsert:
+class TestModelInsert:
     """TODO: needs docstring."""
 
     def test_insert_id_is_not_set(self, user_class: type[UserBase]):
@@ -116,7 +116,7 @@ class TestDocumentInsert:
             user.insert()
 
 
-class TestDocumentInsertMany:
+class TestModelInsertMany:
     """TODO: needs docstring."""
 
     def test_insert_many(

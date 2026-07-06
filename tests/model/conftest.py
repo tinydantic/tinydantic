@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""TODO: needs docstring."""
+"""Fixtures for model tests."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tests.document.models import UserBase
+from tests.model.models import UserBase
 
 if TYPE_CHECKING:
     from tinydb import TinyDB
@@ -29,20 +29,21 @@ if TYPE_CHECKING:
     ],
 )
 def user_class(request: pytest.FixtureRequest, db: TinyDB) -> type[UserBase]:
-    """TODO: needs docstring."""
+    """A user model bound to the test database.
 
-    class User(UserBase):
-        """TODO: needs docstring."""
+    Parametrized over table_name values: None (not provided), ""
+    (explicitly falsy — falls back to the derived name), and "users".
+    """
 
-        database = db
-        table_name = request.param
+    class User(UserBase, database=db, table_name=request.param):
+        """Bound test model."""
 
     return User
 
 
 @pytest.fixture
 def make_users(user_class: type[UserBase]) -> list[UserBase]:
-    """TODO: needs docstring."""
+    """A couple of unsaved user instances."""
     return [
         user_class(name="John", age=37),
         user_class(name="John Smith", age=24),

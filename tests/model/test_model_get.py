@@ -9,10 +9,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from tests.document.models import UserBase
+    from tests.model.models import UserBase
 
 
-class TestDocumentGet:
+class TestModelGet:
     """TODO: needs docstring."""
 
     def test_get_return_type(self, user_class: type[UserBase]):

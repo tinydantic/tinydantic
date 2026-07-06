@@ -11,10 +11,10 @@ from typing import TYPE_CHECKING
 import tinydb.table
 
 if TYPE_CHECKING:
-    from tests.document.models import UserBase
+    from tests.model.models import UserBase
 
 
-class TestDocumentValidation:
+class TestModelValidation:
     """TODO: needs docstring."""
 
     def test_validate_document_from_dict(self, user_class: type[UserBase]):
