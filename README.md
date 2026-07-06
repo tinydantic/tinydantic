@@ -71,14 +71,12 @@ Create a `User` document model, configuring it to store documents in the `users`
 
 > [!TIP]
 >
-> Since `User` is a subclass of [Document][tinydantic.Document] (which itself is a subclass of [pydantic.BaseModel][]), `User` is also a Pydantic model! You have all the power of Pydantic models when creating a `tinydantic` document model.
+> Since `User` is a subclass of [TinydanticModel][tinydantic.TinydanticModel] (which itself is a subclass of [pydantic.BaseModel][]), `User` is also a Pydantic model! You have all the power of Pydantic models when creating a `tinydantic` document model.
 
 ```pycon
 >>> from pydantic import EmailStr
->>> from tinydantic import Document
->>> class User(Document):
-...     database = db
-...     table_name = 'users'
+>>> from tinydantic import TinydanticModel
+>>> class User(TinydanticModel, database=db, table_name='users'):
 ...     name: str
 ...     email: EmailStr
 
