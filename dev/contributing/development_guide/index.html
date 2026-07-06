@@ -2324,14 +2324,38 @@
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>uv<span class="w"> </span>version
 </span></code></pre></div>
 <h3 id="release-process">Release Process<a class="headerlink" href="#release-process" title="Permanent link">¤</a></h3>
-<p>The release process is entirely automated using workflows in GitHub Actions. New releases are created and build artifacts are published automatically when a compliant <a href="https://semver.org/">SemVer</a> release tag of the form <code>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;</code> is pushed to GitHub.</p>
-<p>Releases are cut with <a href="https://commitizen-tools.github.io/commitizen/">Commitizen</a>. The following command determines the next <a href="https://semver.org/">SemVer</a>-compliant version from the commit history, bumps the <code>version</code> field in <code>pyproject.toml</code>, and creates an annotated <code>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;</code> git tag.</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>uv<span class="w"> </span>run<span class="w"> </span>cz<span class="w"> </span>bump
+<p>The release process is automated using workflows in GitHub Actions. New releases are created and build artifacts are published automatically when a compliant <a href="https://semver.org/">SemVer</a> release tag of the form <code>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;</code> is pushed to GitHub.</p>
+<p>Because the <code>main</code> branch is protected (no direct pushes), the version bump travels in a pull request like any other change, and the release tag is pushed afterward — git tags are not governed by branch protection.</p>
+<ol>
+<li>
+<p>Update <code>CHANGELOG.md</code> with a section for the new release. The changelog is curated by hand; <code>cz bump</code> does not generate it.</p>
+</li>
+<li>
+<p>On a release branch, let <a href="https://commitizen-tools.github.io/commitizen/">Commitizen</a> determine the next <a href="https://semver.org/">SemVer</a>-compliant version from the commit history and write it to <code>pyproject.toml</code> without committing or tagging, then refresh the lockfile to match:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>uv<span class="w"> </span>run<span class="w"> </span>cz<span class="w"> </span>bump<span class="w"> </span>--files-only
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>uv<span class="w"> </span>lock
 </span></code></pre></div>
-<p>Then push the new commit and tag to GitHub.</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>git<span class="w"> </span>push<span class="w"> </span>--follow-tags
+</li>
+<li>
+<p>Commit the result (for example <code>bump: version 0.1.19 → 0.2.0</code>), push, open a pull request, and merge it once CI passes.</p>
+</li>
+<li>
+<p>Tag the merged commit on <code>main</code> and push the tag:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>git<span class="w"> </span>fetch<span class="w"> </span>origin
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Release version &lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;&quot;</span><span class="w"> </span>origin/main
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;
 </span></code></pre></div>
-<p>When the tag is pushed to GitHub, a GitHub Actions workflow automatically creates a release on GitHub, builds and publishes the Python package, and updates the documentation site.</p>
+</li>
+</ol>
+<p>When the tag is pushed to GitHub, a GitHub Actions workflow verifies that the tag matches the version in <code>pyproject.toml</code>, builds and publishes the Python package, creates a release on GitHub, and updates the documentation site.</p>
+<!-- prettier-ignore-start -->
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Do not create the GitHub release manually in the web UI — the publish workflow creates it from the tag and will fail if one already exists.</p>
+</div>
+<!-- prettier-ignore-end -->
+
 <h3 id="editor-setup">Editor Setup<a class="headerlink" href="#editor-setup" title="Permanent link">¤</a></h3>
 <div class="admonition todo">
 <p class="admonition-title">Todo</p>
