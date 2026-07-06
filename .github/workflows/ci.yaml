@@ -67,12 +67,6 @@ jobs:
           --schemafile=https://json.schemastore.org/package.json
           package.json
           package-lock.json
-      - name: Check package.json & package-lock.json
-        run: >-
-          check-jsonschema
-          --schemafile=https://json.schemastore.org/package.json
-          package.json
-          package-lock.json
       # Check TOML files
       # Note: taplo format is run as part of pre-commit
       - name: Install taplo

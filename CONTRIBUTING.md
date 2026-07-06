@@ -68,7 +68,7 @@ The next section describes how to set up a development environment and create a 
 
 This project is written in [Python](https://www.python.org/) and requires a Python interpreter to be installed for development.
 
-=== "Instal with uv"
+=== "Install with uv"
 
     We recommend using [uv](https://docs.astral.sh/uv/) to install and manage Python versions on your development system. uv is also used for the rest of the project's development workflow (see the [uv](#uv) section below).
 
@@ -253,15 +253,15 @@ Creating a pull request will kick off a series of automated checks that run as p
 
 ### Development Releases
 
-Whenever a new commit is merged to the `main` branch on GitHub and all automated checks pass, a development release is automatically created and published to <https://test.pypi.org/project/tinydantic/>.
+Between releases, the `version` field under `[project]` in `pyproject.toml` holds the latest released version. Whenever a new commit is merged to the `main` branch on GitHub and all automated checks pass, that version is (re-)published to <https://test.pypi.org/project/tinydantic/>. Because the version is static between releases, repeated pushes to `main` upload the same version; TestPyPI duplicates are skipped (via `skip-existing`), so these re-publishes do not fail the pipeline. A distinct new version appears on TestPyPI only after a release bump (`uv run cz bump`, see [Release Process](#release-process) below).
 
-You can test the development release by installing the package using `pip`.
+You can install the latest published version from TestPyPI using `pip`.
 
 ```sh
 pip install -i https://test.pypi.org/simple/ tinydantic
 ```
 
-You can print the current development version by running the following command in the repository.
+You can print the version currently declared in `pyproject.toml` by running the following command in the repository.
 
 ```sh
 uv version
