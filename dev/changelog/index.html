@@ -1781,6 +1781,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Unreleased">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1807,7 +1824,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
+  <a href="#added_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Added
@@ -1868,6 +1885,10 @@
 <p>All notable changes to this project will be documented in this file.</p>
 <p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>, and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <h2 id="unreleased"><a href="https://github.com/tinydantic/tinydantic/compare/v0.2.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">¤</a></h2>
+<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">¤</a></h3>
+<ul>
+<li>Support for Python 3.10.</li>
+</ul>
 <h2 id="020-2026-07-06"><a href="https://github.com/tinydantic/tinydantic/compare/v0.1.19...v0.2.0">0.2.0</a> - 2026-07-06<a class="headerlink" href="#020-2026-07-06" title="Permanent link">¤</a></h2>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">¤</a></h3>
 <ul>
@@ -1878,7 +1899,7 @@
 <li><strong>BREAKING:</strong> <code>DocumentIDRequiredError</code> no longer subclasses <code>ValueError</code>. All library exceptions now derive from a common <code>TinydanticError</code> base.</li>
 <li>Tooling: the project build backend moved from hatch to uv with <code>poethepoet</code> task running and <code>uv_build</code> (versioning is now static, managed by commitizen); the documentation engine is now ProperDocs, and the docs site gained eight new usage pages.</li>
 </ul>
-<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">¤</a></h3>
+<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">¤</a></h3>
 <ul>
 <li>A full Table API surface: <code>search</code>, <code>contains</code>, <code>update</code>, <code>update_multiple</code>, <code>upsert</code>, and <code>remove</code>.</li>
 <li>A <code>delete()</code> method for removing documents.</li>

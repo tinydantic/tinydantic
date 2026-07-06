@@ -2215,12 +2215,12 @@
 <p>First, follow the <a href="https://docs.astral.sh/uv/getting-started/installation/">Installing uv</a> documentation and make sure that the <code>uv</code> command is available in your shell.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>--version
 </span></code></pre></div>
-<p>Next, use uv to install Python 3.11 or later. We'll install the latest version of Python provided by uv (currently <code>3.13</code> at the time of writing).</p>
+<p>Next, use uv to install Python 3.10 or later. We'll install the latest version of Python provided by uv (currently <code>3.13</code> at the time of writing).</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uv<span class="w"> </span>python<span class="w"> </span>install<span class="w"> </span><span class="m">3</span>.13
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>As long as you have Python 3.11 or later installed, you should be able to follow the remainder of this guide.</p>
+<p>As long as you have Python 3.10 or later installed, you should be able to follow the remainder of this guide.</p>
 </div>
 </div>
 <div class="tabbed-block">
@@ -2271,7 +2271,7 @@
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The <code>test</code> and <code>test-cov</code> tasks run against the single Python version installed in your <code>.venv</code>. The full test matrix — every supported Python version (3.11–3.14) across Linux, macOS, and Windows — runs automatically in CI when you open a pull request, which can catch issues that only show up with a specific version of Python or a specific operating system.</p>
+<p>The <code>test</code> and <code>test-cov</code> tasks run against the single Python version installed in your <code>.venv</code>. The full test matrix — every supported Python version (3.10–3.14) across Linux, macOS, and Windows — runs automatically in CI when you open a pull request, which can catch issues that only show up with a specific version of Python or a specific operating system.</p>
 </div>
 <p>After running <code>uv run poe test-cov</code>, you can also generate an interactive HTML coverage report.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>uv<span class="w"> </span>run<span class="w"> </span>coverage<span class="w"> </span>html
