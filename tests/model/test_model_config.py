@@ -11,6 +11,8 @@ import pytest
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
 
+import tinydantic as td
+
 from tinydantic import TinydanticModel
 from tinydantic.errors import AmbiguousConfigError, DatabaseNotBoundError
 
@@ -181,3 +183,11 @@ class TestAmbiguity:
             """Explicitly resolved diamond."""
 
         assert C.get_database() is memory_db
+
+
+def test_top_level_error_exports():
+    """Error classes are importable from the package root (spec 6)."""
+    assert issubclass(td.DatabaseNotBoundError, td.TinydanticError)
+    assert issubclass(td.AmbiguousConfigError, td.TinydanticUserError)
+    assert issubclass(td.DocumentNotFoundError, td.TinydanticError)
+    assert issubclass(td.DocumentIDRequiredError, td.TinydanticError)
