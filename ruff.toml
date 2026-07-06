@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
 line-length = 79
-target-version = "py311"
+target-version = "py310"
 
 [format]
 docstring-code-format = true

@@ -84,7 +84,7 @@ class TestRoundTrip:
         original = rich_class(
             name="Alice",
             created_at=datetime.datetime(
-                2026, 7, 6, 12, 0, tzinfo=datetime.UTC
+                2026, 7, 6, 12, 0, tzinfo=datetime.timezone.utc
             ),
             token=uuid.UUID("12345678-1234-5678-1234-567812345678"),
             address=Address(city="Oakland", zip_code="94601"),
@@ -102,7 +102,7 @@ class TestRoundTrip:
         original = rich_class(
             name="Alice",
             created_at=datetime.datetime(
-                2026, 7, 6, 12, 0, tzinfo=datetime.UTC
+                2026, 7, 6, 12, 0, tzinfo=datetime.timezone.utc
             ),
             token=uuid.uuid4(),
             address=Address(city="Oakland", zip_code="94601"),
