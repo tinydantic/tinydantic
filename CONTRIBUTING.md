@@ -253,9 +253,9 @@ Creating a pull request will kick off a series of automated checks that run as p
 
 ### Development Releases
 
-Between releases, the `version` field under `[project]` in `pyproject.toml` holds the latest released version. Whenever a new commit is merged to the `main` branch on GitHub and all automated checks pass, that version is (re-)published to <https://test.pypi.org/project/tinydantic/>. Because the version is static between releases, repeated pushes to `main` upload the same version; TestPyPI duplicates are skipped (via `skip-existing`), so these re-publishes do not fail the pipeline. A distinct new version appears on TestPyPI only after a release bump (`uv run cz bump`, see [Release Process](#release-process) below).
+Between releases, the `version` field under `[project]` in `pyproject.toml` holds the latest released version — merges to `main` do not publish anything. Publishing to TestPyPI is currently disabled: with a static version there is no unique development version to upload per merge (the previous behavior relied on the hatch-vcs build plugin deriving one from git). If the uv build backend gains VCS-derived versioning, per-merge TestPyPI publishing may return.
 
-You can install the latest published version from TestPyPI using `pip`.
+Historical development releases can still be browsed at <https://test.pypi.org/project/tinydantic/>, and can be installed with `pip`.
 
 ```sh
 pip install -i https://test.pypi.org/simple/ tinydantic
