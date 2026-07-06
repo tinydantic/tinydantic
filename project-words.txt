@@ -126,6 +126,7 @@ tasklist
 testpaths
 testpypi
 threadpool
+tightenings
 tinydantic
 tinydb
 tomli
@@ -136,6 +137,7 @@ twemoji
 typechecks
 typora
 upsert
+upserts
 venv
 viewports
 vivaxy
