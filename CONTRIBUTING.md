@@ -70,7 +70,7 @@ This project is written in [Python](https://www.python.org/) and requires a Pyth
 
 === "Instal with uv"
 
-    We recommend using [uv](https://docs.astral.sh/uv/) to install and manage Python versions on your development system. We'll also use the [`uv tool`](https://docs.astral.sh/uv/concepts/tools/#the-uv-tool-interface) subcommand in the next step to install a helpful tool for managing python projects ([Hatch](#hatch)).[^1]
+    We recommend using [uv](https://docs.astral.sh/uv/) to install and manage Python versions on your development system. uv is also used for the rest of the project's development workflow (see the [uv](#uv) section below).
 
     First, follow the [Installing uv](https://docs.astral.sh/uv/getting-started/installation/) documentation and make sure that the `uv` command is available in your shell.
 
@@ -78,38 +78,28 @@ This project is written in [Python](https://www.python.org/) and requires a Pyth
     uv --version
     ```
 
-    Next, use uv to install Python 3.10 or later. We'll install the latest version of Python provided by uv (currently `3.12` at the time of writing).
+    Next, use uv to install Python 3.11 or later. We'll install the latest version of Python provided by uv (currently `3.13` at the time of writing).
 
     ```sh
-    uv python install 3.12
+    uv python install 3.13
     ```
 
-    NOTE: While recommended, uv is not *required* for development (we're currently only using it to install `python` and `hatch`). As long as you have Python 3.10 or later installed, you should be able to follow the remainder of this guide.
+    NOTE: As long as you have Python 3.11 or later installed, you should be able to follow the remainder of this guide.
 
 === "Install without uv"
 
     The simplest way to install Python is to [download an official installer](https://www.python.org/downloads/). Check out [this article](https://realpython.com/installing-python/#macos-how-to-install-python-using-the-official-installer) for an overview of some alternative installation options.
 
-#### Hatch
+#### uv
 
-This project currently uses [Hatch](https://hatch.pypa.io/) for project management.[^1] This includes tasks like running tests against multiple versions of Python, building the docs, creating new releases, etc.
+This project uses [uv](https://docs.astral.sh/uv/) for project management. This includes managing the project's dependencies, running project tasks (via [poe](https://poethepoet.natn.io/)), running tests against multiple versions of Python, building the docs, creating new releases, etc.
 
-=== "Instal with uv"
+If you installed Python with uv in the previous section, you already have uv installed. Otherwise, follow the [Installing uv](https://docs.astral.sh/uv/getting-started/installation/) documentation now.
 
-    If you installed Python via `uv` in the previous section, you can install `hatch` by running the following command. The `--python-preference=only-managed` and `--python=3.12` options instruct uv to install Hatch using the managed Python 3.12 instance we installed in the previous step.
-
-    ```sh
-    uv tool install --python-preference=only-managed --python=3.12 hatch
-    ```
-
-=== "Install without uv"
-
-    Install `hatch` by following one of the installation methods described in the [Hatch installation guide](https://hatch.pypa.io/latest/install/). We recommend installing `hatch` [via pipx](https://hatch.pypa.io/latest/install/#pipx).
-
-The important thing is that at this point, you should be able to run the `hatch` command.
+The important thing is that at this point, you should be able to run the `uv` command.
 
 ```sh
-hatch --version
+uv --version
 ```
 
 ### Pull Requests
@@ -123,15 +113,19 @@ git clone git@github.com:<your GitHub username>/tinydantic.git
 cd tinydantic
 ```
 
-Install the project in [development mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) into the default Hatch [Environment](https://hatch.pypa.io/latest/config/environment/overview/), and start a shell in that environment.
+Install the project along with all of its development dependencies.
 
 ```sh
-hatch shell
+uv sync --all-groups
 ```
 
-Hatch environments provide isolated workspaces for testing, building documentation, etc. Unless an environment is [chosen explicitly](https://hatch.pypa.io/latest/environment/#selection), Hatch will use the `default` environment. Behind the scenes, Hatch creates and activates a Python virtual environment automatically, and installs the `tinydantic` package in “development mode” by performing an [editable installation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html). It will also install all the dependencies required by that environment development into the virtual environment.
+Behind the scenes, uv creates a Python virtual environment in a `.venv` directory at the project root, installs the `tinydantic` package in [development mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) by performing an [editable installation](https://setuptools.pypa.io/en/latest/userguide/development_mode.html), and installs all of the project's dependencies. The `--all-groups` flag ensures that every [dependency group](https://docs.astral.sh/uv/concepts/projects/dependencies/#dependency-groups) is installed (including the `dev` group, which pulls in everything needed for testing, linting, type-checking, and building the docs).
 
-At this point, you should be able to start the `python` interpreter and import the `tinydantic` package.
+You can run any command inside this environment by prefixing it with [`uv run`](https://docs.astral.sh/uv/reference/cli/#uv-run). For example, you should be able to start the `python` interpreter and import the `tinydantic` package.
+
+```sh
+uv run python
+```
 
 ```pycon
 >>> import tinydantic
@@ -140,20 +134,20 @@ At this point, you should be able to start the `python` interpreter and import t
 
 #### Install pre-commit hooks
 
-`tinydantic` uses [pre-commit](https://pre-commit.com/) to automatically run a series of quality checks against your code locally before it is committed to the repository. (The `pre-commit` command should have been installed automatically when you ran the `hatch shell` command earlier.)
+`tinydantic` uses [pre-commit](https://pre-commit.com/) to automatically run a series of quality checks against your code locally before it is committed to the repository. (The `pre-commit` command was installed into the virtual environment when you ran `uv sync --all-groups` above.)
 
-Install the pre-commit hook scripts.
+Install the pre-commit hook scripts into your local git repository.
 
 ```sh
-pre-commit install
+uv run pre-commit install
 ```
 
 When you commit your changes (`git commit ...`), the git hook scripts will run automatically and check for issues in your code.
 
-Normally, pre-commit only checks the files that were modified as part of the commit. A Hatch script is provided to run `pre-commit` manually on all the files if needed.
+Normally, pre-commit only checks the files that were modified as part of the commit. A poe task is provided to run `pre-commit` manually on all the files if needed.
 
 ```sh
-hatch run pre-commit:run
+uv run poe pre-commit
 ```
 
 #### Make your changes
@@ -166,36 +160,40 @@ git checkout -b my-new-feature-branch
 
 #### Run tests
 
-While you are making changes in your new branch, you can run the test suite to make sure you didn't break anything. Optionally, `--cover` prints out a [Coverage](https://coverage.readthedocs.io/en/latest/index.html) report showing which parts of the code were executed by the tests.
+While you are making changes in your new branch, you can run the test suite to make sure you didn't break anything.
 
 ```sh
-hatch test --cover
+uv run poe test
+```
+
+You can also run the test suite together with a [Coverage](https://coverage.readthedocs.io/en/latest/index.html) report showing which parts of the code were executed by the tests.
+
+```sh
+uv run poe test-cov
 ```
 
 > [!NOTE]
 >
-> Since no environment is specified, the test command will only run tests in the first defined environment that either already exists or is compatible (in this case, the default environment).
->
-> See <https://hatch.pypa.io/latest/tutorials/testing/overview/#single-environment> for more details.
+> The `test` and `test-cov` tasks run against the single Python version installed in your `.venv`. The full test matrix — every supported Python version (3.11–3.14) across Linux, macOS, and Windows — runs automatically in CI when you open a pull request, which can catch issues that only show up with a specific version of Python or a specific operating system.
 
-Before submitting a pull request, you can run the test suite against a matrix of all the Python versions supported by `tinydantic`. Hatch will automatically download any versions of Python needed to test each supported version in the matrix. This takes a little bit longer to run, but can catch issues that only show up with a specific version of Python.
+After running `uv run poe test-cov`, you can also generate an interactive HTML coverage report.
 
 ```sh
-hatch test --all --cover
-```
-
-After running the tests with the `--cover` option, you can also generate an interactive HTML coverage report.
-
-```sh
-coverage html
+uv run coverage html
 ```
 
 #### Run formatters and linters
 
-Before committing your changes, you should format and lint your code. The following top-level command runs [`hatch fmt`](https://hatch.pypa.io/latest/cli/reference/#hatch-fmt) (which runs the [Ruff](https://docs.astral.sh/ruff/) formatter and linter), as well as a series of other checks.
+Before committing your changes, you should format your code and run the project's checks. First, format your code and apply autofixes with the [Ruff](https://docs.astral.sh/ruff/) formatter and linter.
 
 ```sh
-hatch run check
+uv run poe fmt
+```
+
+Then run the full suite of checks (linting, license/SBOM checks, spell-checking, and type-checking).
+
+```sh
+uv run poe check
 ```
 
 #### Build Documentation
@@ -205,13 +203,13 @@ If you have made any changes to the documentation (including changes to function
 The following command will build and serve the documentation locally on your machine. While the server is running, it will watch for any changes to the documentation files, rebuild the site, and refresh your browser automatically.
 
 ```sh
-hatch run doc:serve
+uv run poe docs-serve
 ```
 
 Before committing your changes, it's good to build and run some validation checks on the built documentation.
 
 ```sh
-hatch run doc:build-check
+uv run poe docs-build-check
 ```
 
 #### Commit your changes
@@ -244,7 +242,7 @@ Closes issue #12
 >
 > ```sh
 > # Make your changes...
-> cz commit
+> uv run cz commit
 > ```
 
 #### Create a PR on GitHub
@@ -266,25 +264,29 @@ pip install -i https://test.pypi.org/simple/ tinydantic
 You can print the current development version by running the following command in the repository.
 
 ```sh
-hatch version
+uv version
 ```
 
 ### Release Process
 
 The release process is entirely automated using workflows in GitHub Actions. New releases are created and build artifacts are published automatically when a compliant [SemVer](https://semver.org/) release tag of the form `v<MAJOR>.<MINOR>.<PATCH>` is pushed to GitHub.
 
-The following command takes a SemVer-compliant version as an argument, creates an annotated tag using the provided version number, and pushes the tag to GitHub.
+Releases are cut with [Commitizen](https://commitizen-tools.github.io/commitizen/). The following command determines the next [SemVer](https://semver.org/)-compliant version from the commit history, bumps the `version` field in `pyproject.toml`, and creates an annotated `v<MAJOR>.<MINOR>.<PATCH>` git tag.
 
 ```sh
-hatch run release <MAJOR>.<MINOR>.<PATCH>
+uv run cz bump
 ```
 
-When the tag is pushed to GitHub, an GitHub Actions workflow automatically creates a release on GitHub, builds and publishes the Python package, and updates the documentation site.
+Then push the new commit and tag to GitHub.
+
+```sh
+git push --follow-tags
+```
+
+When the tag is pushed to GitHub, a GitHub Actions workflow automatically creates a release on GitHub, builds and publishes the Python package, and updates the documentation site.
 
 ### Editor Setup
 
 TODO: Add VS Code setup instructions
-
-[^1]: Hatch and uv both provide project management capabilities. Currently, we're using Hatch for project management because there are a couple features provided by Hatch that uv doesn't support (e.g. [environments](https://hatch.pypa.io/latest/environment/) and [scripts](https://hatch.pypa.io/latest/config/environment/overview/#scripts)). Eventually, this project may switch over to use uv exclusively and remove the dependency on Hatch.
 
 <!-- development-guide-end -->
