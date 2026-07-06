@@ -5,6 +5,7 @@
 title: Usage
 nav:
   - Usage: index.md
+  - installation.md
   - quickstart.md
   - crud.md
   - queries.md
