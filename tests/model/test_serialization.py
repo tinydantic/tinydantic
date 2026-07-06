@@ -16,8 +16,11 @@ import pytest
 from pydantic import BaseModel
 from tinydb.table import Document
 
-from tinydantic import TinydanticModel
-from tinydantic.errors import DocumentIDRequiredError, DocumentNotFoundError
+from tinydantic import (
+    DocumentIDRequiredError,
+    DocumentNotFoundError,
+    TinydanticModel,
+)
 
 if TYPE_CHECKING:
     from tinydb import TinyDB

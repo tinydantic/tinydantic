@@ -13,13 +13,13 @@ from pydantic.alias_generators import to_snake
 from tinydb.queries import Query, where
 from tinydb.table import Document, Table
 
-from tinydantic.config import (
+from tinydantic._config import (
     CONFIG_ATTR,
     TinydanticConfig,
     check_config_ambiguity,
     get_config_value,
 )
-from tinydantic.errors import (
+from tinydantic._errors import (
     DatabaseNotBoundError,
     DocumentIDRequiredError,
     DocumentNotFoundError,
@@ -117,7 +117,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
     Configuration is stored per class in ``__tinydantic_config__`` and
     resolved by walking the MRO — deliberately NOT in pydantic's
-    ``model_config``; see the [tinydantic.config][] module docstring
+    ``model_config``; see the ``tinydantic._config`` module docstring
     for the design rationale (pydantic#9992).
     """
 
@@ -153,7 +153,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         configuration. Only explicitly provided values are stored on
         this class — ``None`` means "not provided", and resolution
         falls through to base classes via
-        [get_config_value][tinydantic.config.get_config_value].
+        ``get_config_value`` in ``tinydantic._config``.
         """
         super().__init_subclass__(**kwargs)
         config: TinydanticConfig = {}
@@ -170,7 +170,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         Raises:
             AmbiguousConfigError: If unrelated base classes supply
                 conflicting tinydantic config (see
-                [check_config_ambiguity][tinydantic.config.check_config_ambiguity]).
+                ``check_config_ambiguity`` in ``tinydantic._config``).
         """
         super().__pydantic_init_subclass__(**kwargs)
         check_config_ambiguity(cls)
@@ -639,7 +639,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         If ``id`` is set but the document no longer exists in the
         table, it is re-inserted under the same id (TinyDB upsert
         semantics) — unlike ``replace()``/``delete()``, which raise
-        [DocumentNotFoundError][tinydantic.errors.DocumentNotFoundError].
+        [DocumentNotFoundError][tinydantic.DocumentNotFoundError].
 
         Returns:
             This instance (with ``id`` set if it was newly inserted).

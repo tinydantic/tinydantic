@@ -79,7 +79,7 @@ Product(id=1, sku='ABC-123')
 
 ## `DatabaseNotBoundError`
 
-Any table operation on a model that has no database anywhere in its class hierarchy raises [DatabaseNotBoundError][tinydantic.errors.DatabaseNotBoundError]. The message points at both ways to fix it:
+Any table operation on a model that has no database anywhere in its class hierarchy raises [DatabaseNotBoundError][tinydantic.DatabaseNotBoundError]. The message points at both ways to fix it:
 
 ```pycon
 >>> class Orphan(TinydanticModel):
@@ -87,13 +87,13 @@ Any table operation on a model that has no database anywhere in its class hierar
 >>> Orphan.all()
 Traceback (most recent call last):
   ...
-tinydantic.errors.DatabaseNotBoundError: No database is bound to 'Orphan'. Pass database=<TinyDB instance> as a class keyword when defining the model, or call Orphan.bind(database=...) before using it.
+tinydantic._errors.DatabaseNotBoundError: No database is bound to 'Orphan'. Pass database=<TinyDB instance> as a class keyword when defining the model, or call Orphan.bind(database=...) before using it.
 
 ```
 
 ## `AmbiguousConfigError`
 
-MRO lookup gives a single, unambiguous answer when config comes down _one_ inheritance chain. The one case where it could not is a diamond: a class inheriting from two _unrelated_ bases that each set the same key to different values. Rather than silently pick one, `tinydantic` raises [AmbiguousConfigError][tinydantic.errors.AmbiguousConfigError] at class-definition time.
+MRO lookup gives a single, unambiguous answer when config comes down _one_ inheritance chain. The one case where it could not is a diamond: a class inheriting from two _unrelated_ bases that each set the same key to different values. Rather than silently pick one, `tinydantic` raises [AmbiguousConfigError][tinydantic.AmbiguousConfigError] at class-definition time.
 
 ```pycon
 >>> other_db = TinyDB(storage=MemoryStorage)
@@ -105,7 +105,7 @@ MRO lookup gives a single, unambiguous answer when config comes down _one_ inher
 ...     value: int
 Traceback (most recent call last):
   ...
-tinydantic.errors.AmbiguousConfigError: 'Combined' inherits conflicting values for tinydantic config key 'database' from unrelated base classes 'FromMain' and 'FromOther'. Set database= explicitly on 'Combined' to resolve the ambiguity.
+tinydantic._errors.AmbiguousConfigError: 'Combined' inherits conflicting values for tinydantic config key 'database' from unrelated base classes 'FromMain' and 'FromOther'. Set database= explicitly on 'Combined' to resolve the ambiguity.
 
 ```
 
@@ -125,7 +125,7 @@ True
 
 Pydantic merges `model_config` across multiple base classes in "last wins" order — the _opposite_ of Python's MRO ([pydantic#9992](https://github.com/pydantic/pydantic/issues/9992)). Community fixes were rejected as breaking changes, and the behavior may yet change in Pydantic v3. Storing `tinydantic`'s keys there would inherit those surprising semantics, risk future key collisions with Pydantic's own [ConfigDict][pydantic.ConfigDict], and couple binding resolution to behavior Pydantic itself may flip.
 
-Using a separate attribute with plain MRO lookup sidesteps all three problems. There is no scenario where "our order versus Pydantic's order" silently matters: a single inheritance chain resolves identically under both orderings, and the only case where they _could_ disagree — two unrelated bases with conflicting values — is turned into a loud `AmbiguousConfigError` rather than a quiet guess. This matches the rationale in the [tinydantic.config][] module docstring.
+Using a separate attribute with plain MRO lookup sidesteps all three problems. There is no scenario where "our order versus Pydantic's order" silently matters: a single inheritance chain resolves identically under both orderings, and the only case where they _could_ disagree — two unrelated bases with conflicting values — is turned into a loud `AmbiguousConfigError` rather than a quiet guess. This matches the rationale documented in the `tinydantic._config` module docstring.
 
 > [!NOTE]
 >

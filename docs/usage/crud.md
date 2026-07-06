@@ -319,7 +319,7 @@ Note(id=1, text='draft')
 >>> note.delete()
 Traceback (most recent call last):
   ...
-tinydantic.errors.DocumentNotFoundError: Document not found
+tinydantic._errors.DocumentNotFoundError: Document not found
 
 ```
 

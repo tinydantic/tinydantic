@@ -11,9 +11,8 @@ Attributes:
 
 from importlib import metadata
 
-from tinydantic._model import TinydanticModel, q
-from tinydantic.config import TinydanticConfig
-from tinydantic.errors import (
+from tinydantic._config import TinydanticConfig
+from tinydantic._errors import (
     AmbiguousConfigError,
     DatabaseNotBoundError,
     DocumentIDRequiredError,
@@ -21,6 +20,7 @@ from tinydantic.errors import (
     TinydanticError,
     TinydanticUserError,
 )
+from tinydantic._model import TinydanticModel, q
 
 __version__: str = metadata.version("tinydantic")
 
