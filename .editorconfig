@@ -34,3 +34,8 @@ indent_size = 4
 
 [Makefile]
 indent_style = tab
+
+# Markdown formatting is owned by Prettier, whose CommonMark-correct
+# ordered-list alignment (3 spaces) conflicts with a fixed indent_size.
+[*.md]
+indent_size = unset
