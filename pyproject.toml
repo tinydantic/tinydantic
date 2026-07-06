@@ -197,6 +197,7 @@ env = { PYTHONUNBUFFERED = "1" }
 
 [tool.interrogate]
 fail-under = 100
+ignore-overloaded-functions = true
 ignore-private = true
 ignore-semiprivate = true
 omit-covered-files = true

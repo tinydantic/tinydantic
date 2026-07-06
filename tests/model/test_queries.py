@@ -53,7 +53,7 @@ class TestFieldQueries:
         User(name="Alice").insert()
         # A raw field comparison is a Query at runtime but types as
         # bool (this is why q() exists); get() also returns a union.
-        result = User.get(User.name == "Alice")  # type: ignore[arg-type]
+        result = User.get(User.name == "Alice")  # type: ignore[call-overload]
         assert result is not None
         assert result.name == "Alice"  # type: ignore[union-attr]
 
@@ -69,7 +69,7 @@ class TestFieldQueries:
         User(name="Alice", address=Address(city="Oakland")).insert()
         # A raw field comparison is a Query at runtime but types as
         # bool (this is why q() exists); get() also returns a union.
-        result = User.get(User.address.city == "Oakland")  # type: ignore[arg-type]
+        result = User.get(User.address.city == "Oakland")  # type: ignore[call-overload]
         assert result is not None
         assert result.name == "Alice"  # type: ignore[union-attr]
 
