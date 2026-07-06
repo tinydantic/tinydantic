@@ -1,0 +1,2513 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A simple Python object-document mapper (ODM) for TinyDB">
+      
+      
+      
+        <link rel="canonical" href="https://tinydantic.dev/latest/superpowers/specs/2026-07-05-tinydantic-v0.2-design/">
+      
+      
+        <link rel="prev" href="../../plans/2026-07-06-v0.2.0-release-runbook/">
+      
+      
+        <link rel="next" href="../../../usage/">
+      
+      
+        
+      
+      
+      
+      
+        
+        
+        
+          <link rel="icon" href="../../../assets/images/favicon.png">
+        
+      
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-materialx-10.1.8">
+    
+    
+      
+        <title>tinydantic v0.2.0 Design Spec - tinydantic</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.314bbef5.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.a45159b5.min.css">
+      
+    
+    
+
+    
+
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../css/code_select.css">
+    
+      <link rel="stylesheet" href="../../../css/admonitions.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo" data-mx-topbar="glass">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="toc" type="checkbox" id="__toc" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <label class="md-overlay" for="__toc"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tinydantic-v020-design-spec" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="tinydantic" class="md-header__button md-logo" aria-label="tinydantic" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            tinydantic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              tinydantic v0.2.0 Design Spec
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10.25 2a8.25 8.25 0 0 1 6.34 13.53l5.69 5.69a.749.749 0 0 1-.326 1.275.75.75 0 0 1-.734-.215l-5.69-5.69A8.25 8.25 0 1 1 10.25 2M3.5 10.25a6.75 6.75 0 1 0 13.5 0 6.75 6.75 0 0 0-13.5 0"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10.25 2a8.25 8.25 0 0 1 6.34 13.53l5.69 5.69a.749.749 0 0 1-.326 1.275.75.75 0 0 1-.734-.215l-5.69-5.69A8.25 8.25 0 1 1 10.25 2M3.5 10.25a6.75 6.75 0 1 0 13.5 0 6.75 6.75 0 0 0-13.5 0"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 5.5a3.498 3.498 0 0 1-6.062 2.385l-5.112 3.021a3.5 3.5 0 0 1 0 2.188l5.112 3.021a3.5 3.5 0 1 1-.764 1.29l-5.112-3.02a3.499 3.499 0 1 1-3.843-5.642 3.5 3.5 0 0 1 3.843.872l5.112-3.021A3.5 3.5 0 1 1 20 5.5m-1.5 13a2 2 0 1 0-3.999-.001 2 2 0 0 0 3.999.001m0-13a2 2 0 1 0-3.999-.001A2 2 0 0 0 18.5 5.5M5.5 14a2 2 0 1 0 .001-3.999A2 2 0 0 0 5.5 14"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0">
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tinydantic/tinydantic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tinydantic/tinydantic
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../.." class="md-tabs__link">
+          
+  
+  
+    
+  
+  Home
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../usage/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Usage
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../contributing/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Contributing
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../FAQ/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../changelog/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Changelog
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../license/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  License
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="tinydantic" class="md-nav__button md-logo" aria-label="tinydantic" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    tinydantic
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tinydantic/tinydantic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tinydantic/tinydantic
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list">
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Home
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../usage/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Usage
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/introduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/crud/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRUD tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/queries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/fastapi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Documentation
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_2_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/api/tinydantic/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> tinydantic
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_2_2" id="__nav_3_2_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> tinydantic
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_2_2_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/api/tinydantic/tinydb/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> tinydb
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_2_2_2" id="__nav_3_2_2_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_3_2_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> tinydb
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_2_2_2_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/api/tinydantic/tinydb/middlewares/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> middlewares
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_3_2_2_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2_2_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> middlewares
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_2_2_2_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/api/tinydantic/tinydb/operations/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> operations
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_3_2_2_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2_2_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> operations
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_2_2_2_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/api/tinydantic/tinydb/storages/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> storages
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_3_2_2_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2_2_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> storages
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../contributing/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../contributing/development_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../contributing/CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../FAQ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../changelog/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Changelog
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../license/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    License
+  
+
+          </label>
+          <ul class="md-nav__list">
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc">
+      
+        <li class="md-nav__item">
+  <a href="#1-project-goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Project goal
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Project goal">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#non-goals-for-020-documented-future-ideas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals for 0.2.0 (documented "future ideas")
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-branch-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Branch strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-core-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Core API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Core API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-the-base-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 The base class
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-configuration-class-kwargs-tinydantic-owned-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Configuration: class kwargs, tinydantic-owned storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-late-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Late binding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-table-naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Table naming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-query-sugar-and-the-metaclass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 Query sugar and the metaclass
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-the-id-field" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 The id field
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#37-serialization-round-trip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7 Serialization round-trip
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-crud-surface-complete-tinydb-table-mirror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. CRUD surface (complete TinyDB Table mirror)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-package-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Package layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-tinydb-friction-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. TinyDB friction log
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-tooling-infrastructure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Tooling &amp; infrastructure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Tooling &amp; infrastructure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-cross-platform-requirement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 Cross-platform requirement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82-hatch-uv-poethepoet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 hatch → uv + poethepoet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83-python-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 Python &amp; dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#84-docs-mkdocs-properdocs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.4 Docs: MkDocs → ProperDocs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#85-claudemd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.5 CLAUDE.md
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-examples-set-docs-deliverable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Examples set (docs deliverable)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-testing-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Testing &amp; quality
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-order-of-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Order of work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-decision-log-for-future-sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Decision log (for future sessions)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+    <a href="https://github.com/tinydantic/tinydantic/edit/main/docs/superpowers/specs/2026-07-05-tinydantic-v0.2-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/tinydantic/tinydantic/raw/main/docs/superpowers/specs/2026-07-05-tinydantic-v0.2-design.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5 5 5 0 0 1 5-5 5 5 0 0 1 5 5 5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5"/></svg>
+    </a>
+  
+
+
+<h1 id="tinydantic-v020-design-spec">tinydantic v0.2.0 Design Spec<a class="headerlink" href="#tinydantic-v020-design-spec" title="Permanent link">¤</a></h1>
+<p><strong>Date:</strong> 2026-07-05 <strong>Status:</strong> Approved by Chris Wilson (pending final spec review) <strong>Authors:</strong> Chris Wilson + Claude (design conversation, 2026-07-05)</p>
+<p>This document is the durable record of the v0.2.0 design so any future session (any model) can pick up the work without the original conversation. Read this together with the implementation plan in <code>docs/superpowers/plans/</code> (created after this spec is approved).</p>
+<h2 id="1-project-goal">1. Project goal<a class="headerlink" href="#1-project-goal" title="Permanent link">¤</a></h2>
+<p><code>tinydantic</code> is a Python object-document mapper (ODM) for <a href="https://tinydb.readthedocs.io/">TinyDB</a> built on <a href="https://docs.pydantic.dev/">Pydantic</a> v2. Target audience: developers who already know <strong>pydantic, SQLModel, FastAPI, and TinyDB</strong> — the API must feel natural to them.</p>
+<p>v0.2.0 is a breaking release (allowed under SemVer 0.y.z; latest release is 0.1.19) that:</p>
+<ol>
+<li>Completes the ODM so <code>TinydanticModel</code> cleanly covers TinyDB's <code>Table</code> API.</li>
+<li>Replaces the <code>Document</code> base class with <code>TinydanticModel</code> configured via class kwargs (SQLModel-style).</li>
+<li>Modernizes tooling: hatch → uv + poethepoet, MkDocs → ProperDocs, Python ≥3.11, all dependencies updated to latest.</li>
+<li>Ships a doctested set of usage examples.</li>
+</ol>
+<h3 id="non-goals-for-020-documented-future-ideas">Non-goals for 0.2.0 (documented "future ideas")<a class="headerlink" href="#non-goals-for-020-documented-future-ideas" title="Permanent link">¤</a></h3>
+<ul>
+<li>Async support. Analyzed 2026-07-05: aiotinydb is an unmaintained (since 2023) LGPL lifecycle shim whose <code>async with</code>-scoped database conflicts with tinydantic's long-lived class binding, and whose file locking is fcntl-only (silently absent on Windows). Real async ≈ doubles project scope; <code>to_thread</code> twins add ~30–50%. Instead, the FastAPI example page (§9.7) documents the correct async usage patterns for sync tinydantic. Revisit for 0.3+ if users ask.</li>
+<li>Document references/relationships</li>
+<li>Unique constraints / indexes</li>
+<li>Custom document ID types (TinyDB <code>Table.document_id_class</code>)</li>
+<li>Multi-database binding for one model</li>
+<li>Zensical docs migration (ProperDocs is the interim step)</li>
+</ul>
+<h2 id="2-branch-strategy">2. Branch strategy<a class="headerlink" href="#2-branch-strategy" title="Permanent link">¤</a></h2>
+<ul>
+<li>Base all work on <code>cdwilson/initial-prototype-and-docs</code> (tests pass there). Create new feature branch(es) off it; final PR to <code>main</code>.</li>
+<li><code>cdwilson/refactor</code> (commit <code>2b2e150</code>) is a half-finished version of this same redesign: source renamed to <code>TinydanticModel</code> with config in <code>model_config</code>, but tests never updated (they still set <code>database = db</code> class attributes) and it imports <code>typing.override</code> (3.12+) while claiming 3.8 support. <strong>Mine it for ideas, then delete it.</strong> This spec supersedes it.</li>
+<li>Delete the stray <code>src/tinydantic/_document_old.py.tmp</code>.</li>
+</ul>
+<h2 id="3-core-api">3. Core API<a class="headerlink" href="#3-core-api" title="Permanent link">¤</a></h2>
+<h3 id="31-the-base-class">3.1 The base class<a class="headerlink" href="#31-the-base-class" title="Permanent link">¤</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb</span><span class="w"> </span><span class="kn">import</span> <span class="n">TinyDB</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tinydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">TinydanticModel</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">db</span> <span class="o">=</span> <span class="n">TinyDB</span><span class="p">(</span><span class="s2">&quot;app.json&quot;</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;users&quot;</span><span class="p">):</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">alice</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Alice&quot;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s2">&quot;alice@example.com&quot;</span><span class="p">)</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">alice</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>                        <span class="c1"># sets alice.id</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Alice&quot;</span><span class="p">)</span>        <span class="c1"># -&gt; User instance (validated)</span>
+</span></code></pre></div>
+<p><strong>Name:</strong> <code>TinydanticModel</code> (not <code>Document</code>). Rationale: TinyDB has a real public <code>tinydb.table.Document</code> class returned by <code>Table.get()</code>; exporting our own <code>Document</code> collides in imports, docs prose, and tracebacks. Precedent: SQLModel's package-named base class. In tinydantic vocabulary, "document" always means the stored TinyDB record; "model" means the user's Pydantic class.</p>
+<h3 id="32-configuration-class-kwargs-tinydantic-owned-storage">3.2 Configuration: class kwargs, tinydantic-owned storage<a class="headerlink" href="#32-configuration-class-kwargs-tinydantic-owned-storage" title="Permanent link">¤</a></h3>
+<p><strong>User-facing API:</strong> class keyword arguments (<code>database=</code>, <code>table_name=</code>), exactly like SQLModel's <code>class Hero(SQLModel, table=True)</code>.</p>
+<p><strong>Mechanism (approach B from the design discussion):</strong></p>
+<ul>
+<li><code>TinydanticConfig</code> is a <strong>plain <code>TypedDict</code></strong> (NOT extending <code>pydantic.ConfigDict</code>) with keys <code>database: TinyDB</code> and <code>table_name: str | None</code>.</li>
+<li>Config kwargs are received via <strong><code>__init_subclass__</code></strong> (with the ambiguity check in <code>__pydantic_init_subclass__</code>, which runs after pydantic finishes building the class) — public, documented pydantic extension points. Verified against pydantic source (<code>ConfigWrapper.for_model</code>): pydantic pops only recognized <code>ConfigDict</code> keys from class kwargs; the rest flow to <code>__init_subclass__</code>. <strong>No metaclass involvement in config.</strong></li>
+<li>Each class stores only the keys explicitly set on it, in its own <code>__tinydantic_config__</code> class attribute. Lookup walks <code>cls.__mro__</code> for the first class whose config contains the key — standard Python attribute semantics.</li>
+<li><strong>Ambiguity error:</strong> at class definition time, if two bases would supply <em>conflicting</em> values for the same tinydantic key and the new class doesn't set that key explicitly, raise a definition-time error naming the bases and the fix ("set <code>database=</code> explicitly on <code>C</code>").</li>
+</ul>
+<p><strong>Why not store in <code>model_config</code></strong> (what the refactor branch and SQLModel/pydantic-settings do): pydantic merges <code>model_config</code> across multiple bases in "last wins" order — the <em>opposite</em> of Python's MRO (pydantic#9992). Pydantic's maintainers agree it's concerning; fix PRs (#9995, #9996) were rejected as breaking; a v3 change is speculative. Storing our keys there would (a) inherit those semantics, (b) risk future key collisions with <code>ConfigDict</code>, (c) couple us to behavior pydantic may flip. With approach B + the ambiguity error, there is no scenario where "our order vs pydantic's order" silently matters: single-inheritance chains resolve identically under both orderings, and multi-base conflicts are loud errors.</p>
+<p><strong>Documentation requirement (explicit request from Chris):</strong> this design — MRO-based lookup, the ambiguity error, and why tinydantic config deliberately does not live in <code>model_config</code> — must be prominently documented BOTH in the code (docstrings on <code>TinydanticConfig</code>, <code>__init_subclass__</code>, and the lookup helper, citing pydantic#9992) AND in the docs site (a dedicated "Configuration" page section explaining inheritance behavior with examples).</p>
+<ul>
+<li>Keep <code>protected_namespaces=("tinydantic_",)</code> in <code>model_config</code> (a legitimate pydantic key) to reserve the <code>tinydantic_</code> prefix for future methods (per Samuel Colvin's guidance in pydantic#10315).</li>
+</ul>
+<h3 id="33-late-binding">3.3 Late binding<a class="headerlink" href="#33-late-binding" title="Permanent link">¤</a></h3>
+<p><code>Model.bind(database=..., table_name=...)</code> classmethod updates the class's <code>__tinydantic_config__</code> after definition — for tests and app factories where no <code>TinyDB</code> exists at import time. Any table operation on an unbound model raises <code>DatabaseNotBoundError</code> with a message pointing at both binding options. Subclass-in-fixture (the existing test pattern) remains supported and documented.</p>
+<h3 id="34-table-naming">3.4 Table naming<a class="headerlink" href="#34-table-naming" title="Permanent link">¤</a></h3>
+<p>Default table name: <code>pydantic.alias_generators.to_snake(cls.__name__)</code> (<code>AdminUser</code> → <code>admin_user</code>), overridable via <code>table_name=</code>.</p>
+<h3 id="35-query-sugar-and-the-metaclass">3.5 Query sugar and the metaclass<a class="headerlink" href="#35-query-sugar-and-the-metaclass" title="Permanent link">¤</a></h3>
+<ul>
+<li><code>User.name</code> at class level returns <code>tinydb.queries.where("name")</code> via metaclass <code>__getattr__</code>, so <code>User.name == "Alice"</code> is a TinyDB query. Nested access chains naturally (<code>User.address.city == "X"</code>), since TinyDB <code>Query</code> supports attribute chaining.</li>
+<li>
+<p>The metaclass now does ONLY this (config moved to <code>__init_subclass__</code>). Obtain the base metaclass without private imports at runtime:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic._internal._model_construction</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelMetaclass</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">else</span><span class="p">:</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">ModelMetaclass</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">)</span>  <span class="c1"># no private import at runtime</span>
+</span></code></pre></div>
+</li>
+</ul>
+<ul>
+<li>Guard (from prototype): only return queries once <code>__pydantic_complete__</code> is true and <code>attr in cls.model_fields</code>.</li>
+<li><strong><code>q()</code> helper</strong> (5-line <code>col()</code> equivalent; name <code>q</code> chosen over SQL-flavored <code>col</code> — subject to final veto in spec review): type checkers see <code>User.name == "Alice"</code> as <code>bool</code>, not <code>QueryLike</code> (same wart as SQLModel; metaclasses don't run statically). <code>q(User.name)</code> is a runtime identity function (with an <code>isinstance(field, Query)</code> check) typed <code>(Any) -&gt; Query</code>, so <code>User.search(q(User.name) == "Alice")</code> typechecks. Docs get a "Static type checking" section showing both forms.</li>
+<li><strong>Documented footgun:</strong> user fields named like classmethods (<code>search</code>, <code>update</code>, <code>count</code>, …) shadow them silently. Pydantic's shadow warning covers most cases; raw <code>tinydb.Query()</code> always works as the escape hatch. Docs callout, not a redesign.</li>
+</ul>
+<h3 id="36-the-id-field">3.6 The <code>id</code> field<a class="headerlink" href="#36-the-id-field" title="Permanent link">¤</a></h3>
+<ul>
+<li><code>id: int | None = None</code> — <strong>without</strong> <code>Field(exclude=True)</code>. The prototype's <code>exclude=True</code> silently dropped <code>id</code> from ALL serialization, so FastAPI responses lost it. Now <code>model_dump()</code> / FastAPI responses include <code>id</code>.</li>
+<li><code>id</code> is excluded only when writing to storage: <code>model_dump(mode="json", exclude={"id"})</code>.</li>
+</ul>
+<h3 id="37-serialization-round-trip">3.7 Serialization round-trip<a class="headerlink" href="#37-serialization-round-trip" title="Permanent link">¤</a></h3>
+<p><code>to_tinydb_document()</code> uses <strong><code>model_dump(mode="json")</code></strong> (prototype used Python-mode <code>model_dump()</code>, which crashes JSON storage on <code>datetime</code>, <code>UUID</code>, enums, …). Reads go through <code>model_validate</code>, which converts JSON values back to rich types. This makes "any JSON- serializable Pydantic model round-trips through storage" a tested guarantee.</p>
+<h2 id="4-crud-surface-complete-tinydb-table-mirror">4. CRUD surface (complete TinyDB Table mirror)<a class="headerlink" href="#4-crud-surface-complete-tinydb-table-mirror" title="Permanent link">¤</a></h2>
+<p>Instance methods:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>insert()</code></td>
+<td>Insert; sets <code>self.id</code>; returns <code>self</code></td>
+</tr>
+<tr>
+<td><code>save()</code></td>
+<td><strong>Fixed semantics:</strong> <code>insert()</code> if <code>id is None</code>, else upsert by id. (Prototype passed a bare dict to <code>Table.upsert()</code> with no cond — confirmed <code>ValueError</code> against TinyDB source.)</td>
+</tr>
+<tr>
+<td><code>replace()</code></td>
+<td>Update-by-id with full replacement; <code>DocumentIDRequiredError</code> if unbound id; <code>DocumentNotFoundError</code> if gone</td>
+</tr>
+<tr>
+<td><code>delete()</code></td>
+<td><strong>New.</strong> Remove by <code>self.id</code>; <code>DocumentIDRequiredError</code> if id unset; <code>DocumentNotFoundError</code> if not in table</td>
+</tr>
+</tbody>
+</table>
+<p>Class methods: <code>insert_multiple(docs)</code>, <code>all()</code>, <code>search(cond)</code>, <code>contains(cond=... | doc_id=...)</code>, <code>update(fields | transform, cond=..., doc_ids=...)</code>, <code>update_multiple(updates)</code>, <code>upsert(doc, cond=...)</code>, <code>remove(cond=..., doc_ids=...)</code>, <code>truncate()</code>, <code>count(cond)</code>, <code>clear_cache()</code> — mirroring <code>tinydb.table.Table</code> signatures and returning validated model instances where documents come back, doc-id lists where TinyDB returns doc ids.</p>
+<p><strong><code>get()</code>: full TinyDB mirror via <code>@typing.overload</code>, plus explicit variants</strong> (decided 2026-07-05, revising an earlier split-only design):</p>
+<ul>
+<li><code>get(cond=..., doc_id=..., doc_ids=...)</code> keeps TinyDB's full input set for familiarity. Static precision comes from <code>@overload</code> signatures — <code>(cond)</code> and <code>(doc_id)</code> overloads return <code>Self | None</code>; the <code>(doc_ids)</code> overload returns <code>list[Self]</code> — so type checkers see exact types per call shape even though the runtime union is <code>Self | list[Self] | None</code>.</li>
+<li>Explicit typed variants delegate to it: <code>get_by_cond(cond) -&gt; Self | None</code>, <code>get_by_id(doc_id) -&gt; Self | None</code>, <code>get_by_ids(doc_ids) -&gt; list[Self]</code>.</li>
+<li>One tightening vs TinyDB: passing more than one of <code>cond</code>/<code>doc_id</code>/<code>doc_ids</code> raises <code>ValueError</code> (TinyDB silently applies a precedence order); passing none raises like TinyDB does.</li>
+</ul>
+<p>Docs note the mapping to TinyDB's single <code>get()</code>. Missing-id behavior (amended 2026-07-06 after verifying TinyDB 4.8.2 source during M3): TinyDB silently <em>skips</em> missing ids in <code>get(doc_ids=...)</code> — no <code>None</code> placeholders — so the return type is <code>list[Self]</code>, mirrored exactly.</p>
+<h2 id="5-errors">5. Errors<a class="headerlink" href="#5-errors" title="Permanent link">¤</a></h2>
+<p>Keep the refactor branch's hierarchy, renaming for the new vocabulary:</p>
+<ul>
+<li><code>TinydanticError</code> (base)<ul>
+<li><code>TinydanticUserError</code><ul>
+<li><code>DatabaseNotBoundError</code> (replaces <code>TinydanticDatabaseMissingError</code>)</li>
+<li><code>AmbiguousConfigError</code> (the §3.2 config ambiguity error)</li>
+</ul>
+</li>
+<li><code>DocumentNotFoundError</code></li>
+<li><code>DocumentIDRequiredError</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="6-package-layout">6. Package layout<a class="headerlink" href="#6-package-layout" title="Permanent link">¤</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>src/tinydantic/
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  __init__.py      # public: TinydanticModel, TinydanticConfig, q, errors, __version__
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  _model.py        # TinydanticModel + thin query metaclass + q()
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  config.py        # TinydanticConfig + MRO lookup + ambiguity check
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  errors.py
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  tinydb/          # TinyDB extensions — future extraction candidate
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    storages.py    # YAMLStorage
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    middlewares.py # ReadOnlyMiddleware
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    operations.py  # replace()
+</span></code></pre></div>
+<p><code>tinydantic.tinydb</code> must stay dependency-clean (no imports from tinydantic core; core → <code>operations.replace</code> is the only allowed edge) so it can later be extracted into a standalone package. Docs give it a separate "TinyDB extensions" section noting possible future extraction.</p>
+<h2 id="7-tinydb-friction-log">7. TinyDB friction log<a class="headerlink" href="#7-tinydb-friction-log" title="Permanent link">¤</a></h2>
+<p>TinyDB is in maintenance mode. When TinyDB bugs/design issues make tinydantic harder (first known case: <code>Table.update()</code> annotates <code>fields</code> as <code>Callable[[Mapping], None]</code> though it accepts a <code>Mapping</code>, forcing an ugly cast):</p>
+<ol>
+<li>Record the issue + full drafted collateral (title, body, minimal repro) under <code>docs/upstream/</code> in this repo.</li>
+<li><strong>NEVER file upstream issues/PRs without Chris's explicit approval</strong> (standing rule).</li>
+<li>If friction becomes blocking, the sanctioned fallback is switching the dependency to the fork <a href="https://github.com/tinydantic/tinydb/">https://github.com/tinydantic/tinydb/</a>; keep this a one-line pyproject change.</li>
+</ol>
+<h2 id="8-tooling-infrastructure">8. Tooling &amp; infrastructure<a class="headerlink" href="#8-tooling-infrastructure" title="Permanent link">¤</a></h2>
+<h3 id="81-cross-platform-requirement">8.1 Cross-platform requirement<a class="headerlink" href="#81-cross-platform-requirement" title="Permanent link">¤</a></h3>
+<p><strong>Windows, macOS, and Linux are all first-class.</strong> Poe tasks must be shell-neutral, no Makefiles, CI test matrix runs on all three OSes.</p>
+<h3 id="82-hatch-uv-poethepoet">8.2 hatch → uv + poethepoet<a class="headerlink" href="#82-hatch-uv-poethepoet" title="Permanent link">¤</a></h3>
+<ul>
+<li>uv manages the project; commit <code>uv.lock</code>.</li>
+<li>Dev/test/docs/types dependencies move from <code>[project.optional-dependencies]</code> to <code>[dependency-groups]</code> (PEP 735).</li>
+<li><strong>Build backend: <code>uv_build</code> with static versioning</strong> (decided 2026-07-05, replacing an earlier keep-hatchling decision). <code>[build-system]</code> = <code>requires = ["uv_build&gt;=0.11,&lt;0.12"]</code>, <code>build-backend = "uv_build"</code>; static <code>version</code> in <code>[project]</code>; hatchling and hatch-vcs removed entirely. The version's source of truth moves from git tags to <code>pyproject.toml</code>: releases are performed with commitizen (<code>version_provider = "pep621"</code>), where <code>cz bump</code> reads conventional commits, writes <code>[project].version</code>, updates the changelog, and creates the tag atomically. The publish workflow asserts the tag matches <code>uv version --short</code> so tag and pyproject can never drift. CI build jobs no longer need <code>fetch-depth: 0</code> (mike still does for gh-pages). Known losses (accepted): no automatic <code>.devN+g&lt;sha&gt;</code> versions between tags; <code>tests/test_version.py</code> updated accordingly.</li>
+<li>Hatch envs/scripts → <strong>poethepoet</strong> tasks in <code>pyproject.toml</code> (<code>uv run poe check</code>, <code>test</code>, <code>docs</code>, …). Chosen over just/taskipy/make: most-downloaded pyproject-native runner (~5M/mo), 1:1 translation from hatch scripts, keeps tasks in TOML where taplo/schema tooling applies, cross-platform.</li>
+<li>CI workflows switch to <code>astral-sh/setup-uv</code> + <code>uv sync</code>; keep the existing four-workflow structure (ci / docs-dev / docs-release / publish-python-package) and the existing tag-driven release process.</li>
+</ul>
+<h3 id="83-python-dependencies">8.3 Python &amp; dependencies<a class="headerlink" href="#83-python-dependencies" title="Permanent link">¤</a></h3>
+<ul>
+<li><code>requires-python = "&gt;=3.11"</code>. CI matrix: CPython 3.11–3.14 × {ubuntu, windows, macos}. Native <code>typing.Self</code>; do NOT use <code>typing.override</code> (3.12+) — not needed by the new code. Drop the <code>typing_extensions</code> and <code>eval_type_backport</code> runtime deps.</li>
+<li>Drop PyPy classifiers (not CI-tested).</li>
+<li>All dependencies to latest: pydantic 2.13.x (floor <code>&gt;=2.11</code>), tinydb 4.8.x (floor <code>&gt;=4.8</code>), ruff, mypy, pre-commit hooks, all mkdocs plugins.</li>
+<li>Update classifiers: <code>Development Status :: 3 - Alpha</code>, Python 3.11–3.14.</li>
+</ul>
+<h3 id="84-docs-mkdocs-properdocs">8.4 Docs: MkDocs → ProperDocs<a class="headerlink" href="#84-docs-mkdocs-properdocs" title="Permanent link">¤</a></h3>
+<ul>
+<li>ProperDocs (v1.6.x) is an actively-maintained drop-in fork of abandoned <strong>MkDocs core</strong>; mkdocs-material (maintenance mode, 9.7.x) stays as the theme, existing plugin set kept and updated. Follow the ProperDocs migration guide (github.com/orgs/ProperDocs/discussions/33).</li>
+<li>Zensical migration is a future project once docs are worth rewriting.</li>
+</ul>
+<h3 id="85-claudemd">8.5 CLAUDE.md<a class="headerlink" href="#85-claudemd" title="Permanent link">¤</a></h3>
+<p>Add a root <code>CLAUDE.md</code>: short project overview, pointer to this spec and the implementation plan, branch strategy, conventions (conventional commits, REUSE headers, doctested docs, cross-platform rule, the never-auto-file-upstream rule).</p>
+<h2 id="9-examples-set-docs-deliverable">9. Examples set (docs deliverable)<a class="headerlink" href="#9-examples-set-docs-deliverable" title="Permanent link">¤</a></h2>
+<p>Seven doctested pages (pytest already runs <code>--doctest-glob '*.md'</code> over <code>docs/</code>), so every example is CI-verified:</p>
+<ol>
+<li><strong>Quickstart</strong> — README basic example on the new API.</li>
+<li><strong>CRUD tour</strong> — every method incl. <code>delete()</code>, <code>save()</code>, <code>upsert()</code>.</li>
+<li><strong>Queries</strong> — field queries, logical ops, nested fields, <code>q()</code> for type checkers, escaping to raw <code>tinydb.Query</code>.</li>
+<li><strong>Real Pydantic models</strong> — datetime/UUID/enum/nested models, validators, defaults; round-trip through JSON storage.</li>
+<li><strong>Storage options</strong> — JSON file, in-memory, YAMLStorage, caching middleware.</li>
+<li><strong>Testing your models</strong> — in-memory fixtures, <code>bind()</code> vs subclass-in-fixture patterns.</li>
+<li><strong>FastAPI integration</strong> — CRUD endpoints backed by tinydantic models (models double as response models; <code>id</code> visible per §3.6), exercised via <code>TestClient</code>; includes the async guidance: plain-<code>def</code> endpoints run in FastAPI's threadpool, <code>asyncio.to_thread</code> for <code>async def</code> contexts, and TinyDB's no-concurrency-safety caveats. Adds <code>fastapi</code> + <code>httpx</code> to the test/docs dependency groups only.</li>
+</ol>
+<p>README's basic example is updated to the new API (it's included into docs and doctested).</p>
+<h2 id="10-testing-quality">10. Testing &amp; quality<a class="headerlink" href="#10-testing-quality" title="Permanent link">¤</a></h2>
+<ul>
+<li>TDD (superpowers workflow). Port existing test suites to the new API first — they are the spec for the port — then per-method tests for newly implemented operations.</li>
+<li>New test areas: round-trip serialization (datetime/UUID/nested), unbound-model errors, config inheritance incl. the ambiguity error, <code>save()</code> on fresh instances, <code>id</code> present in <code>model_dump()</code>, metaclass-pin test (fails loudly if a pydantic upgrade breaks <code>type(BaseModel)</code> assumptions).</li>
+<li>Fill every <code>TODO: needs docstring</code> (interrogate enforces 100%).</li>
+<li>Keep: coverage, ruff, mypy, pre-commit, REUSE, cspell, doctests.</li>
+</ul>
+<h2 id="11-order-of-work">11. Order of work<a class="headerlink" href="#11-order-of-work" title="Permanent link">¤</a></h2>
+<ol>
+<li><strong>Tooling foundation</strong> (new branch): uv migration + poe + dependency updates + Python ≥3.11 + CI matrix — with existing prototype code still passing tests throughout.</li>
+<li><strong>Port the core</strong>: <code>TinydanticModel</code>, <code>TinydanticConfig</code> + <code>__init_subclass__</code> config + ambiguity error + <code>bind()</code> + thin metaclass + <code>q()</code>; tests updated; old naming and refactor branch deleted.</li>
+<li><strong>Complete the API</strong>: six stubbed methods + <code>delete()</code> + overloaded <code>get</code> + <code>get_by_*</code> variants + <code>save()</code> fix + JSON-mode serialization + id-serialization fix. TDD.</li>
+<li><strong>Docs &amp; examples</strong>: ProperDocs swap, seven example pages, API reference docstrings, configuration-inheritance docs (§3.2), CLAUDE.md.</li>
+<li><strong>Release prep</strong>: changelog, classifiers, tag <code>v0.2.0</code>, existing pipeline publishes to PyPI + deploys docs.</li>
+</ol>
+<h2 id="12-decision-log-for-future-sessions">12. Decision log (for future sessions)<a class="headerlink" href="#12-decision-log-for-future-sessions" title="Permanent link">¤</a></h2>
+<table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>Choice</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Base class name</td>
+<td><code>TinydanticModel</code></td>
+<td>tinydb.table.Document collision; SQLModel precedent</td>
+</tr>
+<tr>
+<td>Config API</td>
+<td>Class kwargs</td>
+<td>SQLModel-style; matches refactor branch intent</td>
+</tr>
+<tr>
+<td>Config storage</td>
+<td>Own <code>__tinydantic_config__</code>, MRO lookup + ambiguity error</td>
+<td>pydantic#9992 last-wins merge; collision risk; own semantics</td>
+</tr>
+<tr>
+<td>Config kwargs plumbing</td>
+<td><code>__init_subclass__</code> (public hook)</td>
+<td>Verified in pydantic source; kills metaclass config code</td>
+</tr>
+<tr>
+<td>Metaclass base</td>
+<td><code>type(BaseModel)</code> at runtime</td>
+<td>No private import; TYPE_CHECKING-only static hint</td>
+</tr>
+<tr>
+<td><code>get()</code></td>
+<td>Full TinyDB mirror with <code>@overload</code> typing + <code>get_by_cond</code>/<code>get_by_id</code>/<code>get_by_ids</code> variants</td>
+<td>TinyDB familiarity AND sane static types</td>
+</tr>
+<tr>
+<td>Storage serialization</td>
+<td><code>model_dump(mode="json", exclude={"id"})</code></td>
+<td>datetime/UUID round-trip; id visible to FastAPI</td>
+</tr>
+<tr>
+<td>Type-checker helper</td>
+<td><code>q()</code></td>
+<td>SQLModel <code>col()</code> analog; "col" is SQL vocabulary</td>
+</tr>
+<tr>
+<td>Python floor</td>
+<td>3.11</td>
+<td>3.10 near EOL; native <code>Self</code>; no typing_extensions</td>
+</tr>
+<tr>
+<td>Task runner</td>
+<td>poethepoet</td>
+<td>pyproject-native, most popular, cross-platform</td>
+</tr>
+<tr>
+<td>Docs engine</td>
+<td>ProperDocs + mkdocs-material</td>
+<td>MkDocs abandoned; Zensical not plugin-ready</td>
+</tr>
+<tr>
+<td>Build backend</td>
+<td>uv_build + static version + commitizen <code>pep621</code> bumps</td>
+<td>All-uv story; cz bump replaces hatch-vcs; CI guards tag/pyproject drift</td>
+</tr>
+<tr>
+<td>Version</td>
+<td>0.2.0 (breaking; 0.1.19 already released)</td>
+<td>SemVer 0.y.z</td>
+</tr>
+<tr>
+<td>PyPy</td>
+<td>Dropped from classifiers</td>
+<td>Not CI-tested</td>
+</tr>
+<tr>
+<td>Upstream issues</td>
+<td>Draft collateral only; file only with explicit approval</td>
+<td>Chris's standing rule</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+          <div class="md-top" data-md-component="top" hidden>
+  <div class="md-top__center">
+    <button type="button" class="md-top__button md-top__button--main" data-md-action="top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+      <span>Back to top</span>
+    </button>
+    
+      
+      
+      <label class="md-top__button md-top__side md-top__side--nav" for="__drawer" >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-panel-left" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+      </label>
+    
+    
+      
+      
+      <label class="md-top__button md-top__side md-top__side--toc" for="__toc" >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-panel-right" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>
+      </label>
+    
+  </div>
+</div>
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../plans/2026-07-06-v0.2.0-release-runbook/" class="md-footer__link md-footer__link--prev" aria-label="Previous: v0.2.0 Release Runbook">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                v0.2.0 Release Runbook
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../../usage/" class="md-footer__link md-footer__link--next" aria-label="Next: Usage">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Usage
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; Chris Wilson
+    </div>
+  
+  
+    Made with
+    <a href="https://jaywhj.github.io/mkdocs-materialx/" target="_blank" rel="noopener">
+      MaterialX
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "code": null, "features": ["content.action.view", "content.action.edit", "content.code.annotate", "content.code.copy", "content.tooltips", "navigation.tabs", "navigation.tabs.sticky", "navigation.footer", "navigation.expand", "navigation.top", "navigation.indexes", "navigation.instant", "navigation.instant.progress", "navigation.sections", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow", "content.tabs.link"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "code.collapse": "Collapse", "code.download": "Download", "code.expand": "Expand remaining # lines", "code.select": "Toggle line selection", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.fc193f93.min.js"></script>
+      
+    
+  </body>
+</html>
