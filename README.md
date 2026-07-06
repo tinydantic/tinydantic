@@ -6,24 +6,20 @@
 
 `tinydantic` is a simple Python object-document mapper (ODM) for the [TinyDB](https://tinydb.readthedocs.io/en/latest/) document database. It uses [Pydantic](https://docs.pydantic.dev/latest/)—the most widely used data validation library—for document model definition and validation.
 
-📖 Full documentation is available at [tinydantic.dev](https://tinydantic.dev).
-
 <!-- prettier-ignore-start -->
 
-> [!WARNING]
-> `tinydantic` is currently a work in progress 🏗️
->
-> This project is still in the prototyping phase and should be considered experimental.
->
-> Releases follow the [SemVer versioning spec](https://semver.org):
+> [!NOTE]
+> `tinydantic` is under active development. Releases follow the [SemVer versioning spec](https://semver.org):
 >
 > > Major version zero (0.y.z) is for initial development. Anything MAY change at any time. The public API SHOULD NOT be considered stable.
 >
-> There's not much to see here yet, but feel free to grab your hard hat 👷 and have a look around. Feedback is welcome!
+> Minor releases may include breaking changes until v1.0 — check the [changelog](https://github.com/tinydantic/tinydantic/blob/main/CHANGELOG.md) when upgrading. Feedback is welcome!
 
 <!-- prettier-ignore-end -->
 
 <!-- overview-end -->
+
+Full documentation is available at [tinydantic.dev](https://tinydantic.dev).
 
 ## Table of Contents
 

@@ -1,6 +1,6 @@
 # Quickstart
 
-This page takes you from an empty database to a full create-read-update-delete cycle in a handful of lines. It expands on the [Basic Example](../get_started/basic_example.md) with the mutation and deletion steps that a real application needs.
+This page takes you from an empty database to a full create-read-update-delete cycle in a handful of lines.
 
 ## Create a database
 

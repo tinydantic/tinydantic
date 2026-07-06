@@ -6,4 +6,3 @@ title: Get Started # sets the section name in the left and top nav
 nav:
   - index.md
   - installation.md
-  - basic_example.md
