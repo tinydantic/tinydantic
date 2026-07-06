@@ -210,7 +210,7 @@ verbose = 2
 python_version = "3.11"
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --doctest-glob '*.md'"
+addopts = "--doctest-modules --doctest-glob '*.md' --ignore=docs/superpowers"
 doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL"
 minversion = "6.0"
 testpaths = [
