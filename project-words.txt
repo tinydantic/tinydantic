@@ -38,6 +38,7 @@ fontawesome
 footgun
 getattr
 gitter
+gunicorn
 htmlcov
 httpx
 hynek
@@ -147,6 +148,7 @@ typechecks
 typora
 upsert
 upserts
+uvicorn
 venv
 viewports
 vivaxy
