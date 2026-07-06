@@ -1,9 +1,11 @@
 addopts
+agentic
 aiotinydb
 anson
 asyncio
 autodocstring
 autorefs
+cacheprovider
 callout
 callouts
 callspec
@@ -62,6 +64,7 @@ mkdostrings
 mypy
 njpwerner
 nosetests
+numprocesses
 optionflags
 peasy
 pipenv
@@ -92,6 +95,7 @@ pythonunbuffered
 pytype
 pyupgrade
 Quickstart
+rerunfailures
 ropeproject
 rtype
 schemafile
@@ -128,4 +132,5 @@ venv
 viewports
 vivaxy
 webassets
+xdist
 Zensical
