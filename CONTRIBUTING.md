@@ -273,28 +273,33 @@ The release process is automated using workflows in GitHub Actions. New releases
 
 Because the `main` branch is protected (no direct pushes), the version bump travels in a pull request like any other change, and the release tag is pushed afterward — git tags are not governed by branch protection.
 
-**Step 1 — changelog.** Update `CHANGELOG.md` with a section for the new release. The changelog is curated by hand; `cz bump` does not generate it.
+1. Update `CHANGELOG.md` with a section for the new release. The changelog is curated by hand; `cz bump` does not generate it.
 
-**Step 2 — bump the version.** On a release branch, let [Commitizen](https://commitizen-tools.github.io/commitizen/) determine the next [SemVer](https://semver.org/)-compliant version from the commit history and write it to `pyproject.toml` without committing or tagging, then refresh the lockfile to match:
+2. On a release branch, let [Commitizen](https://commitizen-tools.github.io/commitizen/) determine the next [SemVer](https://semver.org/)-compliant version from the commit history and write it to `pyproject.toml` without committing or tagging, then refresh the lockfile to match:
 
-```sh
-uv run cz bump --files-only
-uv lock
-```
+   ```sh
+   uv run cz bump --files-only
+   uv lock
+   ```
 
-**Step 3 — merge.** Commit the result (for example `bump: version 0.1.19 → 0.2.0`), push, open a pull request, and merge it once CI passes.
+3. Commit the result (for example `bump: version 0.1.19 → 0.2.0`), push, open a pull request, and merge it once CI passes.
 
-**Step 4 — tag.** Tag the merged commit on `main` and push the tag:
+4. Tag the merged commit on `main` and push the tag:
 
-```sh
-git fetch origin
-git tag -a v<MAJOR>.<MINOR>.<PATCH> -m "Release version <MAJOR>.<MINOR>.<PATCH>" origin/main
-git push origin v<MAJOR>.<MINOR>.<PATCH>
-```
+   ```sh
+   git fetch origin
+   git tag -a v<MAJOR>.<MINOR>.<PATCH> -m "Release version <MAJOR>.<MINOR>.<PATCH>" origin/main
+   git push origin v<MAJOR>.<MINOR>.<PATCH>
+   ```
 
 When the tag is pushed to GitHub, a GitHub Actions workflow verifies that the tag matches the version in `pyproject.toml`, builds and publishes the Python package, creates a release on GitHub, and updates the documentation site.
 
-> [!NOTE] Do not create the GitHub release manually in the web UI — the publish workflow creates it from the tag and will fail if one already exists.
+<!-- prettier-ignore-start -->
+
+> [!NOTE]
+> Do not create the GitHub release manually in the web UI — the publish workflow creates it from the tag and will fail if one already exists.
+
+<!-- prettier-ignore-end -->
 
 ### Editor Setup
 
