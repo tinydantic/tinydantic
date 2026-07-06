@@ -167,7 +167,7 @@ TinyDB is in maintenance mode. When TinyDB bugs/design issues make tinydantic ha
 
 - uv manages the project; commit `uv.lock`.
 - Dev/test/docs/types dependencies move from `[project.optional-dependencies]` to `[dependency-groups]` (PEP 735).
-- **Build backend stays `hatchling` + `hatch-vcs`** (VCS-driven versioning; uv's own backend doesn't provide it). uv is orthogonal to the backend.
+- **Build backend: `uv_build` with static versioning** (decided 2026-07-05, replacing an earlier keep-hatchling decision). `[build-system]` = `requires = ["uv_build>=0.11,<0.12"]`, `build-backend = "uv_build"`; static `version` in `[project]`; hatchling and hatch-vcs removed entirely. The version's source of truth moves from git tags to `pyproject.toml`: releases are performed with commitizen (`version_provider = "pep621"`), where `cz bump` reads conventional commits, writes `[project].version`, updates the changelog, and creates the tag atomically. The publish workflow asserts the tag matches `uv version --short` so tag and pyproject can never drift. CI build jobs no longer need `fetch-depth: 0` (mike still does for gh-pages). Known losses (accepted): no automatic `.devN+g<sha>` versions between tags; `tests/test_version.py` updated accordingly.
 - Hatch envs/scripts → **poethepoet** tasks in `pyproject.toml` (`uv run poe check`, `test`, `docs`, …). Chosen over just/taskipy/make: most-downloaded pyproject-native runner (~5M/mo), 1:1 translation from hatch scripts, keeps tasks in TOML where taplo/schema tooling applies, cross-platform.
 - CI workflows switch to `astral-sh/setup-uv` + `uv sync`; keep the existing four-workflow structure (ci / docs-dev / docs-release / publish-python-package) and the existing tag-driven release process.
 
@@ -231,7 +231,7 @@ README's basic example is updated to the new API (it's included into docs and do
 | Python floor | 3.11 | 3.10 near EOL; native `Self`; no typing_extensions |
 | Task runner | poethepoet | pyproject-native, most popular, cross-platform |
 | Docs engine | ProperDocs + mkdocs-material | MkDocs abandoned; Zensical not plugin-ready |
-| Build backend | hatchling + hatch-vcs (kept) | uv backend lacks VCS versioning |
+| Build backend | uv_build + static version + commitizen `pep621` bumps | All-uv story; cz bump replaces hatch-vcs; CI guards tag/pyproject drift |
 | Version | 0.2.0 (breaking; 0.1.19 already released) | SemVer 0.y.z |
 | PyPy | Dropped from classifiers | Not CI-tested |
 | Upstream issues | Draft collateral only; file only with explicit approval | Chris's standing rule |
