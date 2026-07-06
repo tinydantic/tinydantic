@@ -14,7 +14,7 @@ extra_css:
   - css/code_select.css
   - css/admonitions.css
 theme:
-  name: material
+  name: materialx
   icon:
     repo: fontawesome/brands/github
     edit: material/pencil

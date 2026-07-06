@@ -89,13 +89,14 @@ docs = [
   "mkdocs-gen-files",
   "mkdocs-github-admonitions-plugin",
   "mkdocs-include-markdown-plugin",
-  "mkdocs-material",
+  "mkdocs-materialx",
   "mkdocstrings",
   "mkdocstrings-python",
   "poethepoet",
-  # properdocs is the docs build engine (poe docs-build); the transitive
-  # mkdocs package remains installed (mkdocs-material dependency) and is what
-  # mike uses for versioned deploys.
+  # properdocs is the docs build engine. mike >=2.2.0 auto-detects it and
+  # runs properdocs for versioned deploys too. The mkdocs package remains
+  # installed only as a transitive dependency (mkdocs-materialx pins it for
+  # import compatibility).
   "properdocs",
 ]
 lint = [
