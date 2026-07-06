@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""TODO: needs docstring."""
+"""Fixtures for the TinyDB middleware tests."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture
 def sorted_json_db(json_storage_path: Path) -> Iterable[TinyDB]:
-    """TODO: needs docstring."""
+    """Yield a JSON-backed TinyDB wrapped in SortIntDocIDsMiddleware."""
     with TinyDB(
         path=json_storage_path,
         storage=SortIntDocIDsMiddleware(JSONStorage),

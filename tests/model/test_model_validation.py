@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""TODO: needs docstring."""
+"""Tests for validating TinyDB documents into models."""
 
 from __future__ import annotations
 
@@ -15,10 +15,10 @@ if TYPE_CHECKING:
 
 
 class TestModelValidation:
-    """TODO: needs docstring."""
+    """Tests for TinydanticModel.from_tinydb_document."""
 
     def test_validate_document_from_dict(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """A plain dict validates into a model with id left unset."""
         tinydb_document = {
             "name": "Alice",
             "age": 37,
@@ -31,7 +31,7 @@ class TestModelValidation:
         self,
         user_class: type[UserBase],
     ):
-        """TODO: needs docstring."""
+        """A TinyDB Document validates with its doc_id mapped to id."""
         tinydb_document = tinydb.table.Document(
             value={
                 "name": "Alice",

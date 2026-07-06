@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""TODO: needs docstring."""
+"""Tests for TinydanticModel configuration and id attributes."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from tinydantic.errors import DatabaseNotBoundError
 
 
 class TestModelDatabaseConfig:
-    """TODO: needs docstring."""
+    """Tests for model database binding."""
 
     def test_database_is_not_set(self):
         """Unbound model operations raise DatabaseNotBoundError."""
@@ -30,7 +30,7 @@ class TestModelDatabaseConfig:
 
 
 class TestModelTableNameConfig:
-    """TODO: needs docstring."""
+    """Tests for model table_name configuration."""
 
     def test_table_name_matches_test_param(
         self,
@@ -43,20 +43,20 @@ class TestModelTableNameConfig:
 
 
 class TestModelIDAttribute:
-    """TODO: needs docstring."""
+    """Tests for the model id attribute."""
 
     def test_id_is_not_set(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """A model created without an id defaults id to None."""
         user = user_class(name="Alice", age=37)
         assert user.id is None
 
     def test_id_set_to_none(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """A model created with id=None keeps id as None."""
         user = user_class(id=None, name="Alice", age=37)
         assert user.id is None
 
     def test_id_set_to_int(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """An explicit id is preserved after insert."""
         user = user_class(id=5, name="Alice", age=37)
         user.insert()
         assert user.id == 5

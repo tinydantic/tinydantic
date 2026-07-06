@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""TODO: needs docstring."""
+"""Tests for inserting TinydanticModel documents."""
 
 from __future__ import annotations
 
@@ -15,37 +15,37 @@ if TYPE_CHECKING:
 
 
 class TestModelInsert:
-    """TODO: needs docstring."""
+    """Tests for TinydanticModel.insert."""
 
     def test_insert_id_is_not_set(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """Inserting a model without an id assigns the next id."""
         user = user_class(name="Alice", age=37)
         assert user.id is None
         user.insert()
         assert user.id == 1
 
     def test_insert_id_is_none(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """Inserting a model with id=None assigns the next id."""
         user = user_class(id=None, name="Alice", age=37)
         assert user.id is None
         user.insert()
         assert user.id == 1
 
     def test_insert_id_is_zero(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """Inserting a model with id=0 preserves the explicit id."""
         user = user_class(id=0, name="Alice", age=37)
         assert user.id == 0
         user.insert()
         assert user.id == 0
 
     def test_insert_id_is_negative(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """A negative id is preserved on insert."""
         user = user_class(id=-5, name="Alice", age=37)
         user.insert()
         assert user.id == -5
 
     def test_insert_id_increment(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """Consecutive inserts without ids increment the assigned id."""
         user1 = user_class(name="Alice", age=37)
         user1.insert()
         user2 = user_class(name="Alice", age=37)
@@ -54,7 +54,7 @@ class TestModelInsert:
         assert user2.id == 2
 
     def test_insert_id_increment_from_none(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """An id=None insert increments the next assigned id."""
         user1 = user_class(id=None, name="Alice", age=37)
         user1.insert()
         user2 = user_class(name="Alice", age=37)
@@ -63,7 +63,7 @@ class TestModelInsert:
         assert user2.id == 2
 
     def test_insert_id_increment_from_zero(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """An explicit id=0 insert increments the next assigned id."""
         user1 = user_class(id=0, name="Alice", age=37)
         user1.insert()
         user2 = user_class(name="Alice", age=37)
@@ -75,7 +75,7 @@ class TestModelInsert:
         self,
         user_class: type[UserBase],
     ):
-        """TODO: needs docstring."""
+        """A negative id still increments the next assigned id."""
         user1 = user_class(id=-5, name="Alice", age=37)
         user1.insert()
         user2 = user_class(name="Alice", age=37)
@@ -87,7 +87,7 @@ class TestModelInsert:
         self,
         user_class: type[UserBase],
     ):
-        """TODO: needs docstring."""
+        """Optional fields omitted on insert round-trip as unset."""
         user = user_class(name="Alice")
         user.insert()
         assert user.id is not None
@@ -97,7 +97,7 @@ class TestModelInsert:
         assert result.age is None
 
     def test_insert_doc_with_optional_args(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """Optional fields set on insert round-trip as set."""
         user = user_class(name="Alice", age=37)
         user.insert()
         assert user.id is not None
@@ -107,7 +107,7 @@ class TestModelInsert:
         assert result.age == 37
 
     def test_insert_existing_document(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """Re-inserting an existing id raises a ValueError."""
         user = user_class(name="Alice", age=37)
         user.insert()
         assert user.id is not None
@@ -120,12 +120,12 @@ class TestModelInsert:
 
 
 class TestModelInsertMany:
-    """TODO: needs docstring."""
+    """Tests for TinydanticModel.insert_multiple."""
 
     def test_insert_many(
         self,
         user_class: type[UserBase],
         make_users: list[UserBase],
     ):
-        """TODO: needs docstring."""
+        """insert_multiple stores every provided model."""
         user_class.insert_multiple(make_users)

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""TODO: needs docstring."""
+"""Tests for retrieving TinydanticModel documents."""
 
 from __future__ import annotations
 
@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 
 
 class TestModelGet:
-    """TODO: needs docstring."""
+    """Tests for TinydanticModel.get."""
 
     def test_get_return_type(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """Return an instance of the model class."""
         user = user_class(name="Alice", age=37)
         user.insert()
         assert user.id is not None

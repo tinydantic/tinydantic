@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""TODO: needs docstring."""
+"""Shared pytest fixtures for the tinydantic test suite."""
 
 from collections.abc import Iterable
 from pathlib import Path
@@ -23,7 +23,7 @@ TEST_DATABASE_NAME: Final[str] = "test_db"
 # Instead we use tmp_path_factory which is a session-scoped fixture.
 @pytest.fixture(scope="session")
 def json_storage_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """TODO: needs docstring."""
+    """Return the session-scoped path for the JSON test database."""
     return (
         tmp_path_factory.mktemp("json_storage") / f"{TEST_DATABASE_NAME}.json"
     )
@@ -33,7 +33,7 @@ def json_storage_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
 # Instead we use tmp_path_factory which is a session-scoped fixture.
 @pytest.fixture(scope="session")
 def yaml_storage_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """TODO: needs docstring."""
+    """Return the session-scoped path for the YAML test database."""
     return (
         tmp_path_factory.mktemp("yaml_storage") / f"{TEST_DATABASE_NAME}.yaml"
     )
@@ -55,7 +55,7 @@ def db_session(
     json_storage_path: Path,
     yaml_storage_path: Path,
 ) -> Iterable[TinyDB]:
-    """TODO: needs docstring."""
+    """Yield a session-scoped TinyDB for each storage backend."""
     if request.param == "memory_storage":
         with TinyDB(
             storage=MemoryStorage,
@@ -103,7 +103,7 @@ def db_session(
 
 @pytest.fixture
 def db(db_session: TinyDB) -> Iterable[TinyDB]:
-    """TODO: needs docstring."""
+    """Yield a TinyDB with tables dropped before and after each test."""
     db_session.drop_tables()
     yield db_session
     db_session.drop_tables()
