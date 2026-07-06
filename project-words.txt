@@ -112,6 +112,7 @@ reprs
 rerunfailures
 ropeproject
 rtype
+runbook
 schemafile
 scrapy
 sdist
