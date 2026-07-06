@@ -808,6 +808,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#using-tinydb-directly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using TinyDB directly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic-validation-in-action" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pydantic validation in action
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#where-next" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1963,6 +1985,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#using-tinydb-directly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using TinyDB directly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic-validation-in-action" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pydantic validation in action
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#where-next" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2056,6 +2100,28 @@
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Alice&#39;</span><span class="p">))</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="go">None</span>
 </span></code></pre></div>
+<h2 id="using-tinydb-directly">Using TinyDB directly<a class="headerlink" href="#using-tinydb-directly" title="Permanent link">¤</a></h2>
+<p>Because <code>tinydantic</code> is built on top of TinyDB, you can always drop down to TinyDB itself — the database and its tables are ordinary TinyDB objects. For comparison, here is the same kind of insert-and-query flow against the <code>users</code> table directly, without <code>tinydantic</code>:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">users_table</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s1">&#39;users&#39;</span><span class="p">)</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">users_table</span><span class="o">.</span><span class="n">insert</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Bob&#39;</span><span class="p">,</span> <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="s1">&#39;bob@example.com&#39;</span><span class="p">})</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="go">2</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb</span><span class="w"> </span><span class="kn">import</span> <span class="n">where</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">users_table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">where</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Bob&#39;</span><span class="p">)</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="go">{&#39;name&#39;: &#39;Bob&#39;, &#39;email&#39;: &#39;bob@example.com&#39;}</span>
+</span></code></pre></div>
+<p>Notice that TinyDB does not restrict what you insert, and the raw document comes back as a plain dict — no parsing, no validation, no model.</p>
+<h2 id="pydantic-validation-in-action">Pydantic validation in action<a class="headerlink" href="#pydantic-validation-in-action" title="Permanent link">¤</a></h2>
+<p>So what happens if an invalid document somehow ends up in the database? Let's insert one directly with TinyDB — bypassing the model — that is missing the <code>email</code> field the <code>User</code> model requires:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">users_table</span><span class="o">.</span><span class="n">insert</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Carol&#39;</span><span class="p">})</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">3</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Carol&#39;</span><span class="p">)</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="gr">pydantic_core._pydantic_core.ValidationError</span>: <span class="n">1 validation error for User</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="x">email</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="x">  Field required [type=missing, input_value={&#39;name&#39;: &#39;Carol&#39;}, input_type=Document]</span>
+</span></code></pre></div>
+<p>Pydantic refuses to hand you a <code>User</code> that does not satisfy the model, so data problems surface at the boundary instead of propagating through your code.</p>
 <h2 id="where-next">Where next<a class="headerlink" href="#where-next" title="Permanent link">¤</a></h2>
 <ul>
 <li><a href="../crud/">CRUD tour</a> — the full set of create, read, update, and delete methods, with the sharp edges spelled out.</li>
