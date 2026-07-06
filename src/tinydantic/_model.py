@@ -240,7 +240,26 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
     @classmethod
     def from_tinydb_document(cls, document: Mapping) -> Self:
-        """TODO: needs docstring."""
+        """Validate a TinyDB document into a model instance.
+
+        Runs ``document`` through pydantic validation, then maps
+        TinyDB's ``doc_id`` onto the model's ``id`` field: when
+        ``document`` is a [Document][tinydb.table.Document] (as
+        returned by TinyDB reads), its
+        [doc_id][tinydb.table.Document.doc_id] becomes the instance
+        ``id``. A plain mapping carries no ``doc_id``, so ``id`` keeps
+        its default of ``None``. This is the inverse of
+        [to_tinydb_document][tinydantic.TinydanticModel.to_tinydb_document],
+        which maps ``id`` back to ``doc_id`` and never stores it in the
+        document body.
+
+        Args:
+            document: A TinyDB document (or plain mapping) to validate.
+
+        Returns:
+            A validated model instance, with ``id`` set from ``doc_id``
+            when ``document`` carries one.
+        """
         instance = cls.model_validate(document)
         if isinstance(document, Document):
             instance.id = document.doc_id
@@ -248,14 +267,36 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
     @classmethod
     def insert_multiple(cls, documents: Iterable[Self]) -> list[int]:
-        """TODO: needs docstring."""
+        """Insert several models at once.
+
+        Serializes each model with
+        [to_tinydb_document][tinydantic.TinydanticModel.to_tinydb_document]
+        and hands them to [tinydb.table.Table.insert_multiple][]. The
+        models' own ``id`` attributes are NOT updated in place; the
+        assigned document ids are returned instead.
+
+        Args:
+            documents: The models to insert.
+
+        Returns:
+            The ids of the inserted documents, in insertion order.
+        """
         return cls.get_table().insert_multiple(
             [doc.to_tinydb_document() for doc in documents],
         )
 
     @classmethod
     def all(cls) -> list[Self]:
-        """TODO: needs docstring."""
+        """Get every document in the table as validated models.
+
+        Iterates the whole table and validates each document via
+        [from_tinydb_document][tinydantic.TinydanticModel.from_tinydb_document],
+        so every returned instance has its ``id`` populated from the
+        stored ``doc_id``.
+
+        Returns:
+            All documents in the table as validated models.
+        """
         return [cls.from_tinydb_document(doc) for doc in iter(cls.get_table())]
 
     @classmethod
@@ -448,17 +489,35 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
     @classmethod
     def truncate(cls) -> None:
-        """TODO: needs docstring."""
+        """Remove every document from the table.
+
+        Delegates to [tinydb.table.Table.truncate][], leaving the table
+        empty and resetting its document id counter.
+        """
         cls.get_table().truncate()
 
     @classmethod
     def count(cls, cond: QueryLike) -> int:
-        """TODO: needs docstring."""
+        """Count the documents matching ``cond``.
+
+        Delegates to [tinydb.table.Table.count][].
+
+        Args:
+            cond: The query condition to match.
+
+        Returns:
+            The number of matching documents.
+        """
         return cls.get_table().count(cond)
 
     @classmethod
     def clear_cache(cls) -> None:
-        """TODO: needs docstring."""
+        """Clear the table's query cache.
+
+        Delegates to [tinydb.table.Table.clear_cache][]. TinyDB caches
+        query results per table; call this to discard those cached
+        results (for example after mutating storage out of band).
+        """
         cls.get_table().clear_cache()
 
     # --- instance methods ---
@@ -489,13 +548,43 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         return doc
 
     def insert(self) -> Self:
-        """TODO: needs docstring."""
+        """Insert this model as a new document.
+
+        Serializes the model with
+        [to_tinydb_document][tinydantic.TinydanticModel.to_tinydb_document]
+        and inserts it via [tinydb.table.Table.insert][]. When ``id`` is
+        unset it is assigned the id TinyDB generates; when ``id`` is
+        already set that value is used as the document id.
+
+        Returns:
+            This instance, with ``id`` set to the new document id.
+
+        Raises:
+            ValueError: If ``id`` is set to an id that already exists in
+                the table (raised by TinyDB).
+        """
         self.id = self.get_table().insert(self.to_tinydb_document())
 
         return self
 
     def replace(self) -> None:
-        """TODO: needs docstring."""
+        """Overwrite this model's stored document in place.
+
+        Requires ``id`` to be set. Unlike
+        [update][tinydantic.TinydanticModel.update], which merges
+        fields, ``replace`` swaps the entire stored document for this
+        model's current serialized state, so fields absent from the
+        model are removed. Unlike
+        [save][tinydantic.TinydanticModel.save], which re-inserts a
+        missing document, ``replace`` requires the document to already
+        exist.
+
+        Raises:
+            DocumentIDRequiredError: If ``id`` is not set (the model
+                was never inserted).
+            DocumentNotFoundError: If no document with this ``id``
+                exists in the table.
+        """
         if self.id is None:
             raise DocumentIDRequiredError
 

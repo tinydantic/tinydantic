@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""TODO: needs docstring."""
+"""Tests for the SortIntDocIDsMiddleware storage middleware."""
 
 from __future__ import annotations
 
@@ -17,14 +17,14 @@ if TYPE_CHECKING:
 
 
 class TestSortIntDocIDsMiddleware:
-    """TODO: needs docstring."""
+    """Verify documents are sorted by integer doc_id on write."""
 
     def test_sort_order_positive_doc_ids(
         self,
         json_storage_path: Path,
         sorted_json_db: TinyDB,
     ):
-        """TODO: needs docstring."""
+        """Positive doc_ids serialize in ascending numeric order."""
         # Insert documents into the "user" table
         user_table = sorted_json_db.table("user")
 
@@ -75,7 +75,7 @@ class TestSortIntDocIDsMiddleware:
         json_storage_path: Path,
         sorted_json_db: TinyDB,
     ):
-        """TODO: needs docstring."""
+        """Negative doc_ids serialize in ascending numeric order."""
         # Insert documents into the "user" table
         user_table = sorted_json_db.table("user")
 
@@ -126,7 +126,7 @@ class TestSortIntDocIDsMiddleware:
         json_storage_path: Path,
         sorted_json_db: TinyDB,
     ):
-        """TODO: needs docstring."""
+        """Mixed positive/negative doc_ids sort in ascending order."""
         # Insert documents into the "user" table
         user_table = sorted_json_db.table("user")
 

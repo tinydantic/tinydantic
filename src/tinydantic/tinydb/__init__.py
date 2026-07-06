@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""TODO: needs docstring."""
+"""TinyDB extensions used by tinydantic."""

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""TODO: needs docstring."""
+"""Custom TinyDB storage middlewares."""
 
 from __future__ import annotations
 
@@ -17,14 +17,35 @@ if TYPE_CHECKING:
 # IMPORTANT: This middleware may break some storages because it passes
 # integer doc_id's to the underlying storage classes.
 class SortIntDocIDsMiddleware(Middleware):
-    """TODO: needs docstring."""
+    """Middleware that sorts documents by integer ``doc_id`` on write.
+
+    Wraps a [Storage][tinydb.storages.Storage] and, on each write,
+    converts the stringified document ids back to integers and forces
+    the underlying storage to sort keys, so documents are serialized in
+    numeric ``doc_id`` order rather than lexicographic string order
+    (where ``"10"`` would sort before ``"2"``).
+
+    Warning:
+        This middleware may break storages that cannot serialize integer
+        keys, since it passes integer ``doc_id`` values through to the
+        underlying storage.
+    """
 
     def __init__(self, storage_cls: type[Storage]) -> None:
-        """TODO: needs docstring."""
+        """Wrap ``storage_cls`` with integer-``doc_id`` sorting.
+
+        Args:
+            storage_cls: The storage class to wrap.
+        """
         super().__init__(storage_cls)
 
     def write(self, data: dict[str, dict[str, Any]]) -> None:
-        """TODO: needs docstring."""
+        """Write ``data`` with documents sorted by integer ``doc_id``.
+
+        Args:
+            data: The table data to write, keyed by table name then
+                document id.
+        """
         # 3-step "trick" to numerically sort the documents in each table
         # by their integer doc_id:
 

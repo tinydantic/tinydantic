@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""TODO: needs docstring."""
+"""Tests for TinydanticModel table resolution."""
 
 from __future__ import annotations
 
@@ -17,10 +17,10 @@ if TYPE_CHECKING:
 
 
 class TestModelGetTable:
-    """TODO: needs docstring."""
+    """Tests for TinydanticModel.get_table."""
 
     def test_table_return_type(self, user_class: type[UserBase]):
-        """TODO: needs docstring."""
+        """get_table returns a TinyDB Table instance."""
         table = user_class.get_table()
         assert isinstance(table, Table)
 
@@ -29,7 +29,7 @@ class TestModelGetTable:
         request: pytest.FixtureRequest,
         user_class: type[UserBase],
     ):
-        """TODO: needs docstring."""
+        """The resolved table name matches the configured table_name."""
         table = user_class.get_table()
         expected_table_name = request.node.callspec.params.get("user_class")
         if not expected_table_name:
