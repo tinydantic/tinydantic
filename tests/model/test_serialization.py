@@ -87,8 +87,8 @@ class TestRoundTrip:
             address=Address(city="Oakland", zip_code="94601"),
         )
         original.insert()
-        # TODO(M3-task3): rename to doc_id=
-        loaded = rich_class.get(document_id=original.id)
+        assert original.id is not None
+        loaded = rich_class.get(doc_id=original.id)
         assert isinstance(loaded, rich_class)
         assert loaded.created_at == original.created_at
         assert loaded.token == original.token
@@ -121,8 +121,7 @@ class TestSave:
         saved = user.save()
         assert saved is user
         assert user.id is not None
-        # TODO(M3-task3): rename to doc_id=
-        fetched = user_class.get(document_id=user.id)
+        fetched = user_class.get(doc_id=user.id)
         assert isinstance(fetched, user_class)
         assert fetched.name == "Alice"
 
@@ -131,8 +130,8 @@ class TestSave:
         user = user_class(name="Alice", age=37).insert()
         user.age = 38
         user.save()
-        # TODO(M3-task3): rename to doc_id=
-        fetched = user_class.get(document_id=user.id)
+        assert user.id is not None
+        fetched = user_class.get(doc_id=user.id)
         assert isinstance(fetched, user_class)
         assert fetched.age == 38
         assert fetched.id == user.id
@@ -145,8 +144,8 @@ class TestDelete:
         """Deleted documents are gone."""
         user = user_class(name="Alice", age=37).insert()
         user.delete()
-        # TODO(M3-task3): rename to doc_id=
-        assert user_class.get(document_id=user.id) is None
+        assert user.id is not None
+        assert user_class.get(doc_id=user.id) is None
 
     def test_delete_without_id_raises(self, user_class: type[UserBase]):
         """Unsaved instances cannot be deleted."""

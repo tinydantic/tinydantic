@@ -90,7 +90,8 @@ class TestModelInsert:
         """TODO: needs docstring."""
         user = user_class(name="Alice")
         user.insert()
-        result = user_class.get(document_id=user.id)
+        assert user.id is not None
+        result = user_class.get(doc_id=user.id)
         assert isinstance(result, user_class)
         assert result.name == "Alice"
         assert result.age is None
@@ -99,7 +100,8 @@ class TestModelInsert:
         """TODO: needs docstring."""
         user = user_class(name="Alice", age=37)
         user.insert()
-        result = user_class.get(document_id=user.id)
+        assert user.id is not None
+        result = user_class.get(doc_id=user.id)
         assert isinstance(result, user_class)
         assert result.name == "Alice"
         assert result.age == 37
@@ -108,7 +110,8 @@ class TestModelInsert:
         """TODO: needs docstring."""
         user = user_class(name="Alice", age=37)
         user.insert()
-        user_class.get(document_id=user.id)
+        assert user.id is not None
+        user_class.get(doc_id=user.id)
         with pytest.raises(
             ValueError,
             match=r"Document with ID .* already exists",

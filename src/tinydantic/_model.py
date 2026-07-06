@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_snake
@@ -263,20 +263,54 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         """TODO: needs docstring."""
         raise NotImplementedError
 
-    # TODO @cdwilson: should this be split into different methods based
-    # on the type of argument?
+    @overload
+    @classmethod
+    def get(cls, cond: QueryLike) -> Self | None: ...
+
+    @overload
+    @classmethod
+    def get(cls, *, doc_id: int) -> Self | None: ...
+
+    @overload
+    @classmethod
+    def get(cls, *, doc_ids: list[int]) -> list[Self]: ...
+
     @classmethod
     def get(
         cls,
-        condition: QueryLike | None = None,
-        document_id: int | None = None,
-        document_ids: list[int] | None = None,
+        cond: QueryLike | None = None,
+        *,
+        doc_id: int | None = None,
+        doc_ids: list[int] | None = None,
     ) -> Self | list[Self] | None:
-        """TODO: needs docstring."""
+        """Get one document (or several by id) as validated models.
+
+        Mirrors [tinydb.table.Table.get][], with one tightening: at
+        most one of ``cond``, ``doc_id``, ``doc_ids`` may be provided
+        (TinyDB silently applies a precedence order; tinydantic raises
+        ``ValueError``). The typed variants
+        [get_by_cond][tinydantic.TinydanticModel.get_by_cond],
+        [get_by_id][tinydantic.TinydanticModel.get_by_id], and
+        [get_by_ids][tinydantic.TinydanticModel.get_by_ids] offer
+        precise return types per call shape.
+
+        When ``doc_ids`` is given, TinyDB returns only the documents
+        that exist (missing ids are silently skipped), so the result is
+        a ``list`` that may be shorter than the ids requested and is
+        ordered by storage iteration, not by the ids passed in.
+
+        Raises:
+            ValueError: If more than one selector is provided.
+        """
+        provided = [s for s in (cond, doc_id, doc_ids) if s is not None]
+        if len(provided) > 1:
+            msg = "Provide at most one of cond, doc_id, or doc_ids"
+            raise ValueError(msg)
+
         result = cls.get_table().get(
-            cond=condition,
-            doc_id=document_id,
-            doc_ids=document_ids,
+            cond=cond,
+            doc_id=doc_id,
+            doc_ids=doc_ids,
         )
 
         if result is None:
@@ -289,6 +323,21 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             return [cls.from_tinydb_document(doc) for doc in result]
 
         raise TypeError
+
+    @classmethod
+    def get_by_cond(cls, cond: QueryLike) -> Self | None:
+        """Get the first document matching ``cond``, or ``None``."""
+        return cls.get(cond)
+
+    @classmethod
+    def get_by_id(cls, doc_id: int) -> Self | None:
+        """Get the document with the given id, or ``None``."""
+        return cls.get(doc_id=doc_id)
+
+    @classmethod
+    def get_by_ids(cls, doc_ids: list[int]) -> list[Self]:
+        """Get documents for the given ids (see get() for semantics)."""
+        return cls.get(doc_ids=doc_ids)
 
     @classmethod
     def contains(
