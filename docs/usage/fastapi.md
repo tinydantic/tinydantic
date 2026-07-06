@@ -4,7 +4,7 @@ A `tinydantic` model _is_ a Pydantic model, so it drops straight into [FastAPI](
 
 ## A small CRUD API
 
-The setup below is everything the API needs: an in-memory database (see [Storage](storage.md)), the `User` model that doubles as the response model, a plain Pydantic `UserCreate` schema for request bodies, and three endpoints. Because a `tinydantic` model keeps its `id` field in `model_dump()` (spec §3.6), responses include the assigned `id` for free — no separate output schema required.
+The setup below is everything the API needs: an in-memory database (see [Storage](storage.md)), the `User` model that doubles as the response model, a plain Pydantic `UserCreate` schema for request bodies, and three endpoints. Because a `tinydantic` model keeps its `id` field in `model_dump()`, responses include the assigned `id` for free — no separate output schema required.
 
 ```pycon
 >>> from fastapi import FastAPI, HTTPException, status

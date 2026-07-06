@@ -1,11 +1,6 @@
 # CLAUDE.md
 
-tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are pydantic models bound to a TinyDB table via class kwargs (`database=`, `table_name=`) — see `src/tinydantic/_model.py`.
-
-## Authoritative documents
-
-- Design spec (v0.2.0, decision log included): `docs/superpowers/specs/2026-07-05-tinydantic-v0.2-design.md`
-- Implementation plans + execution ledger: `docs/superpowers/plans/`, `.superpowers/sdd/progress.md`
+tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are pydantic models bound to a TinyDB table via class kwargs (`database=`, `table_name=`) — see `src/tinydantic/_model.py`. Design rationale lives in module/method docstrings (start with `src/tinydantic/config.py`) and the usage docs under `docs/usage/`.
 
 ## Conventions
 

@@ -125,7 +125,7 @@ TinyDB's [storage documentation](https://tinydb.readthedocs.io/en/latest/usage.h
 
 > [!NOTE]
 >
-> `YAMLStorage` and the other helpers under `tinydantic.tinydb` are kept free of any dependency on `tinydantic`'s core, so they can later be extracted into a standalone TinyDB-extensions package (spec §6). Import them from `tinydantic.tinydb.storages` today; if that extraction happens, the import path is the only thing that would change.
+> `YAMLStorage` and the other helpers under `tinydantic.tinydb` are kept free of any dependency on `tinydantic`'s core, so they can later be extracted into a standalone TinyDB-extensions package. Import them from `tinydantic.tinydb.storages` today; if that extraction happens, the import path is the only thing that would change.
 
 ## Where next
 
