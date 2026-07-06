@@ -143,6 +143,58 @@ tag_format = "v$version"
 version_provider = "pep621"
 version_scheme = "semver2"
 
+[tool.poe.tasks]
+clean = "pyclean . --debris --verbose"
+fmt = [
+  "_ruff-fix",
+  "_ruff-format",
+]
+lint = [
+  "_ruff-check",
+  "_ruff-format-check",
+]
+pre-commit = "pre-commit run --all-files --verbose"
+sbom = "reuse spdx -o reuse.spdx"
+sbom-check = "reuse lint"
+spell-check = "npx cspell --gitignore --dot ."
+test = "pytest"
+test-cov = "pytest --cov --cov-branch"
+types = "mypy --install-types --non-interactive src/tinydantic tests"
+update-project-words = { shell = "npx cspell --gitignore --dot --words-only --unique . | sort --ignore-case >> project-words.txt" }
+
+_ruff-check = "ruff check ."
+_ruff-fix = "ruff check --fix ."
+_ruff-format = "ruff format ."
+_ruff-format-check = "ruff format --check ."
+
+check = [
+  "lint",
+  "sbom-check",
+  "spell-check",
+  "types",
+]
+
+[tool.poe.tasks.docs-build]
+cmd = "mkdocs build --config-file mkdocs.yaml --clean --strict"
+env = { PYTHONUNBUFFERED = "1", SOURCE_DATE_EPOCH = "1580601600" }
+
+[tool.poe.tasks.docs-build-check]
+sequence = [
+  { ref = "docs-build --no-directory-urls" },
+  { ref = "docs-check" },
+]
+
+[tool.poe.tasks.docs-check]
+cmd = "linkchecker --config .linkcheckerrc site"
+
+[tool.poe.tasks.docs-ci-publish]
+cmd = "mike deploy --config-file mkdocs.yaml --update-aliases --push"
+env = { PYTHONUNBUFFERED = "1", SOURCE_DATE_EPOCH = "1580601600" }
+
+[tool.poe.tasks.docs-serve]
+cmd = "mkdocs serve --config-file mkdocs.yaml --dev-addr localhost:8000"
+env = { PYTHONUNBUFFERED = "1" }
+
 [tool.interrogate]
 fail-under = 100
 ignore-private = true
