@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Chris Wilson <christopher.david.wilson@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+[build]
+# This file is the single source of truth for the Netlify build — do
+# not configure a build command in the Netlify UI (netlify.toml takes
+# precedence). The command defers to the poe docs tasks in
+# pyproject.toml so Netlify can never drift from local/CI docs builds.
+#
+# `uv run` provisions a managed Python satisfying requires-python
+# (>=3.11) automatically, so Netlify's system Python version is
+# irrelevant.
+command = "pip install uv && uv run --group docs poe docs-build"
+publish = "site"
