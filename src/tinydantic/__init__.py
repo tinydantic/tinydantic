@@ -13,12 +13,26 @@ from importlib import metadata
 
 from tinydantic._model import TinydanticModel, q
 from tinydantic.config import TinydanticConfig
+from tinydantic.errors import (
+    AmbiguousConfigError,
+    DatabaseNotBoundError,
+    DocumentIDRequiredError,
+    DocumentNotFoundError,
+    TinydanticError,
+    TinydanticUserError,
+)
 
 __version__: str = metadata.version("tinydantic")
 
 __all__ = [
+    "AmbiguousConfigError",
+    "DatabaseNotBoundError",
+    "DocumentIDRequiredError",
+    "DocumentNotFoundError",
     "TinydanticConfig",
+    "TinydanticError",
     "TinydanticModel",
+    "TinydanticUserError",
     "__version__",
     "q",
 ]
