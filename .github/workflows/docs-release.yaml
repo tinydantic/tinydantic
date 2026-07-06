@@ -41,7 +41,7 @@ jobs:
           git config --local user.email 'github-actions[bot]@users.noreply.github.com'
         # yamllint enable rule:line-length
       - name: Build documentation
-        run: uv run --group docs poe docs-build-check
+        run: uv run --group docs poe docs-build
       - name: Get doc version
         run: |
           TAG_NAME=${{ github.ref_name }}

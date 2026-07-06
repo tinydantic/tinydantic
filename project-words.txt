@@ -58,6 +58,7 @@ kwarg
 kwargs
 kwds
 linenums
+linkcheck
 linkchecker
 linkcheckerrc
 makefiles
