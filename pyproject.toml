@@ -5,10 +5,9 @@
 #:schema https://json.schemastore.org/pyproject.json
 
 [build-system]
-build-backend = "hatchling.build"
+build-backend = "uv_build"
 requires = [
-  "hatch-vcs",
-  "hatchling",
+  "uv_build>=0.11,<0.12",
 ]
 
 [project]
@@ -17,75 +16,68 @@ authors = [
 ]
 # https://pypi.org/classifiers/
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
+  "Development Status :: 3 - Alpha",
   "Framework :: Pydantic :: 2",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: Apache Software License",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy",
   "Programming Language :: Python",
   "Topic :: Database",
   "Topic :: Software Development :: Libraries",
   "Typing :: Typed",
 ]
 dependencies = [
-  "PyYAML",
-  "eval_type_backport;python_version<='3.9'",
-  "pydantic[email]>=2.0",
-  "tinydb>=4.0",
+  "PyYAML>=6.0",
+  "pydantic[email]>=2.11",
+  "tinydb>=4.8",
 ]
-description = ""
-dynamic = [
-  "version",
-]
+description = "A Pydantic-powered ODM (object-document mapper) for TinyDB"
 keywords = [
+  "odm",
+  "pydantic",
+  "tinydb",
 ]
-license = { text = "Apache-2.0 OR MIT" }
-# TODO @cdwilson: uncomment this when license-files is supported in the JSON
-# schema https://json.schemastore.org/pyproject.json
-# license-files = { globs = [
-#   "LICENSES/*",
-# ] }
+license = "Apache-2.0 OR MIT"
+license-files = [
+  "LICENSES/*",
+]
 name = "tinydantic"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
+version = "0.1.19"
 
-[project.optional-dependencies]
+[project.urls]
+Changelog = "https://github.com/tinydantic/tinydantic/blob/main/CHANGELOG.md"
+Documentation = "https://tinydantic.dev"
+Issues = "https://github.com/tinydantic/tinydantic/issues"
+Source = "https://github.com/tinydantic/tinydantic"
+
+[dependency-groups]
 dev = [
   "check-jsonschema",
   "commitizen",
-  "coverage",
   "editorconfig-checker",
   "interrogate",
   "jsonschema[format]",
+  "poethepoet",
   "pre-commit",
   "pre-commit-ci-config",
   "pyclean",
-  "reuse>=4.0.0",
-  "ruff>=0.6",
-  "semver",
-  "tinydantic[doc,pre-commit,test,types]",
+  "reuse>=5.0.0",
+  { include-group = "docs" },
+  { include-group = "lint" },
+  { include-group = "test" },
+  { include-group = "types" },
 ]
-# "doc" is the reserved feature name to mark dependencies needed for generating
-# documentation:
-# https://packaging.python.org/en/latest/specifications/core-metadata/#provides-extra-multiple-use
-#
-# TODO @cdwilson: should this be changed to "docs"? "docs" appears to be more
-# popular than "doc":
-# https://github.com/scientific-python/specs/pull/324#issuecomment-2150738534
-doc = [
-  # black is used by separate_signature option in mkdocstrings-python to format
-  # function signatures
+docs = [
+  # black is used by separate_signature option in mkdocstrings-python
   "black",
-  "griffe>=1.1.1",
+  "griffe",
   "linkchecker",
   "markdown-callouts",
   "markdown-gfm-admonition",
@@ -98,101 +90,26 @@ doc = [
   "mkdocs-material",
   "mkdocstrings",
   "mkdocstrings-python",
+  "poethepoet",
 ]
-pre-commit = [
-  "pre-commit",
+lint = [
+  "poethepoet",
+  "ruff>=0.14",
 ]
-# "test" is the reserved feature name to mark dependencies needed for running
-# automated tests:
-# https://packaging.python.org/en/latest/specifications/core-metadata/#provides-extra-multiple-use
 test = [
   "packaging",
-  "pytest",
+  "poethepoet",
+  "pytest-cov",
+  "pytest-randomly",
+  "pytest-rerunfailures",
+  "pytest-xdist",
+  "pytest>=8",
 ]
 types = [
-  "mypy>=1.0.0",
-  "packaging",         # TODO @cdwilson: this is duplicated in test
+  "mypy>=1.14",
+  "packaging",
   "types-PyYAML",
-  "typing-extensions",
 ]
-
-[project.urls]
-Changelog = "https://github.com/tinydantic/tinydantic/blob/main/CHANGELOG.md"
-Documentation = "https://tinydantic.dev"
-Issues = "https://github.com/tinydantic/tinydantic/issues"
-Source = "https://github.com/tinydantic/tinydantic"
-
-[tool.hatch.version]
-raw-options = { local_scheme = "no-local-version" }
-source = "vcs"
-
-[tool.hatch.envs.default]
-features = [
-  "dev",
-]
-
-[tool.hatch.envs.default.scripts]
-check = [
-  "hatch fmt",
-  "sbom-check",
-  "spell-check",
-]
-clean = "pyclean . --debris --verbose"
-release = 'pysemver check {args} && git tag -a v{args} -m "Release version {args}" && git push --tags'
-sbom = "reuse spdx -o reuse.spdx"
-sbom-check = "reuse lint"
-spell-check = "npx cspell --gitignore --dot ."
-update-project-words = 'npx cspell --gitignore --dot --words-only --unique . | sort --ignore-case >> project-words.txt'
-
-[tool.hatch.envs.doc]
-features = [
-  "doc",
-]
-python = "3.12"
-
-[tool.hatch.envs.doc.env-vars]
-MKDOCS_CONFIG = "mkdocs.yaml"
-PYTHONUNBUFFERED = "1"
-SOURCE_DATE_EPOCH = "1580601600"
-
-[tool.hatch.envs.doc.scripts]
-build = "mkdocs build --config-file {env:MKDOCS_CONFIG} --clean --strict {args}"
-build-check = [
-  "build --no-directory-urls",
-  "check",
-]
-check = "linkchecker --config .linkcheckerrc site"
-ci-publish = "mike deploy --config-file {env:MKDOCS_CONFIG} --update-aliases --push {args}"
-serve = "mkdocs serve --config-file {env:MKDOCS_CONFIG} --dev-addr localhost:8000 {args}"
-
-[tool.hatch.envs.hatch-test]
-default-args = [
-  # hatch test ignores [tool.pytest.ini_options] table
-  # https://github.com/pypa/hatch/issues/1551
-  # https://github.com/pypa/hatch/issues/1452#issuecomment-2153447373
-  "--config-file=pyproject.toml",
-]
-# TODO @cdwilson: remove this when https://github.com/pypa/hatch/issues/1553
-# is implemented
-features = [
-  "test",
-]
-
-[tool.hatch.envs.types]
-features = [
-  "types",
-]
-
-[tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/tinydantic tests}"
-
-[tool.hatch.envs.pre-commit]
-features = [
-  "pre-commit",
-]
-
-[tool.hatch.envs.pre-commit.scripts]
-run = "pre-commit run --all-files --verbose"
 
 [tool.coverage.run]
 branch = true
@@ -223,7 +140,7 @@ exclude_lines = [
 major_version_zero = true
 name = "cz_conventional_commits"
 tag_format = "v$version"
-version_provider = "scm"
+version_provider = "pep621"
 version_scheme = "semver2"
 
 [tool.interrogate]
