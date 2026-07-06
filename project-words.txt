@@ -14,8 +14,10 @@ celerybeat
 charliermarsh
 classmethod
 classmethods
+Colvin
 Colvin's
 commitizen
+conftest
 connor
 crossrefs
 cython
@@ -38,14 +40,18 @@ gitter
 htmlcov
 httpx
 hynek
+importlib
 inlinehilite
 ipynb
 ipython
 isinstance
 isort
+issubclass
 jsonschema
 kennethlove
+klass
 kristensen
+kwarg
 kwargs
 kwds
 linenums
@@ -63,6 +69,7 @@ mkdocstrings
 mkdostrings
 mypy
 njpwerner
+noqa
 nosetests
 numprocesses
 optionflags
@@ -101,6 +108,7 @@ rtype
 schemafile
 scrapy
 sdist
+setattr
 sigstore
 snekvik
 spyder
