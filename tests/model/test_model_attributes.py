@@ -11,8 +11,8 @@ import pytest
 from tinydb import TinyDB
 
 from tests.model.models import UserBase
-from tinydantic.config import get_config_value
-from tinydantic.errors import DatabaseNotBoundError
+from tinydantic import DatabaseNotBoundError
+from tinydantic._config import get_config_value
 
 
 class TestModelDatabaseConfig:

@@ -39,7 +39,7 @@ class AmbiguousConfigError(TinydanticUserError):
     part of one inheritance chain supply different values for the same
     tinydantic config key and the new class does not set that key
     itself. tinydantic refuses to guess which base should win — see
-    the ``tinydantic.config`` module docstring for the design
+    the ``tinydantic._config`` module docstring for the design
     rationale.
     """
 

@@ -22,7 +22,7 @@ key — standard Python attribute semantics. For the one scenario where
 pydantic's ordering and Python's ordering could disagree (two
 *unrelated* bases providing conflicting values), tinydantic refuses to
 guess and raises
-[AmbiguousConfigError][tinydantic.errors.AmbiguousConfigError]
+[AmbiguousConfigError][tinydantic.AmbiguousConfigError]
 at class-definition time instead.
 """
 
@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, TypedDict
 
-from tinydantic.errors import AmbiguousConfigError
+from tinydantic._errors import AmbiguousConfigError
 
 if TYPE_CHECKING:
     from tinydb import TinyDB
@@ -80,7 +80,7 @@ def get_config_value(
 
     Args:
         model_class: The model class to resolve the key for.
-        key: The [TinydanticConfig][tinydantic.config.TinydanticConfig]
+        key: The [TinydanticConfig][tinydantic.TinydanticConfig]
             key to look up.
         default: Value returned when no class in the MRO provides the
             key.

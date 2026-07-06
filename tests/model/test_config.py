@@ -15,8 +15,8 @@ from typing import ClassVar
 
 import pytest
 
-from tinydantic.config import check_config_ambiguity, get_config_value
-from tinydantic.errors import AmbiguousConfigError
+from tinydantic import AmbiguousConfigError
+from tinydantic._config import check_config_ambiguity, get_config_value
 
 
 class Root:

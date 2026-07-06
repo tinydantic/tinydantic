@@ -13,8 +13,11 @@ from tinydb.storages import MemoryStorage
 
 import tinydantic as td
 
-from tinydantic import TinydanticModel
-from tinydantic.errors import AmbiguousConfigError, DatabaseNotBoundError
+from tinydantic import (
+    AmbiguousConfigError,
+    DatabaseNotBoundError,
+    TinydanticModel,
+)
 
 
 @pytest.fixture
