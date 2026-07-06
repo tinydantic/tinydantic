@@ -40,3 +40,23 @@ class TestModelTableNameConfig:
         """The stored table_name matches what the fixture passed."""
         expected = request.node.callspec.params.get("user_class")
         assert get_config_value(user_class, "table_name") == expected
+
+
+class TestModelIDAttribute:
+    """TODO: needs docstring."""
+
+    def test_id_is_not_set(self, user_class: type[UserBase]):
+        """TODO: needs docstring."""
+        user = user_class(name="Alice", age=37)
+        assert user.id is None
+
+    def test_id_set_to_none(self, user_class: type[UserBase]):
+        """TODO: needs docstring."""
+        user = user_class(id=None, name="Alice", age=37)
+        assert user.id is None
+
+    def test_id_set_to_int(self, user_class: type[UserBase]):
+        """TODO: needs docstring."""
+        user = user_class(id=5, name="Alice", age=37)
+        user.insert()
+        assert user.id == 5
