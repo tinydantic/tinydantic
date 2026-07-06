@@ -369,6 +369,12 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     ) -> list[int]:
         """Update matching documents with new fields or a transform.
 
+        Unlike ``insert``/``save``/``upsert``, the ``fields`` mapping
+        is passed to storage as-is — values are NOT serialized through
+        pydantic. Pass JSON-safe primitives (e.g.
+        ``datetime.isoformat()`` strings), or use a validated
+        instance's ``save()``/``replace()`` for full-model updates.
+
         Returns:
             The ids of all updated documents.
         """
@@ -392,6 +398,12 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         ],
     ) -> list[int]:
         """Apply several (fields_or_transform, cond) updates at once.
+
+        Unlike ``insert``/``save``/``upsert``, each update's fields
+        mapping is passed to storage as-is — values are NOT serialized
+        through pydantic. Pass JSON-safe primitives (e.g.
+        ``datetime.isoformat()`` strings), or use a validated
+        instance's ``save()``/``replace()`` for full-model updates.
 
         Returns:
             The ids of all updated documents.
@@ -531,6 +543,11 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
     def save(self) -> Self:
         """Insert this model if it is new, otherwise update it by id.
+
+        If ``id`` is set but the document no longer exists in the
+        table, it is re-inserted under the same id (TinyDB upsert
+        semantics) — unlike ``replace()``/``delete()``, which raise
+        [DocumentNotFoundError][tinydantic.errors.DocumentNotFoundError].
 
         Returns:
             This instance (with ``id`` set if it was newly inserted).
