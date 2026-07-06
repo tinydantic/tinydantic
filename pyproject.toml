@@ -198,9 +198,6 @@ env = { PYTHONUNBUFFERED = "1" }
 [tool.interrogate]
 fail-under = 100
 ignore-private = true
-ignore-regex = [
-  "DocumentMeta",
-]
 ignore-semiprivate = true
 omit-covered-files = true
 style = "google"
