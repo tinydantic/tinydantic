@@ -4,7 +4,7 @@
 
 """TODO: needs docstring."""
 
-from typing import Callable, Mapping, MutableMapping
+from collections.abc import Callable, Mapping, MutableMapping
 
 
 def replace(new: Mapping) -> Callable[[MutableMapping], None]:

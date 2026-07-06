@@ -36,9 +36,9 @@ class SortIntDocIDsMiddleware(Middleware):
         #    string before being passed to the middleware/storage class
         #    (see https://github.com/msiemens/tinydb/discussions/466).
         int_keys_data: dict[str, dict[int | str, Any]] = {}
-        for table in data:
+        for table, table_data in data.items():
             int_keys_data[table] = {
-                int(doc_id): data[table][doc_id] for doc_id in data[table]
+                int(doc_id): value for doc_id, value in table_data.items()
             }
 
         # 2. Force the storage class to sort by key on write.

@@ -16,8 +16,8 @@ from tinydb.storages import JSONStorage
 from tinydantic.tinydb.middlewares import SortIntDocIDsMiddleware
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from pathlib import Path
-    from typing import Iterable
 
 
 @pytest.fixture

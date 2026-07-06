@@ -9,10 +9,7 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
-    Iterable,
-    Mapping,
     cast,
 )
 
@@ -27,12 +24,8 @@ from tinydantic.errors import DocumentIDRequiredError, DocumentNotFoundError
 from tinydantic.tinydb.operations import replace
 
 if TYPE_CHECKING:
-    import sys
-
-    if sys.version_info > (3, 10):
-        from typing import Self
-    else:
-        from typing_extensions import Self
+    from collections.abc import Callable, Iterable, Mapping
+    from typing import Self
 
 
 class DocumentMeta(ModelMetaclass):
@@ -48,7 +41,7 @@ class DocumentMeta(ModelMetaclass):
         if cls.__pydantic_complete__ and attr in cls.model_fields:
             return tinydb.queries.where(attr)
 
-        return super().__getattr__(attr)
+        return super().__getattr__(attr)  # type: ignore[misc]
 
 
 # TODO @cdwilson: the document ID type is currently hard-coded to int in
@@ -261,7 +254,7 @@ class Document(BaseModel, metaclass=DocumentMeta):
             # TODO @cdwilson: remove this cast once the annotation is
             # fixed in TinyDB.
             cast(
-                Callable[[Mapping], None],
+                "Callable[[Mapping], None]",
                 replace(self.to_tinydb_document(force_dict=True)),
             ),
             doc_ids=[self.id],
