@@ -145,7 +145,7 @@ Session(id=1, user='alice', token=UUID('00000000-0000-0000-0000-000000000001'), 
 
 ## What's actually stored
 
-`tinydantic` serializes documents with `model_dump(mode="json", exclude={"id"})` before handing them to TinyDB (spec §3.7). "JSON mode" means every rich type is reduced to a JSON-safe primitive — a `datetime` becomes an ISO 8601 string, a `UUID` becomes its string form, an `Enum` becomes its value, and nested models become plain dicts. Reach past `tinydantic` to the raw TinyDB table with [get_table()][tinydantic.TinydanticModel.get_table] to see it:
+`tinydantic` serializes documents with `model_dump(mode="json", exclude={"id"})` before handing them to TinyDB. "JSON mode" means every rich type is reduced to a JSON-safe primitive — a `datetime` becomes an ISO 8601 string, a `UUID` becomes its string form, an `Enum` becomes its value, and nested models become plain dicts. Reach past `tinydantic` to the raw TinyDB table with [get_table()][tinydantic.TinydanticModel.get_table] to see it:
 
 ```pycon
 >>> Task.get_table().get(doc_id=1)
