@@ -45,9 +45,9 @@ def q(field: Any) -> Query:
     """Tell the type checker a field expression is a TinyDB Query.
 
     At runtime, class-level field access like ``User.name`` already
-    returns a [Query][tinydb.queries.Query] (see
-    [TinydanticModelMetaclass][tinydantic._model.TinydanticModelMetaclass]),
-    but static type checkers see the field annotation instead, so
+    returns a [Query][tinydb.queries.Query] (courtesy of the model
+    metaclass), but static type checkers see the field annotation
+    instead, so
     ``User.name == "Alice"`` types as ``bool``. Wrapping the field in
     ``q()`` gives the type checker the runtime truth:
 

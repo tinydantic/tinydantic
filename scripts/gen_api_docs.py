@@ -76,7 +76,7 @@ skip_main_modules = False
 skip_magic_modules = False
 
 # Skip generating pages for private modules (e.g. _module.py)
-skip_private_modules = False
+skip_private_modules = True
 
 # --- End User Configurable Options ---
 
