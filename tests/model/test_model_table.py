@@ -13,10 +13,10 @@ from tinydb.table import Table
 if TYPE_CHECKING:
     import pytest
 
-    from tests.document.models import UserBase
+    from tests.model.models import UserBase
 
 
-class TestDocumentGetTable:
+class TestModelGetTable:
     """TODO: needs docstring."""
 
     def test_table_return_type(self, user_class: type[UserBase]):

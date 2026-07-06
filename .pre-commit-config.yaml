@@ -33,7 +33,7 @@ repos:
       - id: name-tests-test
         args:
           - --pytest-test-first
-        exclude: tests/document/models.py
+        exclude: tests/model/models.py
       - id: trailing-whitespace
         args:
           - --markdown-linebreak-ext=md
