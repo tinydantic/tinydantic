@@ -77,7 +77,9 @@ dev = [
 docs = [
   # black is used by separate_signature option in mkdocstrings-python
   "black",
+  "fastapi",
   "griffe",
+  "httpx",
   "linkchecker",
   "markdown-callouts",
   "markdown-gfm-admonition",
@@ -91,12 +93,19 @@ docs = [
   "mkdocstrings",
   "mkdocstrings-python",
   "poethepoet",
+  # properdocs is a drop-in fork of the abandoned mkdocs core; it provides the
+  # `properdocs` CLI and aliases `mkdocs`/`mkdocs.*` imports to `properdocs`
+  # at runtime. mkdocs-material still pulls in mkdocs 1.6.x as the theme's
+  # declared dependency, but the `properdocs build` command drives the build.
+  "properdocs",
 ]
 lint = [
   "poethepoet",
   "ruff>=0.14",
 ]
 test = [
+  "fastapi",
+  "httpx",
   "packaging",
   "poethepoet",
   "pytest-cov",
@@ -175,7 +184,7 @@ check = [
 ]
 
 [tool.poe.tasks.docs-build]
-cmd = "mkdocs build --config-file mkdocs.yaml --clean --strict"
+cmd = "properdocs build --config-file mkdocs.yaml --clean --strict"
 env = { PYTHONUNBUFFERED = "1", SOURCE_DATE_EPOCH = "1580601600" }
 
 [tool.poe.tasks.docs-build-check]
@@ -192,7 +201,7 @@ cmd = "mike deploy --config-file mkdocs.yaml --update-aliases --push"
 env = { PYTHONUNBUFFERED = "1", SOURCE_DATE_EPOCH = "1580601600" }
 
 [tool.poe.tasks.docs-serve]
-cmd = "mkdocs serve --config-file mkdocs.yaml --dev-addr localhost:8000"
+cmd = "properdocs serve --config-file mkdocs.yaml --dev-addr localhost:8000"
 env = { PYTHONUNBUFFERED = "1" }
 
 [tool.interrogate]
