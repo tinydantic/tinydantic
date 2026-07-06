@@ -1,7 +1,8 @@
 # Usage
 
-This section is a practical, task-oriented tour of `tinydantic`. It picks up where [Get Started](../get_started/index.md) leaves off and shows how to define models, store and query documents, and wire `tinydantic` into real applications. Every code example on these pages is executed as a doctest in CI, so what you read is exactly what the library does.
+This section is a practical, task-oriented tour of `tinydantic` — from installation to defining models, storing and querying documents, and wiring `tinydantic` into real applications. Every code example on these pages is executed as a doctest in CI, so what you read is exactly what the library does.
 
+- [Installation](installation.md) — installing `tinydantic` from PyPI.
 - [Quickstart](quickstart.md) — the shortest path from an empty database to inserting, reading, updating, and deleting a document.
 - [CRUD tour](crud.md) — a reference-style walkthrough of every create, read, update, and delete method, including the sharp edges worth knowing about.
 - [Queries](queries.md) — building TinyDB queries from model fields: comparisons, logical composition, nested fields, and static type checking with `q()`.
