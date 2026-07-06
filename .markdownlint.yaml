@@ -36,3 +36,8 @@ MD052: false
 #
 # Material for MkDocs "content tabs" used in the docs causes this rule to fail.
 MD046: false
+
+# Keep a Changelog repeats section headings (Added/Changed/Fixed) across
+# version entries; only flag duplicates among sibling headings.
+MD024:
+  siblings_only: true

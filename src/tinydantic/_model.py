@@ -28,7 +28,6 @@ from tinydantic.tinydb.operations import replace
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
-    from typing import Self
 
     # pydantic's ModelMetaclass lives in a private module. We
     # type-check against the real class but resolve it at runtime as
@@ -37,6 +36,11 @@ if TYPE_CHECKING:
     from pydantic._internal._model_construction import ModelMetaclass
     from tinydb import TinyDB
     from tinydb.queries import QueryLike
+
+    # Self is typing_extensions-only on Python 3.10 (typing.Self is
+    # 3.11+). This import is TYPE_CHECKING-only, so typing_extensions
+    # is not a runtime dependency.
+    from typing_extensions import Self
 else:
     ModelMetaclass = type(BaseModel)
 

@@ -78,13 +78,13 @@ This project is written in [Python](https://www.python.org/) and requires a Pyth
     uv --version
     ```
 
-    Next, use uv to install Python 3.11 or later. We'll install the latest version of Python provided by uv (currently `3.13` at the time of writing).
+    Next, use uv to install Python 3.10 or later. We'll install the latest version of Python provided by uv (currently `3.13` at the time of writing).
 
     ```sh
     uv python install 3.13
     ```
 
-    NOTE: As long as you have Python 3.11 or later installed, you should be able to follow the remainder of this guide.
+    NOTE: As long as you have Python 3.10 or later installed, you should be able to follow the remainder of this guide.
 
 === "Install without uv"
 
@@ -174,7 +174,7 @@ uv run poe test-cov
 
 > [!NOTE]
 >
-> The `test` and `test-cov` tasks run against the single Python version installed in your `.venv`. The full test matrix — every supported Python version (3.11–3.14) across Linux, macOS, and Windows — runs automatically in CI when you open a pull request, which can catch issues that only show up with a specific version of Python or a specific operating system.
+> The `test` and `test-cov` tasks run against the single Python version installed in your `.venv`. The full test matrix — every supported Python version (3.10–3.14) across Linux, macOS, and Windows — runs automatically in CI when you open a pull request, which can catch issues that only show up with a specific version of Python or a specific operating system.
 
 After running `uv run poe test-cov`, you can also generate an interactive HTML coverage report.
 
