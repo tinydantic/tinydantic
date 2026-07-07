@@ -1,0 +1,56 @@
+{#-
+  SPDX-FileCopyrightText: Chris Wilson <christopher.david.wilson@gmail.com>
+
+  SPDX-License-Identifier: Apache-2.0 OR MIT
+
+  Override of mkdocstrings-python's `material/_base/class.html.jinja`
+  `source` block (mkdocstrings-python 2.0.5).
+
+  With `merge_init_into_class: true`, upstream renders the merged
+  `__init__`'s source and file path even when `__init__` is inherited
+  from an external base class. For pydantic models this leaks
+  `.venv/lib/python3.10/site-packages/pydantic/main.py` instead of the
+  class's own file. This override only uses `__init__`'s source when the
+  class defines it itself (`not inherited`), and otherwise falls back to
+  the class's own source — upstream instead renders nothing in that
+  case.
+
+  Everything else is inherited from the upstream template. Revisit when
+  bumping mkdocstrings-python in case the `source` block changes
+  upstream.
+-#}
+{% extends "_base/class.html.jinja" %}
+
+{% block source %}
+  {% import "language.html.jinja" as lang with context %}
+  {% if config.show_source %}
+    {% if config.merge_init_into_class
+        and "__init__" in all_members
+        and not all_members["__init__"].inherited
+        and all_members["__init__"].source %}
+      {% with init = all_members["__init__"] %}
+        <details class="mkdocstrings-source">
+          <summary>{{ lang.t("Source code in") }} <code>
+            {%- if init.relative_filepath.is_absolute() -%}
+              {{ init.relative_package_filepath }}
+            {%- else -%}
+              {{ init.relative_filepath }}
+            {%- endif -%}
+          </code></summary>
+          {{ init.source|highlight(language="python", linestart=init.lineno or 0, linenums=True) }}
+        </details>
+      {% endwith %}
+    {% elif class.source %}
+      <details class="mkdocstrings-source">
+        <summary>{{ lang.t("Source code in") }} <code>
+          {%- if class.relative_filepath.is_absolute() -%}
+            {{ class.relative_package_filepath }}
+          {%- else -%}
+            {{ class.relative_filepath }}
+          {%- endif -%}
+        </code></summary>
+        {{ class.source|highlight(language="python", linestart=class.lineno or 0, linenums=True) }}
+      </details>
+    {% endif %}
+  {% endif %}
+{% endblock source %}

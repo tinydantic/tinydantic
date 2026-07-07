@@ -74,6 +74,10 @@ plugins:
   - mkdocstrings: # https://mkdocstrings.github.io/
       default_handler: python
       enable_inventory: true
+      # Overrides the class template's source block so classes with an
+      # inherited __init__ (e.g. pydantic models) don't render venv
+      # paths — see docs/templates/python/materialx/class.html.jinja.
+      custom_templates: docs/templates
       handlers:
         python:
           paths:
@@ -147,3 +151,4 @@ extra:
 watch:
   - src/tinydantic/
   - scripts/gen_api_docs.py
+  - docs/templates/
