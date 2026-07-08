@@ -221,6 +221,11 @@ python_version = "3.10"
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --doctest-glob '*.md' --ignore=docs/superpowers"
 doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL"
+filterwarnings = [
+  # The queries.md "shadowing" section deliberately defines a field named
+  # `search` to demonstrate the pitfall, so pydantic's warning is expected.
+  'ignore:Field name "search" in "Command" shadows an attribute in parent "TinydanticModel":UserWarning',
+]
 minversion = "6.0"
 testpaths = [
   "CONTRIBUTING.md",
