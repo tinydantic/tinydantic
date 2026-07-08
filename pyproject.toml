@@ -80,7 +80,7 @@ docs = [
   "black",
   "fastapi",
   "griffe",
-  "httpx",
+  "httpx2",
   "linkchecker",
   "markdown-callouts",
   "markdown-gfm-admonition",
@@ -106,7 +106,7 @@ lint = [
 ]
 test = [
   "fastapi",
-  "httpx",
+  "httpx2",
   "packaging",
   "poethepoet",
   "pytest-cov",
