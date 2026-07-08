@@ -142,7 +142,7 @@ async def read_user(user_id: int):
 
 > [!NOTE]
 >
-> `tinydantic`'s recommendation is sync-first, deliberately. The async lifecycle shims that exist for TinyDB are unmaintained, are `async with`-scoped in a way that conflicts with `tinydantic`'s long-lived class binding, and rely on file locking that is silently absent on some platforms (spec non-goals, analyzed 2026-07-05). Plain `def` handlers in FastAPI's threadpool, plus `asyncio.to_thread` where you genuinely need it, cover the real use cases without that risk. Revisit if a future version adds first-class async support.
+> `tinydantic`'s recommendation is sync-first, deliberately. The async lifecycle shims that exist for TinyDB are unmaintained, are `async with`-scoped in a way that conflicts with `tinydantic`'s long-lived class binding, and rely on file locking that is silently absent on some platforms. Plain `def` handlers in FastAPI's threadpool, plus `asyncio.to_thread` where you genuinely need it, cover the real use cases without that risk. Revisit if a future version adds first-class async support.
 
 None of this is a compromise for `tinydantic`'s intended audience.
 

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""Round-trip serialization, save() and delete() (spec 3.6/3.7)."""
+"""Round-trip serialization, save() and delete()."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ class Address(BaseModel):
 
 
 class RichBase(TinydanticModel):
-    """Model exercising rich pydantic types (spec 3.7)."""
+    """Model exercising rich pydantic types."""
 
     name: str
     created_at: datetime.datetime
@@ -55,7 +55,7 @@ def rich_class(db: TinyDB) -> type[RichBase]:
 
 
 class TestIDSerialization:
-    """The id field is visible in dumps but never stored (spec 3.6)."""
+    """The id field is visible in dumps but never stored."""
 
     def test_model_dump_includes_id(self, user_class: type[UserBase]):
         """model_dump() exposes id (FastAPI response models need it)."""
@@ -80,7 +80,7 @@ class TestRoundTrip:
     """Rich pydantic types survive storage and come back typed."""
 
     def test_datetime_uuid_nested_round_trip(self, rich_class: type[RichBase]):
-        """Spec 3.7: JSON-mode dump out, validation back in."""
+        """JSON-mode dump out, validation back in."""
         original = rich_class(
             name="Alice",
             created_at=datetime.datetime(
@@ -116,7 +116,7 @@ class TestRoundTrip:
 
 
 class TestSave:
-    """save() = insert when new, else upsert-by-id (spec 4)."""
+    """save() = insert when new, else upsert-by-id."""
 
     def test_save_new_instance_inserts(self, user_class: type[UserBase]):
         """The prototype crashed here (bare upsert with no cond)."""

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""Tests for the classmethod table surface (spec 4)."""
+"""Tests for the classmethod table surface."""
 
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ class TestContains:
         assert not user_class.contains(doc_id=999)
 
     def test_contains_both_selectors_raises(self, user_class: type[UserBase]):
-        """Spec tightening: both selectors is a ValueError."""
+        """Tighter than TinyDB: both selectors is a ValueError."""
         user = user_class(name="Alice", age=37).insert()
         with pytest.raises(ValueError, match="one of"):
             user_class.contains(user_class.name == "Alice", doc_id=user.id)  # type: ignore[arg-type]
