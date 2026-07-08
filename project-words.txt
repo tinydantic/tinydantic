@@ -34,6 +34,7 @@ editmsg
 esbenp
 fastapi
 fcntl
+filterwarnings
 fontawesome
 footgun
 getattr
