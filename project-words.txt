@@ -113,6 +113,8 @@ reprs
 rerunfailures
 ropeproject
 rtype
+ruleset
+rulesets
 runbook
 schemafile
 scrapy
