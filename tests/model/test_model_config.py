@@ -66,7 +66,7 @@ class TestClassKwargsConfig:
         assert Base.get_table().name == "base"
 
     def test_config_does_not_pollute_model_config(self, memory_db: TinyDB):
-        """Spec 3.2: tinydantic keys never enter model_config."""
+        """Tinydantic keys never enter model_config."""
 
         class User(TinydanticModel, database=memory_db):
             """Test model."""
@@ -147,7 +147,7 @@ class TestBind:
 
 
 class TestAmbiguity:
-    """Definition-time ambiguity detection (spec 3.2)."""
+    """Definition-time ambiguity detection."""
 
     def test_conflicting_unrelated_bases_raise(self, memory_db: TinyDB):
         """A diamond over two differently-bound bases is an error."""
@@ -189,7 +189,7 @@ class TestAmbiguity:
 
 
 def test_top_level_error_exports():
-    """Error classes are importable from the package root (spec 6)."""
+    """Error classes are importable from the package root."""
     assert issubclass(td.DatabaseNotBoundError, td.TinydanticError)
     assert issubclass(td.AmbiguousConfigError, td.TinydanticUserError)
     assert issubclass(td.DocumentNotFoundError, td.TinydanticError)

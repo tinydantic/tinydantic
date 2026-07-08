@@ -535,9 +535,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         Uses JSON-mode serialization so rich pydantic types (datetime,
         UUID, enums, nested models, ...) become JSON-safe primitives
-        that round-trip through any TinyDB storage (spec 3.7). The
-        ``id`` field is never embedded in the document — it maps to
-        TinyDB's ``doc_id``.
+        that round-trip through any TinyDB storage. The ``id`` field is
+        never embedded in the document — it maps to TinyDB's
+        ``doc_id``.
 
         Args:
             force_dict: Return a plain dict even when ``id`` is set

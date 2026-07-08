@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""Tests for get() and its typed variants (spec 4)."""
+"""Tests for get() and its typed variants."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ class TestGet:
         assert user_class.get(doc_id=999) is None
 
     def test_get_multiple_selectors_raises(self, user_class: type[UserBase]):
-        """Spec tightening: more than one selector is a ValueError."""
+        """Tighter than TinyDB: multiple selectors is a ValueError."""
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
         with pytest.raises(ValueError, match="one of"):
