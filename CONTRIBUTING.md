@@ -68,7 +68,7 @@ The next section describes how to set up a development environment and create a 
 
 This project is written in [Python](https://www.python.org/) and requires a Python interpreter to be installed for development.
 
-=== "Install with uv"
+=== "Install Python with uv"
 
     We recommend using [uv](https://docs.astral.sh/uv/) to install and manage Python versions on your development system. uv is also used for the rest of the project's development workflow (see the [uv](#uv) section below).
 
@@ -86,7 +86,7 @@ This project is written in [Python](https://www.python.org/) and requires a Pyth
 
     NOTE: As long as you have Python 3.10 or later installed, you should be able to follow the remainder of this guide.
 
-=== "Install without uv"
+=== "Install Python without uv"
 
     The simplest way to install Python is to [download an official installer](https://www.python.org/downloads/). Check out [this article](https://realpython.com/installing-python/#macos-how-to-install-python-using-the-official-installer) for an overview of some alternative installation options.
 
@@ -101,6 +101,23 @@ The important thing is that at this point, you should be able to run the `uv` co
 ```sh
 uv --version
 ```
+
+#### Node.js
+
+Some of the project's development tools (e.g. the [cspell](https://cspell.org/) spell checker that runs as part of `uv run poe check`) are distributed as [npm](https://www.npmjs.com/) packages and require [Node.js](https://nodejs.org/) to run. [Install Node.js](https://nodejs.org/en/download) and make sure the `node` and `npm` commands are available in your shell.
+
+```sh
+node --version
+npm --version
+```
+
+Next, install the project's Node.js development dependencies (declared in `package.json`).
+
+```sh
+npm ci
+```
+
+The [`npm ci`](https://docs.npmjs.com/cli/commands/npm-ci) command installs the exact versions of the tools recorded in `package-lock.json` into a `node_modules` directory at the project root. Some of the project's tasks invoke these tools via [`npx`](https://docs.npmjs.com/cli/commands/npx) — for example, `uv run poe check` runs the cspell spell checker with `npx cspell`.
 
 ### Pull Requests
 
