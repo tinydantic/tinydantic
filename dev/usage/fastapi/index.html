@@ -2107,7 +2107,7 @@
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code>tinydantic</code>'s recommendation is sync-first, deliberately. The async lifecycle shims that exist for TinyDB are unmaintained, are <code>async with</code>-scoped in a way that conflicts with <code>tinydantic</code>'s long-lived class binding, and rely on file locking that is silently absent on some platforms (spec non-goals, analyzed 2026-07-05). Plain <code>def</code> handlers in FastAPI's threadpool, plus <code>asyncio.to_thread</code> where you genuinely need it, cover the real use cases without that risk. Revisit if a future version adds first-class async support.</p>
+<p><code>tinydantic</code>'s recommendation is sync-first, deliberately. The async lifecycle shims that exist for TinyDB are unmaintained, are <code>async with</code>-scoped in a way that conflicts with <code>tinydantic</code>'s long-lived class binding, and rely on file locking that is silently absent on some platforms. Plain <code>def</code> handlers in FastAPI's threadpool, plus <code>asyncio.to_thread</code> where you genuinely need it, cover the real use cases without that risk. Revisit if a future version adds first-class async support.</p>
 </div>
 <p>None of this is a compromise for <code>tinydantic</code>'s intended audience.</p>
 <div class="admonition tip">

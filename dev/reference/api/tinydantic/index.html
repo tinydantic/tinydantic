@@ -4692,9 +4692,9 @@ semantics) — unlike <code>replace()</code>/<code>delete()</code>, which raise
         <p>Convert this model to a TinyDB-storable document.</p>
 <p>Uses JSON-mode serialization so rich pydantic types (datetime,
 UUID, enums, nested models, ...) become JSON-safe primitives
-that round-trip through any TinyDB storage (spec 3.7). The
-<code>id</code> field is never embedded in the document — it maps to
-TinyDB's <code>doc_id</code>.</p>
+that round-trip through any TinyDB storage. The <code>id</code> field is
+never embedded in the document — it maps to TinyDB's
+<code>doc_id</code>.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4764,9 +4764,9 @@ TinyDB's <code>doc_id</code>.</p>
 </span><span id="__span-0-535"><a id="__codelineno-0-535" name="__codelineno-0-535"></a>
 </span><span id="__span-0-536"><a id="__codelineno-0-536" name="__codelineno-0-536"></a><span class="sd">    Uses JSON-mode serialization so rich pydantic types (datetime,</span>
 </span><span id="__span-0-537"><a id="__codelineno-0-537" name="__codelineno-0-537"></a><span class="sd">    UUID, enums, nested models, ...) become JSON-safe primitives</span>
-</span><span id="__span-0-538"><a id="__codelineno-0-538" name="__codelineno-0-538"></a><span class="sd">    that round-trip through any TinyDB storage (spec 3.7). The</span>
-</span><span id="__span-0-539"><a id="__codelineno-0-539" name="__codelineno-0-539"></a><span class="sd">    ``id`` field is never embedded in the document — it maps to</span>
-</span><span id="__span-0-540"><a id="__codelineno-0-540" name="__codelineno-0-540"></a><span class="sd">    TinyDB&#39;s ``doc_id``.</span>
+</span><span id="__span-0-538"><a id="__codelineno-0-538" name="__codelineno-0-538"></a><span class="sd">    that round-trip through any TinyDB storage. The ``id`` field is</span>
+</span><span id="__span-0-539"><a id="__codelineno-0-539" name="__codelineno-0-539"></a><span class="sd">    never embedded in the document — it maps to TinyDB&#39;s</span>
+</span><span id="__span-0-540"><a id="__codelineno-0-540" name="__codelineno-0-540"></a><span class="sd">    ``doc_id``.</span>
 </span><span id="__span-0-541"><a id="__codelineno-0-541" name="__codelineno-0-541"></a>
 </span><span id="__span-0-542"><a id="__codelineno-0-542" name="__codelineno-0-542"></a><span class="sd">    Args:</span>
 </span><span id="__span-0-543"><a id="__codelineno-0-543" name="__codelineno-0-543"></a><span class="sd">        force_dict: Return a plain dict even when ``id`` is set</span>
