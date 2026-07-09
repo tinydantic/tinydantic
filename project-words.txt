@@ -31,8 +31,6 @@ doctested
 doctests
 donjayamanne
 editmsg
-elif
-endwith
 esbenp
 fastapi
 fcntl
@@ -61,7 +59,6 @@ kwarg
 kwargs
 kwds
 linenums
-linestart
 linkcheck
 linkchecker
 linkcheckerrc
@@ -104,7 +101,6 @@ pylint
 pymdownx
 pypa
 pypackages
-purelib
 pypi
 pyproject
 pysemver
@@ -136,7 +132,6 @@ styleguides
 subclassing
 subpackages
 superfences
-sysconfig
 tamasfe
 taplo
 taskipy
