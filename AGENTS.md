@@ -32,4 +32,5 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 ## CI
 
 - Branch pushes do NOT trigger CI (only pushes to main, tags, and PRs do): `gh workflow run ci.yaml --ref <branch>`.
-- Releases: `uv run cz bump` writes `[project].version` + tags; the publish workflow's version-guard asserts tag == pyproject version.
+- Releases (full steps: CONTRIBUTING.md "Release Process"): hand-update `CHANGELOG.md`; on a release branch run `uv run cz bump --files-only` then `uv lock` (writes `[project].version` — no commit, no tag); merge via PR (`main` is protected); then tag `v<version>` on the merged main commit and push the tag.
+- The publish workflow's version-guard asserts tag == pyproject version, and the workflow creates the GitHub release itself — never create one manually in the web UI.
