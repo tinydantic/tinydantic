@@ -31,7 +31,7 @@ class YAMLStorage(Storage):
         create_dirs: bool = False,
         encoding: str | None = None,
         access_mode: str = "r+",
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Create a new instance.
 
@@ -41,9 +41,14 @@ class YAMLStorage(Storage):
         Note: Using an access mode other than `r` or `r+` will probably
         lead to data loss or data corruption!
 
-        :param path: Where to store the YAML data.
-        :param access_mode: mode in which the file is opened (r, r+)
-        :type access_mode: str
+        Args:
+            path: Where to store the YAML data.
+            create_dirs: Whether to create all missing parent
+                directories of the storage file.
+            encoding: The encoding used to open the storage file.
+            access_mode: Mode in which the file is opened (`r`, `r+`).
+            **kwargs: Additional keyword arguments passed to
+                `yaml.dump()` when writing data.
         """
         super().__init__()
 
@@ -74,9 +79,9 @@ class YAMLStorage(Storage):
     def read(self) -> dict[str, dict[str, Any]] | None:
         """Read data from storage.
 
-        :return: A python dict containing the database data from
-            storage.
-        :rtype: dict[str, dict[str, Any]] | None
+        Returns:
+            A python dict containing the database data from storage,
+            or `None` if the storage file is empty.
         """
         # Get the file size by moving the cursor to the file end and
         # reading its location
