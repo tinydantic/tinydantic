@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
----
 site_name: tinydantic
 site_description: A simple Python object-document mapper (ODM) for TinyDB
 site_url: https://tinydantic.dev
