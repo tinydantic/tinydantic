@@ -46,7 +46,7 @@ else:
 
 
 def q(field: Any) -> Query:
-    """Tell the type checker a field expression is a TinyDB Query.
+    """Build a typed TinyDB Query from a field or a field name.
 
     At runtime, class-level field access like ``User.name`` already
     returns a [Query][tinydb.queries.Query] (courtesy of the model
@@ -59,21 +59,36 @@ def q(field: Any) -> Query:
     User.search(q(User.name) == "Alice")
     ```
 
+    A string builds a query on that document key
+    (``tinydb.queries.where``). This is the escape hatch for fields
+    whose names collide with model methods (``search``, ``get``,
+    ``count``, ...) and are therefore unreachable through the
+    ``Model.field`` shorthand:
+
+    ```python
+    Command.search(q("search") == "fuzzy")
+    ```
+
     Args:
-        field: A class-level field expression (e.g. ``User.name``).
+        field: A class-level field expression (e.g. ``User.name``)
+            or a field name string (e.g. ``"name"``).
 
     Returns:
-        The same object, typed as a Query.
+        The field expression unchanged, or a Query on the named
+        field — either way, typed as a Query.
 
     Raises:
-        TypeError: If ``field`` is not actually a TinyDB Query — for
-            example when called with an instance attribute or a plain
-            string instead of class-level field access.
+        TypeError: If ``field`` is neither a TinyDB Query nor a
+            string — for example when called with an instance
+            attribute instead of class-level field access.
     """
+    if isinstance(field, str):
+        return where(field)
     if not isinstance(field, Query):
         msg = (
             f"q() expected a TinyDB Query (class-level field access "
-            f"like Model.field), got {type(field).__name__!r}"
+            f"like Model.field) or a field name string, got "
+            f"{type(field).__name__!r}"
         )
         raise TypeError(msg)
     return field

@@ -100,7 +100,27 @@ class TestQHelper:
         assert isinstance(query, Query)
         assert isinstance(q(User.name) == "Alice", QueryInstance)
 
+    def test_q_accepts_a_field_name_string(self):
+        """q('name') builds a query on that key, like where()."""
+        query = q("name")
+        assert isinstance(query, Query)
+        assert isinstance(query == "Alice", QueryInstance)
+
+    def test_q_string_reaches_a_shadowed_field(self, memory_db: TinyDB):
+        """Fields that collide with methods stay queryable via q()."""
+
+        class Command(TinydanticModel, database=memory_db):
+            """Test model with a field shadowed by search()."""
+
+            name: str
+            search: str  # type: ignore[assignment]
+
+        Command(name="find", search="fuzzy").insert()
+        Command(name="grep", search="regex").insert()
+        results = Command.search(q("search") == "fuzzy")  # type: ignore[operator]
+        assert [command.name for command in results] == ["find"]
+
     def test_q_rejects_non_queries(self):
-        """q() raises TypeError for anything that is not a Query."""
+        """q() raises TypeError for non-Query, non-string values."""
         with pytest.raises(TypeError, match="Query"):
-            q("name")
+            q(42)

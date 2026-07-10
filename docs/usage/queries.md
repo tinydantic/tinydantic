@@ -113,6 +113,14 @@ The [q()][tinydantic.q] helper resolves this. It returns its argument unchanged 
 >
 > `q()` changes nothing at runtime — `q(User.name) == 'Alice'` and `User.name == 'Alice'` build the identical query. Reach for it only to silence a type checker; every other example on this page uses the bare form.
 
+`q()` also accepts a field name as a string, building a query on that document key. This form exists for the shadowed-field escape hatch below.
+
+```pycon
+>>> User.search(q('name') == 'Alice')
+[User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))]
+
+```
+
 ## Sharp edge: fields that shadow query methods
 
 A read method or query method shares its name with a field at your peril. Because `search`, `get`, `count`, `matches`, `test`, and the like are real attributes on the model class (or on the Query object), a field with the same name is shadowed — attribute access finds the method, not a field query.
@@ -142,9 +150,17 @@ False
 
 > [!WARNING]
 >
-> **A field whose name collides with a method is not reachable through the `Model.field` shorthand.** The expression compiles and runs, but it produces a plain `bool` instead of a query — a bug that fails silently. Use the raw-query escape hatch to reach the field by name.
+> **A field whose name collides with a method is not reachable through the `Model.field` shorthand.** The expression compiles and runs, but it produces a plain `bool` instead of a query — a bug that fails silently. Name the field as a string instead.
 
-Reach the shadowed field with a raw [Query][tinydb.queries.Query] (or [where()](https://tinydb.readthedocs.io/en/latest/usage.html#queries)) that names the key as a string:
+Reach the shadowed field by passing its name to [q()][tinydantic.q], which builds a query on that document key:
+
+```pycon
+>>> Command.search(q('search') == 'fuzzy')
+[Command(id=1, name='find', search='fuzzy')]
+
+```
+
+A raw [Query][tinydb.queries.Query] (or [where()](https://tinydb.readthedocs.io/en/latest/usage.html#queries)) works the same way:
 
 ```pycon
 >>> from tinydb import Query, where
