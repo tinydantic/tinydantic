@@ -270,24 +270,30 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         return instance
 
     @classmethod
-    def insert_multiple(cls, documents: Iterable[Self]) -> list[int]:
+    def insert_multiple(cls, documents: Iterable[Self]) -> list[Self]:
         """Insert several models at once.
 
         Serializes each model with
         [to_tinydb_document][tinydantic.TinydanticModel.to_tinydb_document]
-        and hands them to [tinydb.table.Table.insert_multiple][]. The
-        models' own ``id`` attributes are NOT updated in place; the
-        assigned document ids are returned instead.
+        and hands them to [tinydb.table.Table.insert_multiple][].
+        Exactly like [insert][tinydantic.TinydanticModel.insert], each
+        model's ``id`` is set in place to the document id TinyDB
+        assigned, and the same instances are returned in insertion
+        order.
 
         Args:
             documents: The models to insert.
 
         Returns:
-            The ids of the inserted documents, in insertion order.
+            The inserted models, with ``id`` set, in insertion order.
         """
-        return cls.get_table().insert_multiple(
-            [doc.to_tinydb_document() for doc in documents],
+        docs = list(documents)
+        doc_ids = cls.get_table().insert_multiple(
+            [doc.to_tinydb_document() for doc in docs],
         )
+        for doc, doc_id in zip(docs, doc_ids, strict=True):
+            doc.id = doc_id
+        return docs
 
     @classmethod
     def all(cls) -> list[Self]:
