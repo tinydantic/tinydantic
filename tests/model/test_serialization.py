@@ -174,3 +174,51 @@ class TestReplace:
         user.name = "Alicia"
         with pytest.raises(DocumentNotFoundError):
             user.replace()
+
+
+class TestErrorContext:
+    """Raised errors name the model, table, id, and operation."""
+
+    def test_not_found_names_id_and_table(self, user_class: type[UserBase]):
+        """DocumentNotFoundError carries the id and table name."""
+        user = user_class(name="Alice", age=37).insert()
+        table_name = user_class.get_table().name
+        user.delete()
+        with pytest.raises(DocumentNotFoundError) as excinfo:
+            user.delete()
+        message = str(excinfo.value)
+        assert f"id {user.id}" in message
+        assert repr(table_name) in message
+        assert repr(user_class.__name__) in message
+
+    def test_replace_not_found_names_id_and_table(
+        self,
+        user_class: type[UserBase],
+    ):
+        """replace() raises with the same context-rich message."""
+        user = user_class(name="Alice", age=37).insert()
+        user.delete()
+        with pytest.raises(DocumentNotFoundError) as excinfo:
+            user.replace()
+        message = str(excinfo.value)
+        assert f"id {user.id}" in message
+        assert repr(user_class.get_table().name) in message
+
+    def test_id_required_names_model_and_operation(
+        self,
+        user_class: type[UserBase],
+    ):
+        """DocumentIDRequiredError says what to do about it."""
+        user = user_class(name="Alice", age=37)
+        with pytest.raises(DocumentIDRequiredError) as excinfo:
+            user.delete()
+        message = str(excinfo.value)
+        assert "delete()" in message
+        assert repr(user_class.__name__) in message
+        assert "insert()" in message
+
+    def test_id_required_replace_operation(self, user_class: type[UserBase]):
+        """replace() names itself in the id-required message."""
+        user = user_class(name="Alice", age=37)
+        with pytest.raises(DocumentIDRequiredError, match=r"replace\(\)"):
+            user.replace()

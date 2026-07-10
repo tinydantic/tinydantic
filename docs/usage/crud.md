@@ -319,7 +319,7 @@ Note(id=1, text='draft')
 >>> note.delete()
 Traceback (most recent call last):
   ...
-tinydantic._errors.DocumentNotFoundError: Document not found
+tinydantic._errors.DocumentNotFoundError: No document with id 1 in table 'notes' (model 'Note')
 
 ```
 
