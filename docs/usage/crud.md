@@ -1,6 +1,6 @@
 # CRUD tour
 
-This page walks through every create, read, update, and delete method on [TinydanticModel][tinydantic.TinydanticModel]. It doubles as a reference: each method appears in a runnable example, and the three sharp edges worth memorizing are called out along the way.
+This page walks through every create, read, update, and delete method on [TinydanticModel][tinydantic.TinydanticModel]. It doubles as a reference: each method appears in a runnable example, and the sharp edges worth memorizing are called out along the way.
 
 We use an in-memory database and a `Book` model throughout. The examples share state top to bottom, so run them in order.
 
@@ -232,11 +232,7 @@ Book(id=3, title='Snow Crash', author='Stephenson', year=1993, in_stock=True)
 
 ```
 
-> [!WARNING]
->
-> **`update()` and `update_multiple()` do NOT serialize values through Pydantic.** Unlike `insert()`, `save()`, and `upsert()`, the fields you pass are written to storage exactly as given. A plain `bool`, `int`, or `str` is fine, but a rich type such as `datetime` is stored as a raw Python object instead of the JSON-safe string the model would normally produce — which will not round-trip through JSON storage. Pass JSON-safe primitives yourself (for example `datetime.isoformat()` strings), or use an instance's `save()`/`replace()` for full-model updates.
-
-To see the difference, compare the raw stored document after an `insert()` with the raw document after an `update()`. First, `insert()` serializes the `datetime` to a JSON-safe string:
+Field values in the mapping get the same treatment `insert()` and `save()` give whole models: each value is validated against its field's type and serialized to a JSON-safe primitive before it reaches storage. A rich value such as a `datetime` lands in storage as the same ISO string an `insert()` would have written:
 
 ```pycon
 >>> import datetime
@@ -245,30 +241,28 @@ To see the difference, compare the raw stored document after an `insert()` with 
 ...     when: datetime.datetime
 >>> Event(name='launch', when=datetime.datetime(2026, 1, 1, 12, 0)).insert()
 Event(id=1, name='launch', when=datetime.datetime(2026, 1, 1, 12, 0))
->>> db.table('events').get(doc_id=1)
-{'name': 'launch', 'when': '2026-01-01T12:00:00'}
-
-```
-
-But `update()` writes the raw `datetime` object straight into storage:
-
-```pycon
 >>> Event.update({'when': datetime.datetime(2027, 1, 1, 12, 0)}, Event.name == 'launch')
-[1]
->>> db.table('events').get(doc_id=1)
-{'name': 'launch', 'when': datetime.datetime(2027, 1, 1, 12, 0)}
-
-```
-
-Passing the JSON-safe string yourself keeps storage consistent:
-
-```pycon
->>> Event.update({'when': datetime.datetime(2027, 1, 1, 12, 0).isoformat()}, Event.name == 'launch')
 [1]
 >>> db.table('events').get(doc_id=1)
 {'name': 'launch', 'when': '2027-01-01T12:00:00'}
 
 ```
+
+And because values are validated, an update that would corrupt a field refuses to run:
+
+```pycon
+>>> Event.update({'when': 'not a datetime'}, Event.name == 'launch')
+Traceback (most recent call last):
+  ...
+pydantic_core._pydantic_core.ValidationError: 1 validation error for datetime
+  Input should be a valid datetime or date, invalid character in year [type=datetime_from_date_parsing, input_value='not a datetime', input_type=str]
+  ...
+
+```
+
+> [!NOTE]
+>
+> Only keys that name model fields are validated and serialized; other keys pass through to storage unchanged, as do transform callables (like the `bump_year` example above) — what a transform writes is up to you.
 
 ## Delete
 
