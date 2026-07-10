@@ -865,6 +865,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#get_or_raise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_or_raise
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#search" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2170,6 +2181,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#get_or_raise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_or_raise
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#search" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2361,7 +2383,7 @@
 
 
 <h1 id="crud-tour">CRUD tour<a class="headerlink" href="#crud-tour" title="Permanent link">¤</a></h1>
-<p>This page walks through every create, read, update, and delete method on <a class="autorefs autorefs-internal" title="            TinydanticModel" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel">TinydanticModel</a>. It doubles as a reference: each method appears in a runnable example, and the three sharp edges worth memorizing are called out along the way.</p>
+<p>This page walks through every create, read, update, and delete method on <a class="autorefs autorefs-internal" title="            TinydanticModel" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel">TinydanticModel</a>. It doubles as a reference: each method appears in a runnable example, and the sharp edges worth memorizing are called out along the way.</p>
 <p>We use an in-memory database and a <code>Book</code> model throughout. The examples share state top to bottom, so run them in order.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb</span><span class="w"> </span><span class="kn">import</span> <span class="n">TinyDB</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb.storages</span><span class="w"> </span><span class="kn">import</span> <span class="n">MemoryStorage</span>
@@ -2385,12 +2407,13 @@
 
   
       classmethod
-  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.insert_multiple">insert_multiple()</a> stores several models in one call and returns the assigned ids in insertion order. The passed-in instances are <em>not</em> mutated — use the returned ids (or re-read) if you need them.</p>
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.insert_multiple">insert_multiple()</a> stores several models in one call. Exactly like <code>insert()</code>, each passed-in model gets its assigned <code>id</code> set in place, and the same instances come back in insertion order.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">insert_multiple</span><span class="p">([</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="gp">... </span>    <span class="n">Book</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Neuromancer&#39;</span><span class="p">,</span> <span class="n">author</span><span class="o">=</span><span class="s1">&#39;Gibson&#39;</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">1984</span><span class="p">),</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="gp">... </span>    <span class="n">Book</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Snow Crash&#39;</span><span class="p">,</span> <span class="n">author</span><span class="o">=</span><span class="s1">&#39;Stephenson&#39;</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">1992</span><span class="p">),</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="gp">... </span><span class="p">])</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="go">[2, 3]</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="go">[Book(id=2, title=&#39;Neuromancer&#39;, author=&#39;Gibson&#39;, year=1984, in_stock=True),</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="go">  Book(id=3, title=&#39;Snow Crash&#39;, author=&#39;Stephenson&#39;, year=1992, in_stock=True)]</span>
 </span></code></pre></div>
 <h3 id="upsert"><code>upsert</code><a class="headerlink" href="#upsert" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            upsert
@@ -2453,6 +2476,20 @@
 </span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="go">[Book(id=1, title=&#39;Dune&#39;, author=&#39;Herbert&#39;, year=1965, in_stock=True),</span>
 </span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="go">  Book(id=3, title=&#39;Snow Crash&#39;, author=&#39;Stephenson&#39;, year=1992, in_stock=True)]</span>
 </span></code></pre></div>
+<h3 id="get_or_raise"><code>get_or_raise</code><a class="headerlink" href="#get_or_raise" title="Permanent link">¤</a></h3>
+<p><a class="autorefs autorefs-internal" title="            get_or_raise
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.get_or_raise">get_or_raise()</a> is the strict counterpart to <code>get()</code>: where a missing document would return <code>None</code>, it raises <a class="autorefs autorefs-internal" title="            DocumentNotFoundError" href="../../reference/api/tinydantic/#tinydantic.DocumentNotFoundError">DocumentNotFoundError</a> instead. Reach for it when a missing document is a bug (or a 404), not an expected outcome. It accepts exactly one selector — a condition or a <code>doc_id=</code>.</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">get_or_raise</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s1">&#39;Dune&#39;</span><span class="p">)</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">Book(id=1, title=&#39;Dune&#39;, author=&#39;Herbert&#39;, year=1965, in_stock=True)</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">get_or_raise</span><span class="p">(</span><span class="n">doc_id</span><span class="o">=</span><span class="mi">999</span><span class="p">)</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="gr">tinydantic._errors.DocumentNotFoundError</span>: <span class="n">No document with id 999 in table &#39;books&#39; (model &#39;Book&#39;)</span>
+</span></code></pre></div>
 <h3 id="search"><code>search</code><a class="headerlink" href="#search" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            search
 
@@ -2460,9 +2497,9 @@
   
       classmethod
   " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.search">search()</a> returns <em>all</em> documents matching a condition.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;</span> <span class="mi">1985</span><span class="p">)</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">[Book(id=3, title=&#39;Snow Crash&#39;, author=&#39;Stephenson&#39;, year=1992, in_stock=True),</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="go">  Book(id=4, title=&#39;Hyperion&#39;, author=&#39;Dan Simmons&#39;, year=1989, in_stock=True)]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;</span> <span class="mi">1985</span><span class="p">)</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">[Book(id=3, title=&#39;Snow Crash&#39;, author=&#39;Stephenson&#39;, year=1992, in_stock=True),</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">  Book(id=4, title=&#39;Hyperion&#39;, author=&#39;Dan Simmons&#39;, year=1989, in_stock=True)]</span>
 </span></code></pre></div>
 <h3 id="contains"><code>contains</code><a class="headerlink" href="#contains" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            contains
@@ -2471,10 +2508,10 @@
   
       classmethod
   " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.contains">contains()</a> reports whether any matching document exists, by condition or by <code>doc_id=</code>.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s1">&#39;Dune&#39;</span><span class="p">)</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">True</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">doc_id</span><span class="o">=</span><span class="mi">999</span><span class="p">)</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">False</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s1">&#39;Dune&#39;</span><span class="p">)</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">True</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">doc_id</span><span class="o">=</span><span class="mi">999</span><span class="p">)</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">False</span>
 </span></code></pre></div>
 <h3 id="count"><code>count</code><a class="headerlink" href="#count" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            count
@@ -2482,24 +2519,26 @@
 
   
       classmethod
-  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.count">count()</a> returns the number of documents matching a condition.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">in_stock</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">4</span>
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.count">count()</a> returns the number of documents matching a condition — or, called with no arguments, the total number of documents in the table.</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">in_stock</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">4</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">4</span>
 </span></code></pre></div>
 <h2 id="update">Update<a class="headerlink" href="#update" title="Permanent link">¤</a></h2>
 <h3 id="save"><code>save</code><a class="headerlink" href="#save" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            save" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.save">save()</a> persists an instance: it inserts when <code>id</code> is unset and updates in place otherwise. Mutate the model, then save.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dune</span> <span class="o">=</span> <span class="n">Book</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s1">&#39;Dune&#39;</span><span class="p">)</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dune</span><span class="o">.</span><span class="n">in_stock</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dune</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">Book(id=1, title=&#39;Dune&#39;, author=&#39;Herbert&#39;, year=1965, in_stock=False)</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dune</span> <span class="o">=</span> <span class="n">Book</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s1">&#39;Dune&#39;</span><span class="p">)</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dune</span><span class="o">.</span><span class="n">in_stock</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dune</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">Book(id=1, title=&#39;Dune&#39;, author=&#39;Herbert&#39;, year=1965, in_stock=False)</span>
 </span></code></pre></div>
 <h3 id="replace"><code>replace</code><a class="headerlink" href="#replace" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            replace" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.replace">replace()</a> overwrites the entire stored document with the instance's current state — fields absent from the model are removed. It returns nothing and requires an existing document.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dune</span><span class="o">.</span><span class="n">year</span> <span class="o">=</span> <span class="mi">1966</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dune</span><span class="o">.</span><span class="n">replace</span><span class="p">()</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">Book(id=1, title=&#39;Dune&#39;, author=&#39;Herbert&#39;, year=1966, in_stock=False)</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dune</span><span class="o">.</span><span class="n">year</span> <span class="o">=</span> <span class="mi">1966</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dune</span><span class="o">.</span><span class="n">replace</span><span class="p">()</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">Book(id=1, title=&#39;Dune&#39;, author=&#39;Herbert&#39;, year=1966, in_stock=False)</span>
 </span></code></pre></div>
 <h3 id="update_1"><code>update</code><a class="headerlink" href="#update_1" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            update
@@ -2508,18 +2547,18 @@
   
       classmethod
   " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.update">update()</a> merges a fields mapping (or applies a transform callable) into every document matching a condition, and returns the updated ids.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;in_stock&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span> <span class="n">Book</span><span class="o">.</span><span class="n">author</span> <span class="o">==</span> <span class="s1">&#39;Gibson&#39;</span><span class="p">)</span>
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">[2]</span>
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">Book(id=2, title=&#39;Neuromancer&#39;, author=&#39;Gibson&#39;, year=1984, in_stock=False)</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;in_stock&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span> <span class="n">Book</span><span class="o">.</span><span class="n">author</span> <span class="o">==</span> <span class="s1">&#39;Gibson&#39;</span><span class="p">)</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">[2]</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">Book(id=2, title=&#39;Neuromancer&#39;, author=&#39;Gibson&#39;, year=1984, in_stock=False)</span>
 </span></code></pre></div>
 <p>A transform callable mutates each matched document in place:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">bump_year</span><span class="p">(</span><span class="n">doc</span><span class="p">):</span>
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="gp">... </span>    <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">bump_year</span><span class="p">,</span> <span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s1">&#39;Snow Crash&#39;</span><span class="p">)</span>
-</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">[3]</span>
-</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">Book(id=3, title=&#39;Snow Crash&#39;, author=&#39;Stephenson&#39;, year=1993, in_stock=True)</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">bump_year</span><span class="p">(</span><span class="n">doc</span><span class="p">):</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="gp">... </span>    <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">bump_year</span><span class="p">,</span> <span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s1">&#39;Snow Crash&#39;</span><span class="p">)</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">[3]</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">Book(id=3, title=&#39;Snow Crash&#39;, author=&#39;Stephenson&#39;, year=1993, in_stock=True)</span>
 </span></code></pre></div>
 <h3 id="update_multiple"><code>update_multiple</code><a class="headerlink" href="#update_multiple" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            update_multiple
@@ -2528,38 +2567,36 @@
   
       classmethod
   " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.update_multiple">update_multiple()</a> applies several <code>(fields, cond)</code> updates in one call and returns all updated ids.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">update_multiple</span><span class="p">([</span>
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="gp">... </span>    <span class="p">({</span><span class="s1">&#39;in_stock&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s1">&#39;Dune&#39;</span><span class="p">),</span>
-</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="gp">... </span>    <span class="p">({</span><span class="s1">&#39;in_stock&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="n">Book</span><span class="o">.</span><span class="n">author</span> <span class="o">==</span> <span class="s1">&#39;Gibson&#39;</span><span class="p">),</span>
-</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="gp">... </span><span class="p">])</span>
-</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">[1, 2]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">update_multiple</span><span class="p">([</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="gp">... </span>    <span class="p">({</span><span class="s1">&#39;in_stock&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s1">&#39;Dune&#39;</span><span class="p">),</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="gp">... </span>    <span class="p">({</span><span class="s1">&#39;in_stock&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="n">Book</span><span class="o">.</span><span class="n">author</span> <span class="o">==</span> <span class="s1">&#39;Gibson&#39;</span><span class="p">),</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="gp">... </span><span class="p">])</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="go">[1, 2]</span>
 </span></code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p><strong><code>update()</code> and <code>update_multiple()</code> do NOT serialize values through Pydantic.</strong> Unlike <code>insert()</code>, <code>save()</code>, and <code>upsert()</code>, the fields you pass are written to storage exactly as given. A plain <code>bool</code>, <code>int</code>, or <code>str</code> is fine, but a rich type such as <code>datetime</code> is stored as a raw Python object instead of the JSON-safe string the model would normally produce — which will not round-trip through JSON storage. Pass JSON-safe primitives yourself (for example <code>datetime.isoformat()</code> strings), or use an instance's <code>save()</code>/<code>replace()</code> for full-model updates.</p>
+<p>Field values in the mapping get the same treatment <code>insert()</code> and <code>save()</code> give whole models: each value is validated against its field's type and serialized to a JSON-safe primitive before it reaches storage. A rich value such as a <code>datetime</code> lands in storage as the same ISO string an <code>insert()</code> would have written:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Event</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">):</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="gp">... </span>    <span class="n">when</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;launch&#39;</span><span class="p">,</span> <span class="n">when</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="go">Event(id=1, name=&#39;launch&#39;, when=datetime.datetime(2026, 1, 1, 12, 0))</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Event</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2027</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">0</span><span class="p">)},</span> <span class="n">Event</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;launch&#39;</span><span class="p">)</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="go">[1]</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s1">&#39;events&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">doc_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="go">{&#39;name&#39;: &#39;launch&#39;, &#39;when&#39;: &#39;2027-01-01T12:00:00&#39;}</span>
+</span></code></pre></div>
+<p>And because values are validated, an update that would corrupt a field refuses to run:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Event</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="s1">&#39;not a datetime&#39;</span><span class="p">},</span> <span class="n">Event</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;launch&#39;</span><span class="p">)</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="gr">pydantic_core._pydantic_core.ValidationError</span>: <span class="n">1 validation error for datetime</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="x">  Input should be a valid datetime or date, invalid character in year [type=datetime_from_date_parsing, input_value=&#39;not a datetime&#39;, input_type=str]</span>
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="x">  ...</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only keys that name model fields are validated and serialized; other keys pass through to storage unchanged, as do transform callables (like the <code>bump_year</code> example above) — what a transform writes is up to you.</p>
 </div>
-<p>To see the difference, compare the raw stored document after an <code>insert()</code> with the raw document after an <code>update()</code>. First, <code>insert()</code> serializes the <code>datetime</code> to a JSON-safe string:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
-</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Event</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">):</span>
-</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="gp">... </span>    <span class="n">when</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span>
-</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;launch&#39;</span><span class="p">,</span> <span class="n">when</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
-</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="go">Event(id=1, name=&#39;launch&#39;, when=datetime.datetime(2026, 1, 1, 12, 0))</span>
-</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s1">&#39;events&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">doc_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="go">{&#39;name&#39;: &#39;launch&#39;, &#39;when&#39;: &#39;2026-01-01T12:00:00&#39;}</span>
-</span></code></pre></div>
-<p>But <code>update()</code> writes the raw <code>datetime</code> object straight into storage:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Event</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2027</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">0</span><span class="p">)},</span> <span class="n">Event</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;launch&#39;</span><span class="p">)</span>
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">[1]</span>
-</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s1">&#39;events&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">doc_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="go">{&#39;name&#39;: &#39;launch&#39;, &#39;when&#39;: datetime.datetime(2027, 1, 1, 12, 0)}</span>
-</span></code></pre></div>
-<p>Passing the JSON-safe string yourself keeps storage consistent:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Event</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2027</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()},</span> <span class="n">Event</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;launch&#39;</span><span class="p">)</span>
-</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">[1]</span>
-</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s1">&#39;events&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">doc_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="go">{&#39;name&#39;: &#39;launch&#39;, &#39;when&#39;: &#39;2027-01-01T12:00:00&#39;}</span>
-</span></code></pre></div>
 <h2 id="delete">Delete<a class="headerlink" href="#delete" title="Permanent link">¤</a></h2>
 <h3 id="delete_1"><code>delete</code><a class="headerlink" href="#delete_1" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            delete" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.delete">delete()</a> removes the instance's document from the table. It returns nothing; querying afterwards finds nothing.</p>
@@ -2612,7 +2649,7 @@
 </span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">note</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
 </span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="gt">Traceback (most recent call last):</span>
 </span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="gr">tinydantic._errors.DocumentNotFoundError</span>: <span class="n">Document not found</span>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="gr">tinydantic._errors.DocumentNotFoundError</span>: <span class="n">No document with id 1 in table &#39;notes&#39; (model &#39;Note&#39;)</span>
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
