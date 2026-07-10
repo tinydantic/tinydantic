@@ -1736,17 +1736,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#development-releases" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Development Releases
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#release-process" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2163,17 +2152,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#development-releases" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Development Releases
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#release-process" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2322,38 +2300,66 @@
 <p>Before committing your changes, it's good to build and run some validation checks on the built documentation.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>uv<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </span>docs-build-check
 </span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The documentation build downloads Sphinx object inventories so that cross-references to external documentation (Python, Pydantic, TinyDB) resolve to links.</p>
+<p>However, <a href="https://about.readthedocs.com/">Read the Docs</a> has put the site behind a Cloudflare bot challenge which blocks mkdocstrings' <code>mkdocstrings/0.15.0</code> user agent, rejecting the TinyDB inventory download (this shows up as <code>mkdocstrings: Couldn't load inventory ... HTTP Error 429: Too Many Requests</code>).</p>
+<p>If that happens (to any of the inventories), set the corresponding environment variable in your shell to point the build at a downloaded copy of the <code>objects.inv</code> inventory instead, then run the docs task as usual (from the repo root). The <code>file:</code> URL is resolved against the current working directory, so build from the repo root (the <code>poe docs...</code> tasks already require this).</p>
+<table>
+<thead>
+<tr>
+<th>Environment variable</th>
+<th>Default inventory URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PYTHON_OBJECTS_INV</code></td>
+<td><a href="https://docs.python.org/3/objects.inv">https://docs.python.org/3/objects.inv</a></td>
+</tr>
+<tr>
+<td><code>PYDANTIC_OBJECTS_INV</code></td>
+<td><a href="https://docs.pydantic.dev/latest/objects.inv">https://docs.pydantic.dev/latest/objects.inv</a></td>
+</tr>
+<tr>
+<td><code>TINYDB_OBJECTS_INV</code></td>
+<td><a href="https://tinydb.readthedocs.io/en/latest/objects.inv">https://tinydb.readthedocs.io/en/latest/objects.inv</a></td>
+</tr>
+</tbody>
+</table>
+<p>For example, to override the TinyDB inventory:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># If this doesn&#39;t work, just download the file manually with a web browser</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>curl<span class="w"> </span>-fL<span class="w"> </span>https://tinydb.readthedocs.io/en/latest/objects.inv<span class="w"> </span>-o<span class="w"> </span>tinydb-objects.inv
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">TINYDB_OBJECTS_INV</span><span class="o">=</span><span class="s2">&quot;file:tinydb-objects.inv&quot;</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="c1"># PowerShell: $env:TINYDB_OBJECTS_INV = &#39;file:tinydb-objects.inv&#39;</span>
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>uv<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </span>docs-serve
+</span></code></pre></div>
+</div>
 <h4 id="commit-your-changes">Commit your changes<a class="headerlink" href="#commit-your-changes" title="Permanent link">¤</a></h4>
 <p>When you are done making changes, commit them to your new branch.</p>
 <p><code>tinydantic</code> follows the <a href="https://www.conventionalcommits.org/en/v1.0.0/">Conventional Commits</a> specification to enforce some consistency across commit messages.</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;&lt;type&gt;[optional scope]: &lt;description&gt;&quot;</span>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;&lt;type&gt;[optional scope]: &lt;description&gt;&quot;</span>
 </span></code></pre></div>
 <p>This <a href="https://kapeli.com/cheat_sheets/Conventional_Commits.docset/Contents/Resources/Documents/index">cheat sheet</a> lists the allowed options for the <code>&lt;type&gt;</code> field.</p>
 <p>Here's an example of a commit message that follows the spec.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>fix: correct minor typos in code
-</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>
-</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>See the issue for details on the typos fixed.
-</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>
-</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>Closes issue #12
+<div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>fix: correct minor typos in code
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>See the issue for details on the typos fixed.
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>Closes issue #12
 </span></code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>The development dependencies automatically install the <a href="https://commitizen-tools.github.io/commitizen/">Commitizen</a> CLI tool (<code>cz</code>) which walks you through creating a conventional commit message via a questionnaire-style interface.</p>
 <p>Instead of <code>git commit ...</code>, use the <code>cz</code> command to commit your changes.</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># Make your changes...</span>
-</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>uv<span class="w"> </span>run<span class="w"> </span>cz<span class="w"> </span>commit
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1"># Make your changes...</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>uv<span class="w"> </span>run<span class="w"> </span>cz<span class="w"> </span>commit
 </span></code></pre></div>
 </div>
 <h4 id="create-a-pr-on-github">Create a PR on GitHub<a class="headerlink" href="#create-a-pr-on-github" title="Permanent link">¤</a></h4>
 <p>When your changes are ready for review, push your branch to GitHub and <a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request">create a pull request</a>. Link to any relevant issues and include a description of your changes.</p>
 <p>Creating a pull request will kick off a series of automated checks that run as part of workflows in GitHub Actions. If any of the checks fail, fix the issues locally in your PR branch, create a new commit (or amend your existing commits), and push the changes to the remote PR branch. GitHub will automatically run the checks again when changes are pushed to the PR branch. Repeat this process until all checks have passed.</p>
-<h3 id="development-releases">Development Releases<a class="headerlink" href="#development-releases" title="Permanent link">¤</a></h3>
-<p>Between releases, the <code>version</code> field under <code>[project]</code> in <code>pyproject.toml</code> holds the latest released version — merges to <code>main</code> do not publish anything. Publishing to TestPyPI is currently disabled: with a static version there is no unique development version to upload per merge (the previous behavior relied on the hatch-vcs build plugin deriving one from git). If the uv build backend gains VCS-derived versioning, per-merge TestPyPI publishing may return.</p>
-<p>Historical development releases can still be browsed at <a href="https://test.pypi.org/project/tinydantic/">https://test.pypi.org/project/tinydantic/</a>, and can be installed with <code>pip</code>.</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-i<span class="w"> </span>https://test.pypi.org/simple/<span class="w"> </span>tinydantic
-</span></code></pre></div>
-<p>You can print the version currently declared in <code>pyproject.toml</code> by running the following command in the repository.</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>uv<span class="w"> </span>version
-</span></code></pre></div>
 <h3 id="release-process">Release Process<a class="headerlink" href="#release-process" title="Permanent link">¤</a></h3>
 <p>The release process is automated using workflows in GitHub Actions. New releases are created and build artifacts are published automatically when a compliant <a href="https://semver.org/">SemVer</a> release tag of the form <code>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;</code> is pushed to GitHub.</p>
 <p>Because the <code>main</code> branch is protected (no direct pushes), the version bump travels in a pull request like any other change, and the release tag is pushed afterward — git tags are not governed by branch protection.</p>
@@ -2363,8 +2369,8 @@
 </li>
 <li>
 <p>On a release branch, let <a href="https://commitizen-tools.github.io/commitizen/">Commitizen</a> determine the next <a href="https://semver.org/">SemVer</a>-compliant version from the commit history and write it to <code>pyproject.toml</code> without committing or tagging, then refresh the lockfile to match:</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>uv<span class="w"> </span>run<span class="w"> </span>cz<span class="w"> </span>bump<span class="w"> </span>--files-only
-</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>uv<span class="w"> </span>lock
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>uv<span class="w"> </span>run<span class="w"> </span>cz<span class="w"> </span>bump<span class="w"> </span>--files-only
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>uv<span class="w"> </span>lock
 </span></code></pre></div>
 </li>
 <li>
@@ -2372,9 +2378,9 @@
 </li>
 <li>
 <p>Tag the merged commit on <code>main</code> and push the tag:</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>git<span class="w"> </span>fetch<span class="w"> </span>origin
-</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Release version &lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;&quot;</span><span class="w"> </span>origin/main
-</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>git<span class="w"> </span>fetch<span class="w"> </span>origin
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Release version &lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;&quot;</span><span class="w"> </span>origin/main
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;
 </span></code></pre></div>
 </li>
 </ol>

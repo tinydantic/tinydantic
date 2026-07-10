@@ -71,41 +71,6 @@
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/superpowers/plans/2026-07-05-m1-tooling-foundation/</loc>
-        <lastmod>2020-02-02</lastmod>
-        <changefreq>daily</changefreq>
-    </url>
-    <url>
-        <loc>https://tinydantic.dev/latest/superpowers/plans/2026-07-05-m2-core-port/</loc>
-        <lastmod>2020-02-02</lastmod>
-        <changefreq>daily</changefreq>
-    </url>
-    <url>
-        <loc>https://tinydantic.dev/latest/superpowers/plans/2026-07-06-m3-complete-api/</loc>
-        <lastmod>2020-02-02</lastmod>
-        <changefreq>daily</changefreq>
-    </url>
-    <url>
-        <loc>https://tinydantic.dev/latest/superpowers/plans/2026-07-06-m4-docs-and-examples/</loc>
-        <lastmod>2020-02-02</lastmod>
-        <changefreq>daily</changefreq>
-    </url>
-    <url>
-        <loc>https://tinydantic.dev/latest/superpowers/plans/2026-07-06-m5-release-prep/</loc>
-        <lastmod>2020-02-02</lastmod>
-        <changefreq>daily</changefreq>
-    </url>
-    <url>
-        <loc>https://tinydantic.dev/latest/superpowers/plans/2026-07-06-v0.2.0-release-runbook/</loc>
-        <lastmod>2020-02-02</lastmod>
-        <changefreq>daily</changefreq>
-    </url>
-    <url>
-        <loc>https://tinydantic.dev/latest/superpowers/specs/2026-07-05-tinydantic-v0.2-design/</loc>
-        <lastmod>2020-02-02</lastmod>
-        <changefreq>daily</changefreq>
-    </url>
-    <url>
         <loc>https://tinydantic.dev/latest/usage/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
