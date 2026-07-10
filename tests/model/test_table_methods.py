@@ -147,6 +147,23 @@ class TestRemove:
         assert user_class.get_by_id(user.id) is None
 
 
+class TestCount:
+    """count() with and without a condition."""
+
+    def test_count_by_cond(self, user_class: type[UserBase]):
+        """Condition form counts only the matches."""
+        user_class(name="Alice", age=37).insert()
+        user_class(name="Bob", age=24).insert()
+        assert user_class.count(user_class.name == "Alice") == 1  # type: ignore[arg-type]
+
+    def test_count_without_cond_counts_all(self, user_class: type[UserBase]):
+        """Bare count() returns the total number of documents."""
+        assert user_class.count() == 0
+        user_class(name="Alice", age=37).insert()
+        user_class(name="Bob", age=24).insert()
+        assert user_class.count() == 2
+
+
 class TestOperationsEscapeHatch:
     """tinydantic's replace() operation works through update()."""
 

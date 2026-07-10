@@ -158,10 +158,12 @@ False
 
 ### `count`
 
-[count()][tinydantic.TinydanticModel.count] returns the number of documents matching a condition.
+[count()][tinydantic.TinydanticModel.count] returns the number of documents matching a condition — or, called with no arguments, the total number of documents in the table.
 
 ```pycon
 >>> Book.count(Book.in_stock == True)
+4
+>>> Book.count()
 4
 
 ```
