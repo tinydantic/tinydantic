@@ -170,6 +170,16 @@ sbom-check = "reuse lint"
 spell-check = "npx cspell --gitignore --dot ."
 test = "pytest"
 test-cov = "pytest --cov --cov-branch"
+# Each step syncs an ephemeral environment from uv.lock for one
+# supported Python version (--isolated leaves .venv untouched) and
+# runs test-cov in it, covering the Python axis of the CI matrix.
+test-matrix = [
+  "_test-py310",
+  "_test-py311",
+  "_test-py312",
+  "_test-py313",
+  "_test-py314",
+]
 types = "mypy --install-types --non-interactive src/tinydantic tests"
 update-project-words = { shell = "npx cspell --gitignore --dot --words-only --unique . | sort --ignore-case >> project-words.txt" }
 
@@ -177,6 +187,11 @@ _ruff-check = "ruff check ."
 _ruff-fix = "ruff check --fix ."
 _ruff-format = "ruff format ."
 _ruff-format-check = "ruff format --check ."
+_test-py310 = "uv run --isolated --python 3.10 --group test poe test-cov"
+_test-py311 = "uv run --isolated --python 3.11 --group test poe test-cov"
+_test-py312 = "uv run --isolated --python 3.12 --group test poe test-cov"
+_test-py313 = "uv run --isolated --python 3.13 --group test poe test-cov"
+_test-py314 = "uv run --isolated --python 3.14 --group test poe test-cov"
 
 check = [
   "lint",
@@ -205,7 +220,6 @@ env = { PYTHONUNBUFFERED = "1", SOURCE_DATE_EPOCH = "1580601600" }
 [tool.poe.tasks.docs-serve]
 cmd = "properdocs serve --config-file mkdocs.yaml --dev-addr localhost:8000"
 env = { PYTHONUNBUFFERED = "1" }
-
 [tool.interrogate]
 fail-under = 100
 ignore-overloaded-functions = true

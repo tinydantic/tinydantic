@@ -193,6 +193,12 @@ uv run poe test-cov
 >
 > The `test` and `test-cov` tasks run against the single Python version installed in your `.venv`. The full test matrix — every supported Python version (3.10–3.14) across Linux, macOS, and Windows — runs automatically in CI when you open a pull request, which can catch issues that only show up with a specific version of Python or a specific operating system.
 
+To run the test suite against every supported Python version locally, use the `test-matrix` task. It uses [uv](https://docs.astral.sh/uv/) to build a temporary environment from `uv.lock` for each Python version (downloading any missing interpreters automatically) and runs `test-cov` in each one, without touching your `.venv`. This covers the Python-version axis of the CI matrix; the operating-system axis still only runs in CI.
+
+```sh
+uv run poe test-matrix
+```
+
 After running `uv run poe test-cov`, you can also generate an interactive HTML coverage report.
 
 ```sh
