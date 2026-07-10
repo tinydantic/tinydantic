@@ -6,6 +6,7 @@ asyncio
 autodocstring
 autorefs
 cacheprovider
+callables
 callout
 callouts
 callspec
