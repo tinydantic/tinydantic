@@ -219,7 +219,7 @@ verbose = 2
 python_version = "3.10"
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --doctest-glob '*.md' --ignore=docs/superpowers"
+addopts = "--doctest-modules --doctest-glob '*.md'"
 doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL"
 filterwarnings = [
   # The queries.md "shadowing" section deliberately defines a field named
