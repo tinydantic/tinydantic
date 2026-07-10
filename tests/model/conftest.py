@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     ],
 )
 def user_class(request: pytest.FixtureRequest, db: TinyDB) -> type[UserBase]:
-    """A user model bound to the test database.
+    """Return a user model class bound to the test database.
 
     Parametrized over table_name values: None (not provided), ""
     (explicitly falsy — falls back to the derived name), and "users".
@@ -43,7 +43,7 @@ def user_class(request: pytest.FixtureRequest, db: TinyDB) -> type[UserBase]:
 
 @pytest.fixture
 def make_users(user_class: type[UserBase]) -> list[UserBase]:
-    """A couple of unsaved user instances."""
+    """Return a couple of unsaved user instances."""
     return [
         user_class(name="John", age=37),
         user_class(name="John Smith", age=24),

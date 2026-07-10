@@ -93,7 +93,7 @@ api_doc_path = Path(API_DOC_DIR)
 
 
 def sort_init_first(path: Path) -> tuple[Path, bool, str]:
-    """Custom sort key which places __init__.py files first."""
+    """Return a sort key that places __init__.py files first."""
     # Check if the file name is __init__.py
     is_init = path.name == "__init__.py"
     # Create a tuple with the directory part and whether it's
