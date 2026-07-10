@@ -106,6 +106,11 @@ class TestQHelper:
         assert isinstance(query, Query)
         assert isinstance(query == "Alice", QueryInstance)
 
+    # The shadowed field is the point of this test; pydantic rightly
+    # warns about it.
+    @pytest.mark.filterwarnings(
+        'ignore:Field name "search":UserWarning',
+    )
     def test_q_string_reaches_a_shadowed_field(self, memory_db: TinyDB):
         """Fields that collide with methods stay queryable via q()."""
 

@@ -13,13 +13,14 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from tinydb.table import Document
 
 from tinydantic import (
     DocumentIDRequiredError,
     DocumentNotFoundError,
     TinydanticModel,
+    q,
 )
 
 if TYPE_CHECKING:
@@ -113,6 +114,96 @@ class TestRoundTrip:
         assert isinstance(raw["created_at"], str)
         assert isinstance(raw["token"], str)
         assert isinstance(raw["address"], dict)
+
+
+class TestUpdateSerialization:
+    """update() runs mapping values through the model's fields."""
+
+    def test_update_serializes_rich_values(self, rich_class: type[RichBase]):
+        """A datetime lands in storage as a JSON-safe string."""
+        original = rich_class(
+            name="Alice",
+            created_at=datetime.datetime(
+                2026, 7, 6, 12, 0, tzinfo=datetime.timezone.utc
+            ),
+            token=uuid.uuid4(),
+            address=Address(city="Oakland", zip_code="94601"),
+        ).insert()
+        assert original.id is not None
+        new_time = datetime.datetime(
+            2027, 1, 1, 12, 0, tzinfo=datetime.timezone.utc
+        )
+        rich_class.update({"created_at": new_time}, doc_ids=[original.id])
+        raw = rich_class.get_table().get(doc_id=original.id)
+        assert isinstance(raw, Document)
+        assert isinstance(raw["created_at"], str)
+        loaded = rich_class.get_by_id(original.id)
+        assert loaded is not None
+        assert loaded.created_at == new_time
+
+    def test_update_serializes_nested_models(
+        self,
+        rich_class: type[RichBase],
+    ):
+        """A nested BaseModel value is stored as a plain dict."""
+        original = rich_class(
+            name="Alice",
+            created_at=datetime.datetime(
+                2026, 7, 6, 12, 0, tzinfo=datetime.timezone.utc
+            ),
+            token=uuid.uuid4(),
+            address=Address(city="Oakland", zip_code="94601"),
+        ).insert()
+        assert original.id is not None
+        rich_class.update(
+            {"address": Address(city="Berlin", zip_code="10115")},
+            doc_ids=[original.id],
+        )
+        raw = rich_class.get_table().get(doc_id=original.id)
+        assert isinstance(raw, Document)
+        assert raw["address"] == {"city": "Berlin", "zip_code": "10115"}
+
+    def test_update_validates_values(self, user_class: type[UserBase]):
+        """A value the field cannot validate raises ValidationError."""
+        user = user_class(name="Alice", age=37).insert()
+        assert user.id is not None
+        with pytest.raises(ValidationError):
+            user_class.update({"age": "not a number"}, doc_ids=[user.id])
+
+    def test_update_passes_unknown_keys_through(
+        self,
+        user_class: type[UserBase],
+    ):
+        """Keys that are not model fields are written unchanged."""
+        user = user_class(name="Alice", age=37).insert()
+        assert user.id is not None
+        user_class.update({"nickname": "Al"}, doc_ids=[user.id])
+        raw = user_class.get_table().get(doc_id=user.id)
+        assert isinstance(raw, Document)
+        assert raw["nickname"] == "Al"
+
+    def test_update_multiple_serializes_values(
+        self,
+        rich_class: type[RichBase],
+    ):
+        """update_multiple() serializes each update's mapping too."""
+        original = rich_class(
+            name="Alice",
+            created_at=datetime.datetime(
+                2026, 7, 6, 12, 0, tzinfo=datetime.timezone.utc
+            ),
+            token=uuid.uuid4(),
+            address=Address(city="Oakland", zip_code="94601"),
+        ).insert()
+        new_time = datetime.datetime(
+            2028, 1, 1, 12, 0, tzinfo=datetime.timezone.utc
+        )
+        rich_class.update_multiple(
+            [({"created_at": new_time}, q("name") == "Alice")],
+        )
+        raw = rich_class.get_table().get(doc_id=original.id)
+        assert isinstance(raw, Document)
+        assert isinstance(raw["created_at"], str)
 
 
 class TestSave:

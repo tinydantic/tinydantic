@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, cast, overload
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from pydantic.alias_generators import to_snake
 from tinydb.queries import Query, where
 from tinydb.table import Document, Table
@@ -43,6 +43,10 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 else:
     ModelMetaclass = type(BaseModel)
+
+# Name of the per-class attribute caching per-field TypeAdapters
+# (built lazily by _field_adapter for update() serialization).
+_FIELD_ADAPTERS_ATTR = "__tinydantic_field_adapters__"
 
 
 def q(field: Any) -> Query:
@@ -478,6 +482,56 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         return cls.get_table().contains(cond=cond, doc_id=doc_id)
 
     @classmethod
+    def _field_adapter(cls, field_name: str) -> TypeAdapter[Any]:
+        """Get (or build and cache) a TypeAdapter for a model field.
+
+        The adapter is built from the field's full annotation
+        (including ``Field(...)`` metadata, via
+        [rebuild_annotation][pydantic.fields.FieldInfo.rebuild_annotation])
+        and cached on this class, so repeated ``update()`` calls pay
+        the construction cost once per field.
+        """
+        adapters: dict[str, TypeAdapter[Any]] | None = cls.__dict__.get(
+            _FIELD_ADAPTERS_ATTR,
+        )
+        if adapters is None:
+            adapters = {}
+            setattr(cls, _FIELD_ADAPTERS_ATTR, adapters)
+        adapter = adapters.get(field_name)
+        if adapter is None:
+            field_info = cls.model_fields[field_name]
+            adapter = TypeAdapter(field_info.rebuild_annotation())
+            adapters[field_name] = adapter
+        return adapter
+
+    @classmethod
+    def _serialize_update_fields(cls, fields: Mapping) -> dict[str, Any]:
+        """Validate and JSON-serialize known field values in a mapping.
+
+        Each key that names a model field has its value validated
+        against that field's type and serialized in JSON mode — the
+        same treatment ``insert()``/``save()`` give whole models — so
+        rich values (datetime, UUID, nested models, ...) land in
+        storage as JSON-safe primitives. Keys that are not model
+        fields pass through unchanged.
+
+        Raises:
+            pydantic.ValidationError: If a value fails validation
+                against its field's type.
+        """
+        serialized: dict[str, Any] = {}
+        for key, value in fields.items():
+            if key in cls.model_fields:
+                adapter = cls._field_adapter(key)
+                serialized[key] = adapter.dump_python(
+                    adapter.validate_python(value),
+                    mode="json",
+                )
+            else:
+                serialized[key] = value
+        return serialized
+
+    @classmethod
     def update(
         cls,
         fields: Mapping | Callable[[Mapping], None],
@@ -487,15 +541,23 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     ) -> list[int]:
         """Update matching documents with new fields or a transform.
 
-        Unlike ``insert``/``save``/``upsert``, the ``fields`` mapping
-        is passed to storage as-is — values are NOT serialized through
-        pydantic. Pass JSON-safe primitives (e.g.
-        ``datetime.isoformat()`` strings), or use a validated
-        instance's ``save()``/``replace()`` for full-model updates.
+        A ``fields`` mapping gets the same treatment ``insert()`` and
+        ``save()`` give whole models: each value that belongs to a
+        model field is validated against that field's type and
+        serialized to a JSON-safe primitive before it reaches storage
+        (keys that are not model fields pass through unchanged). A
+        transform callable is handed to TinyDB as-is — what it writes
+        is up to you.
 
         Returns:
             The ids of all updated documents.
+
+        Raises:
+            pydantic.ValidationError: If a mapping value fails
+                validation against its field's type.
         """
+        if not callable(fields):
+            fields = cls._serialize_update_fields(fields)
         return cls.get_table().update(
             # See replace() for why this cast is needed.
             # TODO @cdwilson: remove this cast once the annotation is
@@ -517,20 +579,31 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     ) -> list[int]:
         """Apply several (fields_or_transform, cond) updates at once.
 
-        Unlike ``insert``/``save``/``upsert``, each update's fields
-        mapping is passed to storage as-is — values are NOT serialized
-        through pydantic. Pass JSON-safe primitives (e.g.
-        ``datetime.isoformat()`` strings), or use a validated
-        instance's ``save()``/``replace()`` for full-model updates.
+        Each update's fields mapping is validated and serialized
+        exactly as in [update][tinydantic.TinydanticModel.update];
+        transform callables pass through to TinyDB as-is.
 
         Returns:
             The ids of all updated documents.
+
+        Raises:
+            pydantic.ValidationError: If a mapping value fails
+                validation against its field's type.
         """
+        prepared = [
+            (
+                fields
+                if callable(fields)
+                else cls._serialize_update_fields(fields),
+                cond,
+            )
+            for fields, cond in updates
+        ]
         return cls.get_table().update_multiple(
             # See replace() for why this cast is needed.
             cast(
                 "Iterable[tuple[Callable[[Mapping], None], QueryLike]]",
-                updates,
+                prepared,
             ),
         )
 
