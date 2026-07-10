@@ -2,7 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-name: Publish Python package
+# Release pipeline. All side-effect-free gate jobs (version-guard,
+# build, build-docs) must succeed before anything deploys. PyPI
+# publishing runs first among the deploy jobs because it is the only
+# irreversible step (a version's files can never be re-uploaded);
+# deploy-docs and github-release are idempotent, so a failure after
+# the PyPI publish is recovered by re-running the failed jobs.
+name: Release
 
 on: # yamllint disable-line rule:truthy
   push:
@@ -49,6 +55,24 @@ jobs:
         with:
           attest-build-provenance-github: "true"
 
+  build-docs:
+    name: Build docs (release gate)
+    if: >-
+      github.repository_owner == 'tinydantic'
+      && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0 # https://github.com/actions/checkout/issues/249
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+          python-version: "3.12"
+      - name: Build documentation
+        run: uv run --group docs poe docs-build
+
   publish-to-pypi:
     name: Publish to PyPI
     # only publish to PyPI on tag pushes
@@ -57,6 +81,7 @@ jobs:
       && startsWith(github.ref, 'refs/tags/')
     needs:
       - build
+      - build-docs
       - version-guard
     runs-on: ubuntu-latest
     environment:
@@ -71,11 +96,56 @@ jobs:
       - name: Publish dists to PyPI
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
 
-  # Sign the Python package distributions with Sigstore and upload them to a
-  # GitHub Release
+  deploy-docs:
+    name: Deploy versioned docs
+    if: >-
+      github.repository_owner == 'tinydantic'
+      && startsWith(github.ref, 'refs/tags/')
+    needs:
+      - publish-to-pypi
+    concurrency:
+      group: docs-deploy
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0 # https://github.com/actions/checkout/issues/249
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+          python-version: "3.12"
+      - name: Configure Git for GitHub Actions bot
+        # yamllint disable rule:line-length
+        run: |
+          git config --local user.name 'github-actions[bot]'
+          git config --local user.email 'github-actions[bot]@users.noreply.github.com'
+        # yamllint enable rule:line-length
+      - name: Build documentation
+        run: uv run --group docs poe docs-build
+      - name: Get doc version
+        run: |
+          TAG_NAME=${{ github.ref_name }}
+          DOC_VERSION=${TAG_NAME#v}
+          echo "Documentation version: $DOC_VERSION"
+          echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
+      - name: Commit documentation
+        run: >-
+          uv run --group docs poe docs-ci-publish "$DOC_VERSION" latest
+      - name: Create archive
+        run: git archive -o site.zip gh-pages
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: documentation
+          path: site.zip
+
   github-release:
     name: Create GitHub Release
-    if: github.repository_owner == 'tinydantic'
+    if: >-
+      github.repository_owner == 'tinydantic'
+      && startsWith(github.ref, 'refs/tags/')
     needs:
       - publish-to-pypi
     permissions:
@@ -101,18 +171,26 @@ jobs:
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
+        # Skip creation if the release already exists so that
+        # re-running this job after a partial failure converges
+        # instead of failing on the duplicate.
         run: >-
-          gh release create
+          gh release view
+          '${{ github.ref_name }}'
+          --repo '${{ github.repository }}'
+          || gh release create
           '${{ github.ref_name }}'
           --repo '${{ github.repository }}'
           --title "$REPO_NAME $VERSION"
           --notes ""
-      - name: Upload artifact signatures
+      - name: Upload package dists
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        # Upload to GitHub Release using the `gh` CLI. `dist/` contains the
-        # built packages, and the sigstore-produced signatures and certificates.
+        # Upload to GitHub Release using the `gh` CLI. `dist/` contains
+        # the built packages. `--clobber` keeps re-runs idempotent when
+        # some assets were already uploaded.
         run: >-
           gh release upload
           '${{ github.ref_name }}' dist/**
           --repo '${{ github.repository }}'
+          --clobber
