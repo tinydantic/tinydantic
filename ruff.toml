@@ -9,6 +9,12 @@ target-version = "py310"
 docstring-code-format = true
 
 [lint]
+extend-select = [
+  "D204", # https://docs.astral.sh/ruff/rules/incorrect-blank-line-after-class/
+  "D400", # https://docs.astral.sh/ruff/rules/missing-trailing-period/
+  "D401", # https://docs.astral.sh/ruff/rules/non-imperative-mood/
+  "D404", # https://docs.astral.sh/ruff/rules/docstring-starts-with-this/
+]
 ignore = [
   # flake8-annotations (ANN)
   "ANN003", # https://docs.astral.sh/ruff/rules/missing-type-kwargs/
@@ -41,10 +47,12 @@ ignore = [
   "Q003",   # https://docs.astral.sh/ruff/rules/avoidable-escaped-quote/
   "W191",   # https://docs.astral.sh/ruff/rules/tab-indentation/
 ]
-pydocstyle.convention = "google"
 select = [
   "ALL",
 ]
+
+[lint.pydocstyle]
+convention = "google"
 
 [lint.per-file-ignores]
 "**/scripts/*" = [

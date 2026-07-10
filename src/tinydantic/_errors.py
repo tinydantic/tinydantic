@@ -64,7 +64,7 @@ class DocumentNotFoundError(TinydanticError):
     """Requested document is not found."""
 
     def __init__(self) -> None:
-        """Initializes an instance of this class."""
+        """Initialize with the "Document not found" message."""
         super().__init__("Document not found")
 
 
@@ -72,5 +72,5 @@ class DocumentIDRequiredError(TinydanticError):
     """Required document ID is missing."""
 
     def __init__(self) -> None:
-        """Initializes an instance of this class."""
+        """Initialize with the "Document ID is required" message."""
         super().__init__("Document ID is required")

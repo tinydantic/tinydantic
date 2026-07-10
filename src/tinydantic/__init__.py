@@ -2,12 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-"""`tinydantic` is a simple Python object-document mapper (ODM) for the
-[TinyDB](https://tinydb.readthedocs.io/en/latest/) document database.
+"""A simple Python object-document mapper (ODM) for TinyDB.
+
+`tinydantic` maps Python objects to and from documents stored in
+the [TinyDB](https://tinydb.readthedocs.io/en/latest/) document
+database.
 
 Attributes:
     __version__: The `tinydantic` package version.
-"""  # noqa: D205
+"""
 
 from importlib import metadata
 

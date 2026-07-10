@@ -22,7 +22,7 @@ from tinydantic import (
 
 @pytest.fixture
 def memory_db() -> TinyDB:
-    """An isolated in-memory TinyDB instance."""
+    """Return an isolated in-memory TinyDB instance."""
     return TinyDB(storage=MemoryStorage)
 
 
