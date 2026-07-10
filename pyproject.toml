@@ -172,26 +172,32 @@ test = "pytest"
 test-cov = "pytest --cov --cov-branch"
 # Each step syncs an ephemeral environment from uv.lock for one
 # supported Python version (--isolated leaves .venv untouched) and
-# runs test-cov in it, covering the Python axis of the CI matrix.
+# runs test-cov in it, writing a per-version COVERAGE_FILE that the
+# final _test-summary step merges into one cross-version report.
+# CAUTION: taplo (reorder_arrays) alphabetizes these arrays, so poe
+# sequence task names must be chosen so that alphabetical order
+# matches the intended execution order.
 test-matrix = [
   "_test-py310",
   "_test-py311",
   "_test-py312",
   "_test-py313",
   "_test-py314",
+  "_test-summary",
 ]
 types = "mypy --install-types --non-interactive src/tinydantic tests"
 update-project-words = { shell = "npx cspell --gitignore --dot --words-only --unique . | sort --ignore-case >> project-words.txt" }
 
+_coverage-combine = "coverage combine .coverage.py310 .coverage.py311 .coverage.py312 .coverage.py313 .coverage.py314"
+_coverage-report = "coverage report"
 _ruff-check = "ruff check ."
 _ruff-fix = "ruff check --fix ."
 _ruff-format = "ruff format ."
 _ruff-format-check = "ruff format --check ."
-_test-py310 = "uv run --isolated --python 3.10 --group test poe test-cov"
-_test-py311 = "uv run --isolated --python 3.11 --group test poe test-cov"
-_test-py312 = "uv run --isolated --python 3.12 --group test poe test-cov"
-_test-py313 = "uv run --isolated --python 3.13 --group test poe test-cov"
-_test-py314 = "uv run --isolated --python 3.14 --group test poe test-cov"
+_test-summary = [
+  "_coverage-combine",
+  "_coverage-report",
+]
 
 check = [
   "lint",
@@ -220,6 +226,27 @@ env = { PYTHONUNBUFFERED = "1", SOURCE_DATE_EPOCH = "1580601600" }
 [tool.poe.tasks.docs-serve]
 cmd = "properdocs serve --config-file mkdocs.yaml --dev-addr localhost:8000"
 env = { PYTHONUNBUFFERED = "1" }
+
+[tool.poe.tasks._test-py310]
+cmd = "uv run --isolated --python 3.10 --group test poe test-cov"
+env = { COVERAGE_FILE = ".coverage.py310" }
+
+[tool.poe.tasks._test-py311]
+cmd = "uv run --isolated --python 3.11 --group test poe test-cov"
+env = { COVERAGE_FILE = ".coverage.py311" }
+
+[tool.poe.tasks._test-py312]
+cmd = "uv run --isolated --python 3.12 --group test poe test-cov"
+env = { COVERAGE_FILE = ".coverage.py312" }
+
+[tool.poe.tasks._test-py313]
+cmd = "uv run --isolated --python 3.13 --group test poe test-cov"
+env = { COVERAGE_FILE = ".coverage.py313" }
+
+[tool.poe.tasks._test-py314]
+cmd = "uv run --isolated --python 3.14 --group test poe test-cov"
+env = { COVERAGE_FILE = ".coverage.py314" }
+
 [tool.interrogate]
 fail-under = 100
 ignore-overloaded-functions = true
