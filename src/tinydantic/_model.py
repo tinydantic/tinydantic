@@ -590,7 +590,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 exists in the table.
         """
         if self.id is None:
-            raise DocumentIDRequiredError
+            raise DocumentIDRequiredError(
+                model_name=type(self).__name__,
+                operation="replace",
+            )
 
         try:
             updated_doc_ids = self.get_table().update(
@@ -614,10 +617,18 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 doc_ids=[self.id],
             )
         except KeyError:
-            raise DocumentNotFoundError from None
+            raise DocumentNotFoundError(
+                model_name=type(self).__name__,
+                table_name=self.get_table().name,
+                doc_id=self.id,
+            ) from None
 
         if not updated_doc_ids:
-            raise DocumentNotFoundError
+            raise DocumentNotFoundError(
+                model_name=type(self).__name__,
+                table_name=self.get_table().name,
+                doc_id=self.id,
+            )
 
     def delete(self) -> None:
         """Remove this model's document from its table.
@@ -629,13 +640,24 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 exists in the table.
         """
         if self.id is None:
-            raise DocumentIDRequiredError
+            raise DocumentIDRequiredError(
+                model_name=type(self).__name__,
+                operation="delete",
+            )
         try:
             removed = self.get_table().remove(doc_ids=[self.id])
         except KeyError:
-            raise DocumentNotFoundError from None
+            raise DocumentNotFoundError(
+                model_name=type(self).__name__,
+                table_name=self.get_table().name,
+                doc_id=self.id,
+            ) from None
         if not removed:
-            raise DocumentNotFoundError
+            raise DocumentNotFoundError(
+                model_name=type(self).__name__,
+                table_name=self.get_table().name,
+                doc_id=self.id,
+            )
 
     def save(self) -> Self:
         """Insert this model if it is new, otherwise update it by id.

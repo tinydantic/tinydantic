@@ -61,16 +61,42 @@ class AmbiguousConfigError(TinydanticUserError):
 
 
 class DocumentNotFoundError(TinydanticError):
-    """Requested document is not found."""
+    """Requested document is not found.
 
-    def __init__(self) -> None:
-        """Initialize with the "Document not found" message."""
-        super().__init__("Document not found")
+    The message names the model, the table, and — when the lookup was
+    by id — the missing document id, so the error is actionable
+    without a debugger.
+    """
+
+    def __init__(
+        self,
+        *,
+        model_name: str,
+        table_name: str,
+        doc_id: int | None = None,
+    ) -> None:
+        """Initialize with the model, table, and optional id context."""
+        if doc_id is not None:
+            selector = f"with id {doc_id}"
+        else:
+            selector = "matching the given query"
+        super().__init__(
+            f"No document {selector} in table {table_name!r} "
+            f"(model {model_name!r})",
+        )
 
 
 class DocumentIDRequiredError(TinydanticError):
-    """Required document ID is missing."""
+    """Required document ID is missing.
 
-    def __init__(self) -> None:
-        """Initialize with the "Document ID is required" message."""
-        super().__init__("Document ID is required")
+    Raised by instance operations that address a stored document by
+    its id (``replace()``, ``delete()``) when the instance was never
+    inserted, so its ``id`` is still ``None``.
+    """
+
+    def __init__(self, *, model_name: str, operation: str) -> None:
+        """Initialize with the model name and attempted operation."""
+        super().__init__(
+            f"Cannot {operation}() a {model_name!r} instance whose id "
+            "is None — insert() or save() it first",
+        )
