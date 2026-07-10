@@ -132,8 +132,6 @@ styleguides
 subclassing
 subpackages
 superfences
-tamasfe
-taplo
 taskipy
 tasklist
 testclient
@@ -144,6 +142,7 @@ tightenings
 tinydantic
 tinydb
 tmpdir
+tombi
 tomli
 traceback
 tracebacks

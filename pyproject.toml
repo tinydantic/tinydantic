@@ -4,15 +4,23 @@
 
 #:schema https://json.schemastore.org/pyproject.json
 
-[build-system]
-build-backend = "uv_build"
-requires = [
-  "uv_build>=0.11,<0.12",
-]
-
 [project]
+name = "tinydantic"
+version = "0.3.1"
+description = "A Pydantic-powered ODM (object-document mapper) for TinyDB"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0 OR MIT"
+license-files = [
+  "LICENSES/*",
+]
 authors = [
   { name = "Chris Wilson", email = "christopher.david.wilson@gmail.com" },
+]
+keywords = [
+  "odm",
+  "pydantic",
+  "tinydb",
 ]
 # https://pypi.org/classifiers/
 classifiers = [
@@ -20,6 +28,7 @@ classifiers = [
   "Framework :: Pydantic :: 2",
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
+  "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -27,7 +36,6 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python",
   "Topic :: Database",
   "Topic :: Software Development :: Libraries",
   "Typing :: Typed",
@@ -37,20 +45,6 @@ dependencies = [
   "pydantic[email]>=2.11",
   "tinydb>=4.8",
 ]
-description = "A Pydantic-powered ODM (object-document mapper) for TinyDB"
-keywords = [
-  "odm",
-  "pydantic",
-  "tinydb",
-]
-license = "Apache-2.0 OR MIT"
-license-files = [
-  "LICENSES/*",
-]
-name = "tinydantic"
-readme = "README.md"
-requires-python = ">=3.10"
-version = "0.3.1"
 
 [project.urls]
 Changelog = "https://github.com/tinydantic/tinydantic/blob/main/CHANGELOG.md"
@@ -109,17 +103,31 @@ test = [
   "httpx2",
   "packaging",
   "poethepoet",
+  "pytest>=8",
   "pytest-cov",
   "pytest-randomly",
   "pytest-rerunfailures",
   "pytest-xdist",
-  "pytest>=8",
 ]
 types = [
   "mypy>=1.14",
   "packaging",
   "types-PyYAML",
 ]
+
+[build-system]
+requires = [
+  "uv_build>=0.11,<0.12",
+]
+build-backend = "uv_build"
+
+[tool.commitizen]
+annotated_tag = true
+major_version_zero = true
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_provider = "pep621"
+version_scheme = "semver2"
 
 [tool.coverage.run]
 branch = true
@@ -146,13 +154,17 @@ exclude_lines = [
   "no cov",
 ]
 
-[tool.commitizen]
-annotated_tag = true
-major_version_zero = true
-name = "cz_conventional_commits"
-tag_format = "v$version"
-version_provider = "pep621"
-version_scheme = "semver2"
+[tool.interrogate]
+fail-under = 100
+ignore-overloaded-functions = true
+ignore-private = true
+ignore-semiprivate = true
+omit-covered-files = true
+style = "google"
+verbose = 2
+
+[tool.mypy]
+python_version = "3.10"
 
 [tool.poe.tasks]
 clean = "pyclean . --debris --verbose"
@@ -173,17 +185,15 @@ test-cov = "pytest --cov --cov-branch"
 # Each step syncs an ephemeral environment from uv.lock for one
 # supported Python version (--isolated leaves .venv untouched) and
 # runs test-cov in it, writing a per-version COVERAGE_FILE that the
-# final _test-summary step merges into one cross-version report.
-# CAUTION: taplo (reorder_arrays) alphabetizes these arrays, so poe
-# sequence task names must be chosen so that alphabetical order
-# matches the intended execution order.
+# final coverage steps merge into one cross-version report.
 test-matrix = [
   "_test-py310",
   "_test-py311",
   "_test-py312",
   "_test-py313",
   "_test-py314",
-  "_test-summary",
+  "_coverage-combine",
+  "_coverage-report",
 ]
 types = "mypy --install-types --non-interactive src/tinydantic tests"
 update-project-words = { shell = "npx cspell --gitignore --dot --words-only --unique . | sort --ignore-case >> project-words.txt" }
@@ -194,10 +204,6 @@ _ruff-check = "ruff check ."
 _ruff-fix = "ruff check --fix ."
 _ruff-format = "ruff format ."
 _ruff-format-check = "ruff format --check ."
-_test-summary = [
-  "_coverage-combine",
-  "_coverage-report",
-]
 
 check = [
   "lint",
@@ -246,18 +252,6 @@ env = { COVERAGE_FILE = ".coverage.py313" }
 [tool.poe.tasks._test-py314]
 cmd = "uv run --isolated --python 3.14 --group test poe test-cov"
 env = { COVERAGE_FILE = ".coverage.py314" }
-
-[tool.interrogate]
-fail-under = 100
-ignore-overloaded-functions = true
-ignore-private = true
-ignore-semiprivate = true
-omit-covered-files = true
-style = "google"
-verbose = 2
-
-[tool.mypy]
-python_version = "3.10"
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --doctest-glob '*.md'"
