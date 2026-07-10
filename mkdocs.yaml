@@ -96,10 +96,31 @@ plugins:
             show_symbol_type_heading: true
             show_symbol_type_toc: true
             signature_crossrefs: true
+          # Inventory downloads can be blocked by bot challenges
+          # (Read the Docs' Cloudflare challenge sometimes 429s the
+          # TinyDB download), so each inventory URL can be overridden
+          # via an environment variable pointing at a downloaded copy
+          # of the file, e.g. run `curl -fL
+          # https://tinydb.readthedocs.io/en/latest/objects.inv -o
+          # tinydb-objects.inv` and then set
+          # TINYDB_OBJECTS_INV=file:tinydb-objects.inv in your shell.
+          # The file: URL is resolved against the CWD — build from
+          # the repo root (the poe docs tasks already require this).
+          # base_url keeps cross-reference links pointing at the
+          # online docs. See CONTRIBUTING.md for the full workaround.
           inventories:
-            - https://docs.python.org/3/objects.inv
-            - https://docs.pydantic.dev/latest/objects.inv
-            - https://tinydb.readthedocs.io/en/latest/objects.inv
+            - url: !ENV
+                - PYTHON_OBJECTS_INV
+                - https://docs.python.org/3/objects.inv
+              base_url: https://docs.python.org/3
+            - url: !ENV
+                - PYDANTIC_OBJECTS_INV
+                - https://docs.pydantic.dev/latest/objects.inv
+              base_url: https://docs.pydantic.dev/latest
+            - url: !ENV
+                - TINYDB_OBJECTS_INV
+                - https://tinydb.readthedocs.io/en/latest/objects.inv
+              base_url: https://tinydb.readthedocs.io/en/latest
   - mike: # https://github.com/jimporter/mike
       alias_type: symlink
       redirect_template: null
