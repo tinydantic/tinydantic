@@ -57,7 +57,7 @@
 
   // TOML
   "[toml]": {
-    "editor.defaultFormatter": "tamasfe.even-better-toml",
+    "editor.defaultFormatter": "tombi-toml.tombi",
     "editor.formatOnSave": true,
     "editor.formatOnSaveMode": "file"
   },

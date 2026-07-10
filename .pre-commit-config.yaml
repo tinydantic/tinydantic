@@ -67,24 +67,18 @@ repos:
       - id: check-github-workflows
         args:
           - --builtin-schema=vendor.github-workflows
-  # Experimental taplo support
-  # This may change in the future depending on the status of this PR:
-  # https://github.com/tamasfe/taplo/pull/549
-  - repo: https://github.com/ComPWA/mirrors-taplo
-    rev: v0.9.3
+  # --offline avoids downloading schemas at runtime (pre-commit.ci
+  # doesn't allow network access for free tier) and keeps formatting
+  # and linting deterministic across environments.
+  - repo: https://github.com/tombi-toml/tombi-pre-commit
+    rev: v1.2.0
     hooks:
-      - id: taplo-format
-      # TODO @cdwilson: re-enable this when this issue is fixed
-      # https://github.com/tamasfe/taplo/issues/657
-      # - id: taplo-lint
-      #   args:
-      # yamllint disable rule:line-length
-      #     # This hook tries to download schemas for validation, which fails
-      #     # because pre-commit.ci doesn't allow network access at runtime for
-      #     # free tier:
-      #     # https://github.com/pre-commit-ci/issues/issues/47#issuecomment-804481763
-      #     - --no-schema
-      # yamllint enable rule:line-length
+      - id: tombi-format
+        args:
+          - --offline
+      - id: tombi-lint
+        args:
+          - --offline
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v4.16.4
     hooks:

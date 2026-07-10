@@ -67,11 +67,11 @@ jobs:
           package.json
           package-lock.json
       # Check TOML files
-      # Note: taplo format is run as part of pre-commit
-      - name: Install taplo
-        run: uv tool install taplo
+      # Note: tombi format is run as part of pre-commit
+      - name: Install tombi
+        run: uv tool install tombi
       - name: Lint TOML files
-        run: taplo lint
+        run: tombi lint --offline
 
   test:
     name: >-
