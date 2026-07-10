@@ -553,17 +553,24 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         cls.get_table().truncate()
 
     @classmethod
-    def count(cls, cond: QueryLike) -> int:
-        """Count the documents matching ``cond``.
+    def count(cls, cond: QueryLike | None = None) -> int:
+        """Count the documents matching ``cond``, or all documents.
 
-        Delegates to [tinydb.table.Table.count][].
+        With a condition, delegates to [tinydb.table.Table.count][].
+        Without one, returns the total number of documents in the
+        table (``len(table)``) — TinyDB itself spells this
+        ``len(db.table(...))``; tinydantic folds it into ``count()``
+        so "how many documents are there?" needs no query object.
 
         Args:
-            cond: The query condition to match.
+            cond: The query condition to match. When omitted, every
+                document in the table is counted.
 
         Returns:
-            The number of matching documents.
+            The number of matching (or total) documents.
         """
+        if cond is None:
+            return len(cls.get_table())
         return cls.get_table().count(cond)
 
     @classmethod
