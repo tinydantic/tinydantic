@@ -329,7 +329,7 @@ When the tag is pushed to GitHub, a GitHub Actions workflow verifies that the ta
 <!-- prettier-ignore-start -->
 
 > [!NOTE]
-> Do not create the GitHub release manually in the web UI — the publish workflow creates it from the tag and will fail if one already exists.
+> Do not create the GitHub release manually in the web UI — the release workflow creates it from the tag and will fail if one already exists.
 
 <!-- prettier-ignore-end -->
 
