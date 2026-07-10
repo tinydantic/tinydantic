@@ -119,6 +119,20 @@ Book(id=4, title='Hyperion', author='Dan Simmons', year=1989, in_stock=True)
 
 ```
 
+### `get_or_raise`
+
+[get_or_raise()][tinydantic.TinydanticModel.get_or_raise] is the strict counterpart to `get()`: where a missing document would return `None`, it raises [DocumentNotFoundError][tinydantic.DocumentNotFoundError] instead. Reach for it when a missing document is a bug (or a 404), not an expected outcome. It accepts exactly one selector — a condition or a `doc_id=`.
+
+```pycon
+>>> Book.get_or_raise(Book.title == 'Dune')
+Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
+>>> Book.get_or_raise(doc_id=999)
+Traceback (most recent call last):
+  ...
+tinydantic._errors.DocumentNotFoundError: No document with id 999 in table 'books' (model 'Book')
+
+```
+
 ### `search`
 
 [search()][tinydantic.TinydanticModel.search] returns _all_ documents matching a condition.
