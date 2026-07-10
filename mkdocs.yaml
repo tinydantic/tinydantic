@@ -79,15 +79,13 @@ plugins:
           paths:
             - src
           options:
-            docstring_options:
-              ignore_init_summary: true
             docstring_section_style: table
             heading_level: 1
             preload_modules:
               - pydantic
               - tinydb
             inherited_members: false
-            merge_init_into_class: true
+            merge_init_into_class: false
             group_by_category: true
             separate_signature: true
             show_root_heading: true
