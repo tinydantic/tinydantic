@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `PYTHON_OBJECTS_INV`, `PYDANTIC_OBJECTS_INV`, and `TINYDB_OBJECTS_INV` environment variables that point the documentation build at local copies of the corresponding Sphinx object inventories, as a workaround for bot challenges (such as Read the Docs' Cloudflare challenge) rejecting mkdocstrings' inventory downloads.
+
 ## [0.3.0] - 2026-07-09
 
 ### Added
@@ -36,5 +42,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `replace()` no longer leaks a `KeyError` when the target document does not exist.
 - `datetime`, `UUID`, and nested model fields now round-trip correctly through storage.
 
+[Unreleased]: https://github.com/tinydantic/tinydantic/compare/v0.3.0...HEAD
 [0.3.0]: https://github.com/tinydantic/tinydantic/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/tinydantic/tinydantic/compare/v0.1.19...v0.2.0

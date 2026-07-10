@@ -229,6 +229,31 @@ Before committing your changes, it's good to build and run some validation check
 uv run poe docs-build-check
 ```
 
+> [!NOTE]
+>
+> The documentation build downloads Sphinx object inventories so that cross-references to external documentation (Python, Pydantic, TinyDB) resolve to links.
+>
+> However, [Read the Docs](https://about.readthedocs.com/) has put the site behind a Cloudflare bot challenge which blocks mkdocstrings' `mkdocstrings/0.15.0` user agent, rejecting the TinyDB inventory download (this shows up as `mkdocstrings: Couldn't load inventory ... HTTP Error 429: Too Many Requests`).
+>
+> If that happens (to any of the inventories), set the corresponding environment variable in your shell to point the build at a downloaded copy of the `objects.inv` inventory instead, then run the docs task as usual (from the repo root). The `file:` URL is resolved against the current working directory, so build from the repo root (the `poe docs...` tasks already require this).
+>
+> | Environment variable | Default inventory URL |
+> | --- | --- |
+> | `PYTHON_OBJECTS_INV` | <https://docs.python.org/3/objects.inv> |
+> | `PYDANTIC_OBJECTS_INV` | <https://docs.pydantic.dev/latest/objects.inv> |
+> | `TINYDB_OBJECTS_INV` | <https://tinydb.readthedocs.io/en/latest/objects.inv> |
+>
+> For example, to override the TinyDB inventory:
+>
+> ```sh
+> # If this doesn't work, just download the file manually with a web browser
+> curl -fL https://tinydb.readthedocs.io/en/latest/objects.inv -o tinydb-objects.inv
+>
+> export TINYDB_OBJECTS_INV="file:tinydb-objects.inv"
+> # PowerShell: $env:TINYDB_OBJECTS_INV = 'file:tinydb-objects.inv'
+> uv run poe docs-serve
+> ```
+
 #### Commit your changes
 
 When you are done making changes, commit them to your new branch.

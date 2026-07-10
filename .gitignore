@@ -166,6 +166,9 @@ cython_debug/
 # Hatch
 .hatch/
 
+# Sphinx inventory files
+*.inv
+
 # VS Code
 .vscode/*
 !.vscode/extensions.json
