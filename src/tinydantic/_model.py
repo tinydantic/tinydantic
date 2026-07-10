@@ -387,6 +387,58 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         """Get documents for the given ids (see get() for semantics)."""
         return cls.get(doc_ids=doc_ids)
 
+    @overload
+    @classmethod
+    def get_or_raise(cls, cond: QueryLike) -> Self: ...
+
+    @overload
+    @classmethod
+    def get_or_raise(cls, *, doc_id: int) -> Self: ...
+
+    @classmethod
+    def get_or_raise(
+        cls,
+        cond: QueryLike | None = None,
+        *,
+        doc_id: int | None = None,
+    ) -> Self:
+        """Get one document, raising instead of returning ``None``.
+
+        The strict counterpart to
+        [get][tinydantic.TinydanticModel.get] for call sites where a
+        missing document is an error rather than an expected outcome
+        (request handlers, lookups by known id, ...). Accepts exactly
+        one selector: a query condition or a ``doc_id``. There is no
+        ``doc_ids`` form — TinyDB silently skips missing ids in bulk
+        gets, so "raise if missing" has no single obvious meaning
+        there.
+
+        Args:
+            cond: The query condition to match.
+            doc_id: The document id to fetch.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            DocumentNotFoundError: If no matching document exists.
+            ValueError: If no selector or both selectors are provided.
+        """
+        if cond is not None and doc_id is None:
+            result = cls.get(cond)
+        elif doc_id is not None and cond is None:
+            result = cls.get(doc_id=doc_id)
+        else:
+            msg = "Provide exactly one of cond or doc_id"
+            raise ValueError(msg)
+        if result is None:
+            raise DocumentNotFoundError(
+                model_name=cls.__name__,
+                table_name=cls.get_table().name,
+                doc_id=doc_id,
+            )
+        return result
+
     @classmethod
     def contains(
         cls,

@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from tinydantic import DocumentNotFoundError
+
 if TYPE_CHECKING:
     from tests.model.models import UserBase
 
@@ -85,3 +87,57 @@ class TestGetVariants:
         assert u2.id is not None
         results = user_class.get_by_ids([u1.id, u2.id])
         assert [r.name for r in results if r is not None] == ["Alice", "Bob"]
+
+
+class TestGetOrRaise:
+    """get_or_raise() returns a model or raises instead of None."""
+
+    def test_by_cond_returns_model(self, user_class: type[UserBase]):
+        """A matching condition returns the validated model."""
+        user_class(name="Alice", age=37).insert()
+        result = user_class.get_or_raise(user_class.name == "Alice")  # type: ignore[call-overload]
+        assert isinstance(result, user_class)
+        assert result.name == "Alice"
+        assert result.id is not None
+
+    def test_by_doc_id_returns_model(self, user_class: type[UserBase]):
+        """A matching doc_id returns the validated model."""
+        user = user_class(name="Alice", age=37).insert()
+        assert user.id is not None
+        result = user_class.get_or_raise(doc_id=user.id)
+        assert isinstance(result, user_class)
+        assert result.name == "Alice"
+
+    def test_by_cond_missing_raises(self, user_class: type[UserBase]):
+        """No match by condition raises DocumentNotFoundError."""
+        with pytest.raises(DocumentNotFoundError) as excinfo:
+            user_class.get_or_raise(user_class.name == "Nobody")  # type: ignore[call-overload]
+        message = str(excinfo.value)
+        assert repr(user_class.get_table().name) in message
+        assert repr(user_class.__name__) in message
+
+    def test_by_doc_id_missing_raises(self, user_class: type[UserBase]):
+        """No match by doc_id raises with the id in the message."""
+        with pytest.raises(DocumentNotFoundError, match="id 999"):
+            user_class.get_or_raise(doc_id=999)
+
+    def test_no_selector_raises_value_error(
+        self,
+        user_class: type[UserBase],
+    ):
+        """Calling with no selector is a ValueError."""
+        with pytest.raises(ValueError, match="exactly one"):
+            user_class.get_or_raise()  # type: ignore[call-overload]
+
+    def test_both_selectors_raise_value_error(
+        self,
+        user_class: type[UserBase],
+    ):
+        """Passing both selectors is a ValueError."""
+        user = user_class(name="Alice", age=37).insert()
+        assert user.id is not None
+        with pytest.raises(ValueError, match="exactly one"):
+            user_class.get_or_raise(  # type: ignore[call-overload]
+                user_class.name == "Alice",
+                doc_id=user.id,
+            )
