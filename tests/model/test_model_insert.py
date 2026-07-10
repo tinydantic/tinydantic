@@ -129,3 +129,48 @@ class TestModelInsertMany:
     ):
         """insert_multiple stores every provided model."""
         user_class.insert_multiple(make_users)
+        assert user_class.count() == len(make_users)
+
+    def test_insert_many_sets_ids_in_place(
+        self,
+        user_class: type[UserBase],
+        make_users: list[UserBase],
+    ):
+        """Each passed-in model gets its assigned id, like insert()."""
+        assert all(user.id is None for user in make_users)
+        user_class.insert_multiple(make_users)
+        assert [user.id for user in make_users] == [1, 2]
+
+    def test_insert_many_returns_the_models(
+        self,
+        user_class: type[UserBase],
+        make_users: list[UserBase],
+    ):
+        """The same instances come back, ids set, in order."""
+        result = user_class.insert_multiple(make_users)
+        assert result == make_users
+        assert all(a is b for a, b in zip(result, make_users, strict=True))
+        assert [user.id for user in result] == [1, 2]
+
+    def test_insert_many_round_trip(
+        self,
+        user_class: type[UserBase],
+        make_users: list[UserBase],
+    ):
+        """Inserted models can be fetched back by their new ids."""
+        for user in user_class.insert_multiple(make_users):
+            assert user.id is not None
+            fetched = user_class.get_by_id(user.id)
+            assert fetched is not None
+            assert fetched.name == user.name
+
+    def test_insert_many_accepts_a_generator(
+        self,
+        user_class: type[UserBase],
+    ):
+        """Non-list iterables work and still come back as a list."""
+        result = user_class.insert_multiple(
+            user_class(name=name) for name in ("Alice", "Bob")
+        )
+        assert [user.name for user in result] == ["Alice", "Bob"]
+        assert [user.id for user in result] == [1, 2]

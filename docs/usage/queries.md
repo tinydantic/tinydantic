@@ -18,11 +18,12 @@ The examples share an in-memory database of three users. Run them in order.
 ...     age: int
 ...     email: str
 ...     address: Address
->>> User.insert_multiple([
+>>> users = User.insert_multiple([
 ...     User(name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US')),
 ...     User(name='Bob', age=25, email='bob@example.org', address=Address(city='Berlin', country='DE')),
 ...     User(name='Carol', age=35, email='carol@example.com', address=Address(city='Berlin', country='DE')),
 ... ])
+>>> [user.id for user in users]
 [1, 2, 3]
 
 ```
@@ -122,10 +123,11 @@ Consider a model with a field literally named `search`:
 >>> class Command(TinydanticModel, database=db, table_name='commands'):
 ...     name: str
 ...     search: str
->>> Command.insert_multiple([
+>>> commands = Command.insert_multiple([
 ...     Command(name='find', search='fuzzy'),
 ...     Command(name='grep', search='regex'),
 ... ])
+>>> [command.id for command in commands]
 [1, 2]
 
 ```

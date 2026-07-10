@@ -31,14 +31,15 @@ Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
 
 ### `insert_multiple`
 
-[insert_multiple()][tinydantic.TinydanticModel.insert_multiple] stores several models in one call and returns the assigned ids in insertion order. The passed-in instances are _not_ mutated — use the returned ids (or re-read) if you need them.
+[insert_multiple()][tinydantic.TinydanticModel.insert_multiple] stores several models in one call. Exactly like `insert()`, each passed-in model gets its assigned `id` set in place, and the same instances come back in insertion order.
 
 ```pycon
 >>> Book.insert_multiple([
 ...     Book(title='Neuromancer', author='Gibson', year=1984),
 ...     Book(title='Snow Crash', author='Stephenson', year=1992),
 ... ])
-[2, 3]
+[Book(id=2, title='Neuromancer', author='Gibson', year=1984, in_stock=True),
+  Book(id=3, title='Snow Crash', author='Stephenson', year=1992, in_stock=True)]
 
 ```
 
