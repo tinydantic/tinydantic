@@ -27,6 +27,7 @@ rules:
     spaces: 2 # must match indent_size in .editorconfig file
   line-length:
     allow-non-breakable-inline-mappings: true
+    max: 120 # SHA-pinned actions with version comments exceed 80
   quoted-strings:
     required: only-when-needed
     allow-quoted-quotes: true

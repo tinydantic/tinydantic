@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Chris Wilson <christopher.david.wilson@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+---
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
