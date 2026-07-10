@@ -40,6 +40,11 @@ repos:
     rev: v6.2.0
     hooks:
       - id: reuse-lint-file
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.11.28
+    hooks:
+      - id: uv-lock
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.20
     hooks:
