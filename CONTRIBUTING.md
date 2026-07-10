@@ -293,22 +293,6 @@ When your changes are ready for review, push your branch to GitHub and [create a
 
 Creating a pull request will kick off a series of automated checks that run as part of workflows in GitHub Actions. If any of the checks fail, fix the issues locally in your PR branch, create a new commit (or amend your existing commits), and push the changes to the remote PR branch. GitHub will automatically run the checks again when changes are pushed to the PR branch. Repeat this process until all checks have passed.
 
-### Development Releases
-
-Between releases, the `version` field under `[project]` in `pyproject.toml` holds the latest released version — merges to `main` do not publish anything. Publishing to TestPyPI is currently disabled: with a static version there is no unique development version to upload per merge (the previous behavior relied on the hatch-vcs build plugin deriving one from git). If the uv build backend gains VCS-derived versioning, per-merge TestPyPI publishing may return.
-
-Historical development releases can still be browsed at <https://test.pypi.org/project/tinydantic/>, and can be installed with `pip`.
-
-```sh
-pip install -i https://test.pypi.org/simple/ tinydantic
-```
-
-You can print the version currently declared in `pyproject.toml` by running the following command in the repository.
-
-```sh
-uv version
-```
-
 ### Release Process
 
 The release process is automated using workflows in GitHub Actions. New releases are created and build artifacts are published automatically when a compliant [SemVer](https://semver.org/) release tag of the form `v<MAJOR>.<MINOR>.<PATCH>` is pushed to GitHub.
