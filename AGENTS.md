@@ -15,7 +15,7 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 - Windows/macOS/Linux are all first-class; no shell-isms in poe tasks.
 - Python 3.10 is the floor (`requires-python`; mypy and ruff target py310) — no syntax newer than 3.10.
 - Ruff runs with `select = ALL`: 79-char code lines, Google-style docstrings wrapped at 72 chars (W505 `max-doc-length`), relative imports banned.
-- Tests include doctests in README, CONTRIBUTING, and docs — a lying example fails CI. `docs/superpowers/` (specs/plans) is excluded from collection.
+- Tests include doctests in README, CONTRIBUTING, and docs — a lying example fails CI.
 - Tests run shuffled (pytest-randomly) and parallel (pytest-xdist) — don't write order-dependent tests.
 - Markdown: prettier enforces `proseWrap: never` (don't hard-wrap prose); markdownlint requires an H1 on line 1.
 - REUSE licensing: new code files need SPDX headers; `**.md` and listed files are covered by `REUSE.toml` aggregates.
