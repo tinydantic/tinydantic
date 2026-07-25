@@ -14,7 +14,11 @@ from tinydb import where
 from tinydb.queries import QueryInstance
 
 from tests.model.models import UserBase
-from tinydantic import DocumentIDConditionError, q
+from tinydantic import (
+    DocumentIDConditionError,
+    DocumentIDUpdateError,
+    q,
+)
 from tinydantic._query import (
     DocIdCondition,
     DocIdQuery,
@@ -261,3 +265,111 @@ class TestIdConditionReads:
     ) -> None:
         """q('id') stays a raw body-key query (escape hatch)."""
         assert users.search(q("id") == 1) == []
+
+
+class TestIdConditionWrites:
+    """Id conditions work through the write methods."""
+
+    def test_update_by_id_condition(self, users: type[UserBase]) -> None:
+        """update() resolves id conditions to doc_ids."""
+        assert users.update({"age": 26}, q(users.id) == 2) == [2]
+        doc = users.get_table().get(doc_id=2)
+        assert isinstance(doc, dict)
+        assert doc["age"] == 26
+
+    def test_update_by_composed_condition(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """Composed id conditions update the right documents."""
+        updated = users.update(
+            {"age": 0},
+            (q(users.id) != 2) & (q(users.age) >= 30),
+        )
+        assert sorted(updated) == [1, 3]
+
+    def test_update_no_match_returns_empty(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """No matching ids: no write, empty result."""
+        assert users.update({"age": 99}, q(users.id) == 999) == []
+        assert users.count() == 3
+
+    def test_update_doc_ids_wins_over_cond(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """Explicit doc_ids= keeps TinyDB precedence (cond unused)."""
+        result = users.update(
+            {"age": 1},
+            q(users.id) == 2,
+            doc_ids=[3],
+        )
+        assert result == [3]
+
+    def test_remove_by_id_condition(self, users: type[UserBase]) -> None:
+        """remove() resolves id conditions to doc_ids."""
+        assert users.remove(q(users.id).one_of([1, 3])) == [1, 3]
+        assert {user.id for user in users.all()} == {2}
+
+    def test_remove_no_match_returns_empty(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """No matching ids: nothing removed."""
+        assert users.remove(q(users.id) == 999) == []
+        assert users.count() == 3
+
+    def test_upsert_updates_matching_id(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """upsert() with a matching id condition updates."""
+        document = users(name="Bobby", age=27)
+        assert users.upsert(document, q(users.id) == 2) == [2]
+        doc = users.get_table().get(doc_id=2)
+        assert isinstance(doc, dict)
+        assert doc["name"] == "Bobby"
+        assert users.count() == 3
+
+    def test_upsert_inserts_when_no_match(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """upsert() with no matching id inserts a new document."""
+        document = users(name="Dave", age=40)
+        assert users.upsert(document, q(users.id) == 999) == [4]
+        assert users.count() == 4
+
+    def test_update_multiple_id_condition_raises(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """update_multiple() refuses id conditions loudly."""
+        with pytest.raises(
+            DocumentIDConditionError,
+            match="update_multiple",
+        ):
+            users.update_multiple([({"age": 1}, q(users.id) == 1)])
+
+    def test_update_mapping_id_key_raises(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """update() refuses to set the id field."""
+        with pytest.raises(DocumentIDUpdateError, match="doc_id"):
+            users.update({"id": 99}, where("name") == "Alice")
+        doc = users.get_table().get(doc_id=1)
+        assert isinstance(doc, dict)
+        assert "id" not in doc
+
+    def test_update_multiple_mapping_id_key_raises(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """update_multiple() mappings get the same id guard."""
+        with pytest.raises(DocumentIDUpdateError, match="doc_id"):
+            users.update_multiple(
+                [({"id": 99}, where("name") == "Alice")],
+            )
