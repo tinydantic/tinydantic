@@ -92,6 +92,14 @@ Book(id=2, title='Neuromancer', author='Gibson', year=1984, in_stock=True)
 
 ```
 
+Because `id` maps to the document id, a condition on `Book.id` is a document-id lookup — `Book.get(Book.id == 2)` and `Book.get(doc_id=2)` are equivalent (see [Queries](queries.md)):
+
+```pycon
+>>> Book.get(Book.id == 2)
+Book(id=2, title='Neuromancer', author='Gibson', year=1984, in_stock=True)
+
+```
+
 By a list of document ids — this returns a `list`:
 
 ```pycon
@@ -219,9 +227,19 @@ Book(id=3, title='Snow Crash', author='Stephenson', year=1993, in_stock=True)
 
 ```
 
+Update mappings cannot set `id` — it maps to TinyDB's `doc_id`, which an update cannot change. Trying raises [DocumentIDUpdateError][tinydantic.DocumentIDUpdateError]:
+
+```pycon
+>>> Book.update({'id': 99}, Book.title == 'Dune')
+Traceback (most recent call last):
+  ...
+tinydantic._errors.DocumentIDUpdateError: update() cannot set 'id'
+
+```
+
 ### `update_multiple`
 
-[update_multiple()][tinydantic.TinydanticModel.update_multiple] applies several `(fields, cond)` updates in one call and returns all updated ids.
+[update_multiple()][tinydantic.TinydanticModel.update_multiple] applies several `(fields, cond)` updates in one call and returns all updated ids. It cannot take conditions on `Book.id` — TinyDB has no bulk-update-by-id API — and raises [DocumentIDConditionError][tinydantic.DocumentIDConditionError] for them; call [update()][tinydantic.TinydanticModel.update] once per condition instead.
 
 ```pycon
 >>> Book.update_multiple([
