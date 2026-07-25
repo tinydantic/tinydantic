@@ -24,7 +24,11 @@ from tinydantic._errors import (
     DocumentIDRequiredError,
     DocumentNotFoundError,
 )
-from tinydantic._query import DocIdQuery
+from tinydantic._query import (
+    DocIdCondition,
+    DocIdQuery,
+    has_id_condition,
+)
 from tinydantic.tinydb.operations import replace
 
 if TYPE_CHECKING:
@@ -346,8 +350,38 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         return [cls.from_tinydb_document(doc) for doc in iter(cls.get_table())]
 
     @classmethod
+    def _match_id_condition_ids(cls, cond: QueryLike) -> list[int]:
+        """Resolve an id-bearing condition to matching doc_ids.
+
+        TinyDB evaluates conditions against document bodies, which
+        never contain the id, so id-bearing conditions are instead
+        evaluated against table iteration — the one TinyDB API that
+        yields [Document][tinydb.table.Document] instances carrying
+        ``doc_id``.
+        """
+        return [doc.doc_id for doc in iter(cls.get_table()) if cond(doc)]
+
+    @classmethod
     def search(cls, cond: QueryLike) -> list[Self]:
-        """Get all documents matching ``cond`` as validated models."""
+        """Get all documents matching ``cond`` as validated models.
+
+        Conditions on ``Model.id`` (bare or composed with field
+        conditions) are translated to document-id operations —
+        TinyDB's own evaluator only ever sees the document body,
+        which does not contain the id.
+        """
+        if isinstance(cond, DocIdCondition) and cond.opname == "==":
+            # Pure id equality: a direct key lookup beats a scan.
+            doc = cls.get_table().get(doc_id=cast("int", cond.value))
+            if doc is None:
+                return []
+            return [cls.from_tinydb_document(cast("Document", doc))]
+        if has_id_condition(cond):
+            return [
+                cls.from_tinydb_document(doc)
+                for doc in iter(cls.get_table())
+                if cond(doc)
+            ]
         return [
             cls.from_tinydb_document(doc)
             for doc in cls.get_table().search(cond)
@@ -396,6 +430,12 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         if len(provided) > 1:
             msg = "Provide at most one of cond, doc_id, or doc_ids"
             raise ValueError(msg)
+
+        if cond is not None and has_id_condition(cond):
+            # Conditions on Model.id are translated to document-id
+            # operations (see search()).
+            results = cls.search(cond)
+            return results[0] if results else None
 
         result = cls.get_table().get(
             cond=cond,
@@ -490,12 +530,22 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     ) -> bool:
         """Check whether a matching document exists.
 
+        Conditions on ``Model.id`` are translated to document-id
+        operations; like plain-condition calls, no document is
+        validated into a model.
+
         Raises:
             ValueError: If both ``cond`` and ``doc_id`` are provided.
         """
         if cond is not None and doc_id is not None:
             msg = "Provide at most one of cond or doc_id"
             raise ValueError(msg)
+        if cond is not None and has_id_condition(cond):
+            if isinstance(cond, DocIdCondition) and cond.opname == "==":
+                return cls.get_table().contains(
+                    doc_id=cast("int", cond.value),
+                )
+            return any(cond(doc) for doc in iter(cls.get_table()))
         return cls.get_table().contains(cond=cond, doc_id=doc_id)
 
     @classmethod
@@ -682,6 +732,16 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         """
         if cond is None:
             return len(cls.get_table())
+        if has_id_condition(cond):
+            # Conditions on Model.id are translated to document-id
+            # operations; nothing is validated into a model.
+            if isinstance(cond, DocIdCondition) and cond.opname == "==":
+                return int(
+                    cls.get_table().contains(
+                        doc_id=cast("int", cond.value),
+                    ),
+                )
+            return len(cls._match_id_condition_ids(cond))
         return cls.get_table().count(cond)
 
     @classmethod
