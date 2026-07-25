@@ -24,6 +24,7 @@ from tinydantic._errors import (
     DocumentIDRequiredError,
     DocumentNotFoundError,
 )
+from tinydantic._query import DocIdQuery
 from tinydantic.tinydb.operations import replace
 
 if TYPE_CHECKING:
@@ -73,6 +74,11 @@ def q(field: Any) -> Query:
     Command.search(q("search") == "fuzzy")
     ```
 
+    Note that ``q(Model.id)`` and ``q("id")`` differ: ``Model.id``
+    builds a document-id query (translated to TinyDB ``doc_id``
+    operations), while the string form queries a literal ``id``
+    key in the document body — which tinydantic never writes.
+
     Args:
         field: A class-level field expression (e.g. ``User.name``)
             or a field name string (e.g. ``"name"``).
@@ -105,6 +111,12 @@ class TinydanticModelMetaclass(ModelMetaclass):
     returns ``tinydb.queries.where(field_name)``, so expressions like
     ``User.name == "Alice"`` build TinyDB queries directly from the
     model definition.
+
+    The ``id`` field is special-cased: it maps to TinyDB's
+    ``doc_id``, which never appears in the stored document body, so
+    ``Model.id`` returns a ``DocIdQuery`` (translated by the model's
+    query methods to document-id operations) instead of a
+    ``where("id")`` body query that would silently match nothing.
     """
 
     def __getattr__(cls, attr: str) -> Any:  # noqa: N805
@@ -117,6 +129,11 @@ class TinydanticModelMetaclass(ModelMetaclass):
         behavior until the model is fully built.
         """
         if cls.__pydantic_complete__ and attr in cls.model_fields:
+            if attr == "id":
+                # id maps to TinyDB's doc_id, which never appears
+                # in the document body — a plain where("id") query
+                # would silently match nothing.
+                return DocIdQuery()
             return where(attr)
         return super().__getattr__(attr)  # type: ignore[misc]
 

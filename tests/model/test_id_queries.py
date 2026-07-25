@@ -13,7 +13,8 @@ import pytest
 from tinydb import where
 from tinydb.queries import QueryInstance
 
-from tinydantic import DocumentIDConditionError
+from tests.model.models import UserBase
+from tinydantic import DocumentIDConditionError, q
 from tinydantic._query import (
     DocIdCondition,
     DocIdQuery,
@@ -116,3 +117,35 @@ class TestHasIdCondition:
         assert not has_id_condition(cond)
         with pytest.raises(DocumentIDConditionError, match="doc_id"):
             cond({"name": "Alice"})
+
+
+class TestModelIdExpression:
+    """Class-level Model.id returns the typed id query."""
+
+    def test_model_id_is_doc_id_query(
+        self,
+        user_class: type[UserBase],
+    ) -> None:
+        """Model.id returns a DocIdQuery."""
+        assert isinstance(user_class.id, DocIdQuery)
+
+    def test_unbound_model_builds_conditions(self) -> None:
+        """Building an id condition needs no bound database."""
+        cond = UserBase.id == 1
+        assert isinstance(cond, DocIdCondition)
+
+    def test_q_passes_id_query_through(
+        self,
+        user_class: type[UserBase],
+    ) -> None:
+        """q(Model.id) passes through (DocIdQuery is a Query)."""
+        assert isinstance(q(user_class.id), DocIdQuery)
+
+    def test_other_fields_still_plain_queries(
+        self,
+        user_class: type[UserBase],
+    ) -> None:
+        """Non-id fields keep returning plain TinyDB queries."""
+        cond = user_class.name == "Alice"
+        assert not isinstance(user_class.name, DocIdQuery)
+        assert not has_id_condition(cond)
