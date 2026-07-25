@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from pydantic import ValidationError
 from tinydb import where
 from tinydb.queries import QueryInstance
 
@@ -250,6 +251,21 @@ class TestIdConditionReads:
         assert users.count(q(users.id) == 1) == 1
         assert users.count(q(users.id) == 999) == 0
         assert users.count(q(users.id) >= 2) == 2
+
+    def test_contains_and_count_do_not_validate(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """contains()/count() never validate documents into models.
+
+        A schema-invalid raw document must not break them; search()
+        by contrast validates and raises.
+        """
+        users.get_table().insert({"name": 123, "age": "not an int"})
+        assert users.contains(q(users.id) > 3)
+        assert users.count(q(users.id) > 1) == 3
+        with pytest.raises(ValidationError):
+            users.search(q(users.id) > 3)
 
     def test_raw_table_search_raises(
         self,
