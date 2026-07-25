@@ -18,7 +18,9 @@ from tinydantic._config import TinydanticConfig
 from tinydantic._errors import (
     AmbiguousConfigError,
     DatabaseNotBoundError,
+    DocumentIDConditionError,
     DocumentIDRequiredError,
+    DocumentIDUpdateError,
     DocumentNotFoundError,
     TinydanticError,
     TinydanticUserError,
@@ -30,7 +32,9 @@ __version__: str = metadata.version("tinydantic")
 __all__ = [
     "AmbiguousConfigError",
     "DatabaseNotBoundError",
+    "DocumentIDConditionError",
     "DocumentIDRequiredError",
+    "DocumentIDUpdateError",
     "DocumentNotFoundError",
     "TinydanticConfig",
     "TinydanticError",
