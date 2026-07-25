@@ -149,3 +149,115 @@ class TestModelIdExpression:
         cond = user_class.name == "Alice"
         assert not isinstance(user_class.name, DocIdQuery)
         assert not has_id_condition(cond)
+
+
+@pytest.fixture
+def users(user_class: type[UserBase]) -> type[UserBase]:
+    """Return the bound user class with three users (ids 1-3)."""
+    user_class.insert_multiple(
+        [
+            user_class(name="Alice", age=30),
+            user_class(name="Bob", age=25),
+            user_class(name="Carol", age=35),
+        ],
+    )
+    return user_class
+
+
+class TestIdConditionReads:
+    """Id conditions work through every read method."""
+
+    def test_get_by_id_equality(self, users: type[UserBase]) -> None:
+        """get(Model.id == n) fetches by document id."""
+        user = users.get(users.id == 2)  # type: ignore[call-overload]
+        assert user is not None
+        assert user.id == 2
+        assert user.name == "Bob"
+
+    def test_get_missing_id_returns_none(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """A get with an unknown id returns None."""
+        assert users.get(q(users.id) == 999) is None
+
+    @pytest.mark.parametrize(
+        ("build", "expected_ids"),
+        [
+            (lambda cls: q(cls.id) != 2, [1, 3]),
+            (lambda cls: q(cls.id) < 2, [1]),
+            (lambda cls: q(cls.id) <= 2, [1, 2]),
+            (lambda cls: q(cls.id) > 2, [3]),
+            (lambda cls: q(cls.id) >= 2, [2, 3]),
+            (lambda cls: q(cls.id).one_of([1, 3]), [1, 3]),
+        ],
+    )
+    def test_search_by_id_comparisons(
+        self,
+        users: type[UserBase],
+        build: Callable[[type[UserBase]], QueryInstance],
+        expected_ids: list[int],
+    ) -> None:
+        """Every operator matches the right documents."""
+        found = users.search(build(users))
+        assert {user.id for user in found} == set(expected_ids)
+
+    def test_search_composed_with_field_condition(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """Id conditions compose with field conditions."""
+        found = users.search((q(users.id) != 2) & (q(users.age) >= 30))
+        assert {user.id for user in found} == {1, 3}
+
+    def test_search_id_condition_right_of_field(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """Composition works with the id condition on the right."""
+        found = users.search(
+            (where("name") == "Alice") | (q(users.id) == 3),
+        )
+        assert {user.id for user in found} == {1, 3}
+
+    def test_search_inverted(self, users: type[UserBase]) -> None:
+        """A negated id condition matches the complement."""
+        found = users.search(~(q(users.id) == 2))
+        assert {user.id for user in found} == {1, 3}
+
+    def test_get_by_cond_and_get_or_raise(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """The get() delegates inherit translation."""
+        by_cond = users.get_by_cond(q(users.id) == 3)
+        assert by_cond is not None
+        assert by_cond.name == "Carol"
+        assert users.get_or_raise(q(users.id) == 1).name == "Alice"
+
+    def test_contains(self, users: type[UserBase]) -> None:
+        """contains() translates pure and composed id conditions."""
+        assert users.contains(q(users.id) == 1)
+        assert not users.contains(q(users.id) == 999)
+        assert users.contains((q(users.id) > 1) & (q(users.age) == 35))
+
+    def test_count(self, users: type[UserBase]) -> None:
+        """count() translates pure and composed id conditions."""
+        assert users.count(q(users.id) == 1) == 1
+        assert users.count(q(users.id) == 999) == 0
+        assert users.count(q(users.id) >= 2) == 2
+
+    def test_raw_table_search_raises(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """Bypassing tinydantic raises instead of matching nothing."""
+        with pytest.raises(DocumentIDConditionError, match="doc_id"):
+            users.get_table().search(q(users.id) == 1)
+
+    def test_q_string_id_still_queries_body(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """q('id') stays a raw body-key query (escape hatch)."""
+        assert users.search(q("id") == 1) == []
