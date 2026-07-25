@@ -1,6 +1,7 @@
 addopts
 agentic
 aiotinydb
+alikes
 anson
 asyncio
 autodocstring
@@ -18,6 +19,7 @@ classmethods
 Colvin
 Colvin's
 commitizen
+conds
 conftest
 connor
 crossref
@@ -26,6 +28,8 @@ cython
 debugpy
 dists
 dmypy
+dnspython
+docid
 docstrings
 doctest
 doctested
@@ -37,12 +41,18 @@ excinfo
 fastapi
 fcntl
 filterwarnings
+Firestore
 fontawesome
 footgun
+frozensets
 getattr
 gitter
 gunicorn
+hasattr
+hashval
+hashvals
 htmlcov
+httpcore
 httpx
 hynek
 importlib
@@ -80,6 +90,7 @@ njpwerner
 noqa
 nosetests
 numprocesses
+opname
 optionflags
 peasy
 pipenv
@@ -112,6 +123,7 @@ pytype
 pyupgrade
 Quickstart
 Repr
+Representer
 reprs
 rerunfailures
 ropeproject
@@ -140,6 +152,7 @@ testclient
 testpaths
 testpypi
 threadpool
+throughs
 tightenings
 tinydantic
 tinydb
@@ -152,6 +165,9 @@ trond
 twemoji
 typechecks
 typora
+uninspected
+unmigrated
+unvalidated
 upsert
 upserts
 uvicorn

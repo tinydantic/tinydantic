@@ -86,6 +86,43 @@ class DocumentNotFoundError(TinydanticError):
         )
 
 
+class DocumentIDConditionError(TinydanticUserError):
+    """An id condition was used where ``doc_id`` is unavailable.
+
+    ``Model.id`` conditions are translated to document-id
+    operations by the tinydantic model methods. TinyDB itself
+    evaluates query conditions against the document body, which
+    never contains the document id, so an id condition that
+    reaches TinyDB's raw evaluator — or an API with no ``doc_ids``
+    variant, like ``update_multiple()`` — raises this error
+    instead of silently matching nothing.
+    """
+
+    def __init__(self, message: str) -> None:
+        """Initialize with a context-specific message."""
+        super().__init__(message)
+
+
+class DocumentIDUpdateError(TinydanticUserError):
+    """An update mapping tried to set the ``id`` field.
+
+    ``id`` maps to TinyDB's ``doc_id`` — the document's key in the
+    table, not a field in the stored body — and an update cannot
+    change it. Allowing the key through would write a stray ``id``
+    field into the body that ``insert()`` and ``save()`` would
+    never produce.
+    """
+
+    def __init__(self, *, model_name: str) -> None:
+        """Initialize with the model whose update set ``id``."""
+        super().__init__(
+            f"update() cannot set 'id' on {model_name!r} — id "
+            "maps to TinyDB's doc_id, which updates cannot "
+            "change. Use doc_ids=[...] or a query condition to "
+            "select documents instead.",
+        )
+
+
 class DocumentIDRequiredError(TinydanticError):
     """Required document ID is missing.
 
