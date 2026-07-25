@@ -121,6 +121,63 @@ The [q()][tinydantic.q] helper resolves this. It returns its argument unchanged 
 
 ```
 
+## Querying by id
+
+The `id` field is not a body field: it maps to TinyDB's `doc_id`, the document's key in the table (see [Models](models.md)). Class-level `User.id` therefore builds a _document-id query_, which the model methods translate to TinyDB's native id operations — the same convenience Beanie and ODMantic provide for MongoDB's `_id`:
+
+```pycon
+>>> User.get(User.id == 2)
+User(id=2, name='Bob', age=25, email='bob@example.org', address=Address(city='Berlin', country='DE'))
+>>> User.search(User.id.one_of([1, 3]))
+[User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US')),
+  User(id=3, name='Carol', age=35, email='carol@example.com', address=Address(city='Berlin', country='DE'))]
+
+```
+
+The full comparison set works (`==`, `!=`, `<`, `<=`, `>`, `>=`, `one_of`), and id conditions compose with field conditions:
+
+```pycon
+>>> User.search((User.id >= 2) & (User.address.country == 'DE'))
+[User(id=2, name='Bob', age=25, email='bob@example.org', address=Address(city='Berlin', country='DE')),
+  User(id=3, name='Carol', age=35, email='carol@example.com', address=Address(city='Berlin', country='DE'))]
+
+```
+
+An id condition only accepts an int. Anything else raises immediately — including `None`, which is what `id` is on a model that was never inserted:
+
+```pycon
+>>> draft = User(name='Dana', age=41, email='dana@example.com', address=Address(city='Oslo', country='NO'))
+>>> User.get(User.id == draft.id)
+Traceback (most recent call last):
+  ...
+TypeError: id conditions require an int document id, got None
+
+```
+
+`Model.id` and `q("id")` are different things: `q(User.id)` is the typed form of the document-id query, while the string form `q("id")` queries a literal `id` key in the document body — a key tinydantic never writes:
+
+```pycon
+>>> User.search(q(User.id) == 1)
+[User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))]
+>>> User.search(q('id') == 1)
+[]
+
+```
+
+Because TinyDB's own query evaluator only ever sees the document body, an id condition that bypasses the model methods fails loudly rather than silently matching nothing:
+
+```pycon
+>>> db.table('users').search(User.id == 1)
+Traceback (most recent call last):
+  ...
+tinydantic._errors.DocumentIDConditionError: An id condition reached TinyDB's raw query evaluator
+
+```
+
+> [!WARNING]
+>
+> Ordered id comparisons (`User.id > 2`) are supported for consistency, but document ids restart from 1 after [truncate()][tinydantic.TinydanticModel.truncate] — don't treat id ranges as a stable insertion-order proxy. And `update_multiple()` cannot take id conditions at all (a TinyDB limitation); it raises [DocumentIDConditionError][tinydantic.DocumentIDConditionError] pointing you at per-condition [update()][tinydantic.TinydanticModel.update] calls.
+
 ## Sharp edge: fields that shadow query methods
 
 A read method or query method shares its name with a field at your peril. Because `search`, `get`, `count`, `matches`, `test`, and the like are real attributes on the model class (or on the Query object), a field with the same name is shadowed — attribute access finds the method, not a field query.
