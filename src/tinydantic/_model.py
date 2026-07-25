@@ -21,7 +21,9 @@ from tinydantic._config import (
 )
 from tinydantic._errors import (
     DatabaseNotBoundError,
+    DocumentIDConditionError,
     DocumentIDRequiredError,
+    DocumentIDUpdateError,
     DocumentNotFoundError,
 )
 from tinydantic._query import (
@@ -583,11 +585,16 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         fields pass through unchanged.
 
         Raises:
+            DocumentIDUpdateError: If the mapping contains an ``id``
+                key — ``id`` maps to TinyDB's ``doc_id``, which an
+                update cannot change.
             pydantic.ValidationError: If a value fails validation
                 against its field's type.
         """
         serialized: dict[str, Any] = {}
         for key, value in fields.items():
+            if key == "id":
+                raise DocumentIDUpdateError(model_name=cls.__name__)
             if key in cls.model_fields:
                 adapter = cls._field_adapter(key)
                 serialized[key] = adapter.dump_python(
@@ -616,15 +623,34 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         transform callable is handed to TinyDB as-is — what it writes
         is up to you.
 
+        Conditions on ``Model.id`` are translated to document-id
+        operations: matching ids are resolved in a read pass, then
+        updated via TinyDB's ``doc_ids=`` path — equivalent to
+        TinyDB's own read-modify-write under the single-process,
+        serialized-writes contract tinydantic documents. When
+        ``doc_ids`` is passed explicitly, TinyDB's precedence
+        applies and ``cond`` is not evaluated.
+
         Returns:
             The ids of all updated documents.
 
         Raises:
+            DocumentIDUpdateError: If a mapping contains an ``id``
+                key.
             pydantic.ValidationError: If a mapping value fails
                 validation against its field's type.
         """
         if not callable(fields):
             fields = cls._serialize_update_fields(fields)
+        if cond is not None and doc_ids is None and has_id_condition(cond):
+            matched = cls._match_id_condition_ids(cond)
+            if not matched:
+                return []
+            return cls.get_table().update(
+                # See replace() for why this cast is needed.
+                cast("Callable[[Mapping], None]", fields),
+                doc_ids=matched,
+            )
         return cls.get_table().update(
             # See replace() for why this cast is needed.
             # TODO @cdwilson: remove this cast once the annotation is
@@ -654,18 +680,34 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             The ids of all updated documents.
 
         Raises:
+            DocumentIDConditionError: If a condition contains an id
+                condition — TinyDB's ``update_multiple()`` cannot
+                select documents by id; call
+                [update][tinydantic.TinydanticModel.update] once per
+                condition instead.
+            DocumentIDUpdateError: If a mapping contains an ``id``
+                key.
             pydantic.ValidationError: If a mapping value fails
                 validation against its field's type.
         """
-        prepared = [
-            (
-                fields
-                if callable(fields)
-                else cls._serialize_update_fields(fields),
-                cond,
+        prepared = []
+        for fields, cond in updates:
+            if has_id_condition(cond):
+                msg = (
+                    "id conditions are not supported in "
+                    "update_multiple() — TinyDB's update_multiple() "
+                    "cannot select documents by id. Call update() "
+                    "once per condition instead."
+                )
+                raise DocumentIDConditionError(msg)
+            prepared.append(
+                (
+                    fields
+                    if callable(fields)
+                    else cls._serialize_update_fields(fields),
+                    cond,
+                ),
             )
-            for fields, cond in updates
-        ]
         return cls.get_table().update_multiple(
             # See replace() for why this cast is needed.
             cast(
@@ -682,9 +724,24 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     ) -> list[int]:
         """Update documents matching ``cond``, or insert ``document``.
 
+        Conditions on ``Model.id`` are translated to document-id
+        operations. As with TinyDB's own upsert, when nothing
+        matches, the insert does not adopt the condition's id value —
+        the document is inserted with a fresh id.
+
         Returns:
             The ids of the updated (or inserted) documents.
         """
+        if cond is not None and has_id_condition(cond):
+            matched = cls._match_id_condition_ids(cond)
+            document_dict = document.to_tinydb_document(force_dict=True)
+            if matched:
+                return cls.get_table().update(
+                    # See replace() for why this cast is needed.
+                    cast("Callable[[Mapping], None]", document_dict),
+                    doc_ids=matched,
+                )
+            return [cls.get_table().insert(document_dict)]
         return cls.get_table().upsert(
             document.to_tinydb_document(force_dict=cond is not None),
             cond,
@@ -699,9 +756,19 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     ) -> list[int]:
         """Remove matching documents.
 
+        Conditions on ``Model.id`` are translated to document-id
+        operations (matching ids resolved in a read pass, removed
+        via ``doc_ids=``). When ``doc_ids`` is passed explicitly,
+        TinyDB's precedence applies and ``cond`` is not evaluated.
+
         Returns:
             The ids of all removed documents.
         """
+        if cond is not None and doc_ids is None and has_id_condition(cond):
+            matched = cls._match_id_condition_ids(cond)
+            if not matched:
+                return []
+            return cls.get_table().remove(doc_ids=matched)
         return cls.get_table().remove(cond=cond, doc_ids=doc_ids)
 
     @classmethod
