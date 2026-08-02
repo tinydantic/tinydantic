@@ -22,12 +22,12 @@ Declare fields with any JSON-serializable Pydantic type. Here a `Task` mixes a `
 >>> from pydantic import BaseModel
 >>> from tinydantic import TinydanticModel
 >>> class Priority(enum.Enum):
-...     LOW = 'low'
-...     HIGH = 'high'
+...     LOW = "low"
+...     HIGH = "high"
 >>> class Tag(BaseModel):
 ...     label: str
 ...     weight: int
->>> class Task(TinydanticModel, database=db, table_name='tasks'):
+>>> class Task(TinydanticModel, database=db, table_name="tasks"):
 ...     title: str
 ...     created: datetime.datetime
 ...     ref: uuid.UUID
@@ -40,11 +40,11 @@ Insert an instance built from real Python objects:
 
 ```pycon
 >>> Task(
-...     title='Ship docs',
+...     title="Ship docs",
 ...     created=datetime.datetime(2026, 7, 5, 9, 30),
-...     ref=uuid.UUID('12345678-1234-5678-1234-567812345678'),
+...     ref=uuid.UUID("12345678-1234-5678-1234-567812345678"),
 ...     priority=Priority.HIGH,
-...     tags=[Tag(label='urgent', weight=5)],
+...     tags=[Tag(label="urgent", weight=5)],
 ... ).insert()
 Task(id=1, title='Ship docs', created=datetime.datetime(2026, 7, 5, 9, 30), ref=UUID('12345678-1234-5678-1234-567812345678'), priority=<Priority.HIGH: 'high'>, tags=[Tag(label='urgent', weight=5)])
 
@@ -53,7 +53,7 @@ Task(id=1, title='Ship docs', created=datetime.datetime(2026, 7, 5, 9, 30), ref=
 Fetch it back and the fields are the same typed values, not strings — Pydantic validates the stored primitives back into `datetime`, `UUID`, `Priority`, and `Tag` objects:
 
 ```pycon
->>> task = Task.get(Task.title == 'Ship docs')
+>>> task = Task.get(Task.title == "Ship docs")
 >>> task.created
 datetime.datetime(2026, 7, 5, 9, 30)
 >>> task.ref
@@ -71,14 +71,14 @@ A [field_validator][pydantic.field_validator] runs both when you construct a mod
 
 ```pycon
 >>> from pydantic import field_validator
->>> class Account(TinydanticModel, database=db, table_name='accounts'):
+>>> class Account(TinydanticModel, database=db, table_name="accounts"):
 ...     email: str
 ...
-...     @field_validator('email')
+...     @field_validator("email")
 ...     @classmethod
 ...     def _check_email(cls, value: str) -> str:
-...         if '@' not in value:
-...             raise ValueError('email must contain @')
+...         if "@" not in value:
+...             raise ValueError("email must contain @")
 ...         return value
 
 ```
@@ -86,7 +86,7 @@ A [field_validator][pydantic.field_validator] runs both when you construct a mod
 Constructing with a bad value raises before anything reaches storage:
 
 ```pycon
->>> Account(email='not-an-email')
+>>> Account(email="not-an-email")
 Traceback (most recent call last):
   ...
 pydantic_core._pydantic_core.ValidationError: 1 validation error for Account
@@ -98,7 +98,7 @@ email
 The same guard fires on the way _out_. Suppose a malformed document already exists in the table — written before the validator existed, or by another tool — with an `email` that has no `@`:
 
 ```pycon
->>> db.table('accounts').insert({'email': 'broken'})
+>>> db.table("accounts").insert({"email": "broken"})
 1
 >>> Account.all()
 Traceback (most recent call last):
@@ -114,7 +114,7 @@ email
 > Validation on load means a `tinydantic` read is a schema check, not just a fetch. Bad data surfaces as a loud [pydantic.ValidationError][pydantic_core.ValidationError] the moment you read it, rather than silently flowing into your application as an untyped dict.
 
 ```pycon
->>> db.table('accounts').truncate()
+>>> db.table("accounts").truncate()
 
 ```
 
@@ -124,13 +124,15 @@ Ordinary Pydantic defaults and [default factories][pydantic.fields.Field] work a
 
 ```pycon
 >>> from pydantic import Field
->>> class Session(TinydanticModel, database=db, table_name='sessions'):
+>>> class Session(TinydanticModel, database=db, table_name="sessions"):
 ...     user: str
 ...     token: uuid.UUID = Field(
-...         default_factory=lambda: uuid.UUID('00000000-0000-0000-0000-000000000001'),
+...         default_factory=lambda: uuid.UUID(
+...             "00000000-0000-0000-0000-000000000001"
+...         ),
 ...     )
 ...     active: bool = True
->>> Session(user='alice').insert()
+>>> Session(user="alice").insert()
 Session(id=1, user='alice', token=UUID('00000000-0000-0000-0000-000000000001'), active=True)
 
 ```
@@ -138,7 +140,7 @@ Session(id=1, user='alice', token=UUID('00000000-0000-0000-0000-000000000001'), 
 The defaults are persisted, so a later read returns the filled-in values:
 
 ```pycon
->>> Session.get(Session.user == 'alice')
+>>> Session.get(Session.user == "alice")
 Session(id=1, user='alice', token=UUID('00000000-0000-0000-0000-000000000001'), active=True)
 
 ```

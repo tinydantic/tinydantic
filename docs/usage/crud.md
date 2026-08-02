@@ -9,7 +9,7 @@ We use an in-memory database and a `Book` model throughout. The examples share s
 >>> from tinydb.storages import MemoryStorage
 >>> db = TinyDB(storage=MemoryStorage)
 >>> from tinydantic import TinydanticModel
->>> class Book(TinydanticModel, database=db, table_name='books'):
+>>> class Book(TinydanticModel, database=db, table_name="books"):
 ...     title: str
 ...     author: str
 ...     year: int
@@ -24,7 +24,7 @@ We use an in-memory database and a `Book` model throughout. The examples share s
 [insert()][tinydantic.TinydanticModel.insert] stores a single model and returns it with `id` populated.
 
 ```pycon
->>> Book(title='Dune', author='Herbert', year=1965).insert()
+>>> Book(title="Dune", author="Herbert", year=1965).insert()
 Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
 
 ```
@@ -34,10 +34,12 @@ Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
 [insert_multiple()][tinydantic.TinydanticModel.insert_multiple] stores several models in one call. Exactly like `insert()`, each passed-in model gets its assigned `id` set in place, and the same instances come back in insertion order.
 
 ```pycon
->>> Book.insert_multiple([
-...     Book(title='Neuromancer', author='Gibson', year=1984),
-...     Book(title='Snow Crash', author='Stephenson', year=1992),
-... ])
+>>> Book.insert_multiple(
+...     [
+...         Book(title="Neuromancer", author="Gibson", year=1984),
+...         Book(title="Snow Crash", author="Stephenson", year=1992),
+...     ]
+... )
 [Book(id=2, title='Neuromancer', author='Gibson', year=1984, in_stock=True),
   Book(id=3, title='Snow Crash', author='Stephenson', year=1992, in_stock=True)]
 
@@ -48,10 +50,13 @@ Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
 [upsert()][tinydantic.TinydanticModel.upsert] updates every document matching a condition, or inserts the document if nothing matches. Either way it returns the affected ids — and when exactly one document is affected, it also sets the passed instance's `id` in place, just like [insert()][tinydantic.TinydanticModel.insert]. (When several documents match, linking the instance to any one of them would be arbitrary, so `id` is left untouched.) The first call below inserts (no `Hyperion` exists yet); the second updates the same document and links the instance to it:
 
 ```pycon
->>> Book.upsert(Book(title='Hyperion', author='Simmons', year=1989), Book.title == 'Hyperion')
+>>> Book.upsert(
+...     Book(title="Hyperion", author="Simmons", year=1989),
+...     Book.title == "Hyperion",
+... )
 [4]
->>> hyperion = Book(title='Hyperion', author='Dan Simmons', year=1989)
->>> Book.upsert(hyperion, Book.title == 'Hyperion')
+>>> hyperion = Book(title="Hyperion", author="Dan Simmons", year=1989)
+>>> Book.upsert(hyperion, Book.title == "Hyperion")
 [4]
 >>> hyperion.id
 4
@@ -82,7 +87,7 @@ The table now holds four books. Read methods return validated model instances wi
 By condition:
 
 ```pycon
->>> Book.get(Book.title == 'Dune')
+>>> Book.get(Book.title == "Dune")
 Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
 
 ```
@@ -121,7 +126,7 @@ By a list of document ids — this returns a `list`:
 These are precisely typed aliases for the three `get()` call shapes. Use them when you want a static type checker to know exactly what comes back.
 
 ```pycon
->>> Book.get_by_cond(Book.author == 'Gibson')
+>>> Book.get_by_cond(Book.author == "Gibson")
 Book(id=2, title='Neuromancer', author='Gibson', year=1984, in_stock=True)
 >>> Book.get_by_id(4)
 Book(id=4, title='Hyperion', author='Dan Simmons', year=1989, in_stock=True)
@@ -136,7 +141,7 @@ Book(id=4, title='Hyperion', author='Dan Simmons', year=1989, in_stock=True)
 [get_or_raise()][tinydantic.TinydanticModel.get_or_raise] is the strict counterpart to `get()`: where a missing document would return `None`, it raises [DocumentNotFoundError][tinydantic.DocumentNotFoundError] instead. Reach for it when a missing document is a bug (or a 404), not an expected outcome. It accepts exactly one selector — a condition or a `doc_id=`.
 
 ```pycon
->>> Book.get_or_raise(Book.title == 'Dune')
+>>> Book.get_or_raise(Book.title == "Dune")
 Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
 >>> Book.get_or_raise(doc_id=999)
 Traceback (most recent call last):
@@ -161,7 +166,7 @@ tinydantic._errors.DocumentNotFoundError: No document with id 999 in table 'book
 [contains()][tinydantic.TinydanticModel.contains] reports whether any matching document exists, by condition or by `doc_id=`.
 
 ```pycon
->>> Book.contains(Book.title == 'Dune')
+>>> Book.contains(Book.title == "Dune")
 True
 >>> Book.contains(doc_id=999)
 False
@@ -187,7 +192,7 @@ False
 [save()][tinydantic.TinydanticModel.save] persists an instance: it inserts when `id` is unset and updates in place otherwise. Mutate the model, then save.
 
 ```pycon
->>> dune = Book.get(Book.title == 'Dune')
+>>> dune = Book.get(Book.title == "Dune")
 >>> dune.in_stock = False
 >>> dune.save()
 Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=False)
@@ -211,7 +216,7 @@ Book(id=1, title='Dune', author='Herbert', year=1966, in_stock=False)
 [update()][tinydantic.TinydanticModel.update] merges a fields mapping (or applies a transform callable) into every document matching a condition, and returns the updated ids.
 
 ```pycon
->>> Book.update({'in_stock': False}, Book.author == 'Gibson')
+>>> Book.update({"in_stock": False}, Book.author == "Gibson")
 [2]
 >>> Book.get_by_id(2)
 Book(id=2, title='Neuromancer', author='Gibson', year=1984, in_stock=False)
@@ -222,8 +227,8 @@ A transform callable mutates each matched document in place:
 
 ```pycon
 >>> def bump_year(doc):
-...     doc['year'] += 1
->>> Book.update(bump_year, Book.title == 'Snow Crash')
+...     doc["year"] += 1
+>>> Book.update(bump_year, Book.title == "Snow Crash")
 [3]
 >>> Book.get_by_id(3)
 Book(id=3, title='Snow Crash', author='Stephenson', year=1993, in_stock=True)
@@ -233,7 +238,7 @@ Book(id=3, title='Snow Crash', author='Stephenson', year=1993, in_stock=True)
 Update mappings cannot set `id` — it maps to TinyDB's `doc_id`, which an update cannot change. Trying raises [DocumentIDUpdateError][tinydantic.DocumentIDUpdateError]:
 
 ```pycon
->>> Book.update({'id': 99}, Book.title == 'Dune')
+>>> Book.update({"id": 99}, Book.title == "Dune")
 Traceback (most recent call last):
   ...
 tinydantic._errors.DocumentIDUpdateError: update() cannot set 'id'
@@ -245,10 +250,12 @@ tinydantic._errors.DocumentIDUpdateError: update() cannot set 'id'
 [update_multiple()][tinydantic.TinydanticModel.update_multiple] applies several `(fields, cond)` updates in one call and returns all updated ids.
 
 ```pycon
->>> Book.update_multiple([
-...     ({'in_stock': True}, Book.title == 'Dune'),
-...     ({'in_stock': True}, Book.author == 'Gibson'),
-... ])
+>>> Book.update_multiple(
+...     [
+...         ({"in_stock": True}, Book.title == "Dune"),
+...         ({"in_stock": True}, Book.author == "Gibson"),
+...     ]
+... )
 [1, 2]
 
 ```
@@ -256,9 +263,11 @@ tinydantic._errors.DocumentIDUpdateError: update() cannot set 'id'
 Pairs may use conditions on `Book.id` (see [Queries](queries.md)) and mix them freely with field conditions — the whole batch still runs as one atomic write:
 
 ```pycon
->>> Book.update_multiple([
-...     ({'in_stock': False}, Book.id == 1),
-... ])
+>>> Book.update_multiple(
+...     [
+...         ({"in_stock": False}, Book.id == 1),
+...     ]
+... )
 [1]
 
 ```
@@ -267,14 +276,16 @@ Field values in the mapping get the same treatment `insert()` and `save()` give 
 
 ```pycon
 >>> import datetime
->>> class Event(TinydanticModel, database=db, table_name='events'):
+>>> class Event(TinydanticModel, database=db, table_name="events"):
 ...     name: str
 ...     when: datetime.datetime
->>> Event(name='launch', when=datetime.datetime(2026, 1, 1, 12, 0)).insert()
+>>> Event(name="launch", when=datetime.datetime(2026, 1, 1, 12, 0)).insert()
 Event(id=1, name='launch', when=datetime.datetime(2026, 1, 1, 12, 0))
->>> Event.update({'when': datetime.datetime(2027, 1, 1, 12, 0)}, Event.name == 'launch')
+>>> Event.update(
+...     {"when": datetime.datetime(2027, 1, 1, 12, 0)}, Event.name == "launch"
+... )
 [1]
->>> db.table('events').get(doc_id=1)
+>>> db.table("events").get(doc_id=1)
 {'name': 'launch', 'when': '2027-01-01T12:00:00'}
 
 ```
@@ -282,7 +293,7 @@ Event(id=1, name='launch', when=datetime.datetime(2026, 1, 1, 12, 0))
 And because values are validated, an update that would corrupt a field refuses to run:
 
 ```pycon
->>> Event.update({'when': 'not a datetime'}, Event.name == 'launch')
+>>> Event.update({"when": "not a datetime"}, Event.name == "launch")
 Traceback (most recent call last):
   ...
 pydantic_core._pydantic_core.ValidationError: 1 validation error for datetime
@@ -302,9 +313,9 @@ pydantic_core._pydantic_core.ValidationError: 1 validation error for datetime
 [delete()][tinydantic.TinydanticModel.delete] removes the instance's document from the table. It returns nothing; querying afterwards finds nothing.
 
 ```pycon
->>> snow = Book.get(Book.title == 'Snow Crash')
+>>> snow = Book.get(Book.title == "Snow Crash")
 >>> snow.delete()
->>> print(Book.get(Book.title == 'Snow Crash'))
+>>> print(Book.get(Book.title == "Snow Crash"))
 None
 
 ```
@@ -337,9 +348,9 @@ The last sharp edge is about what happens when an instance's document has disapp
 `save()` is forgiving: if the document is gone, it re-inserts it under the same id.
 
 ```pycon
->>> class Note(TinydanticModel, database=db, table_name='notes'):
+>>> class Note(TinydanticModel, database=db, table_name="notes"):
 ...     text: str
->>> note = Note(text='draft').insert()
+>>> note = Note(text="draft").insert()
 >>> note
 Note(id=1, text='draft')
 >>> Note.remove(doc_ids=[note.id])  # the document vanishes out of band

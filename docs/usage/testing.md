@@ -11,9 +11,9 @@ Code that talks to a database is only as testable as its data isolation. `tinyda
 >>> from tinydb.storages import MemoryStorage
 >>> from tinydantic import TinydanticModel
 >>> db = TinyDB(storage=MemoryStorage)
->>> class Note(TinydanticModel, database=db, table_name='notes'):
+>>> class Note(TinydanticModel, database=db, table_name="notes"):
 ...     text: str
->>> Note(text='scratch').insert()
+>>> Note(text="scratch").insert()
 Note(id=1, text='scratch')
 
 ```
@@ -117,11 +117,11 @@ def app():
 Because `bind()` re-points a model at a different database at runtime, you can demonstrate the isolation it buys directly. Here a single `Widget` class writes to one in-memory database, then rebinds to a second, fresh one — and the swap gives a completely empty starting point, exactly what a fresh fixture provides:
 
 ```pycon
->>> class Widget(TinydanticModel, table_name='widgets'):
+>>> class Widget(TinydanticModel, table_name="widgets"):
 ...     name: str
 >>> db_one = TinyDB(storage=MemoryStorage)
 >>> Widget.bind(database=db_one)
->>> Widget(name='first').insert()
+>>> Widget(name="first").insert()
 Widget(id=1, name='first')
 >>> Widget.all()
 [Widget(id=1, name='first')]
@@ -135,7 +135,7 @@ Rebind to a second database and the model sees a clean slate — `db_one`'s data
 >>> Widget.bind(database=db_two)
 >>> Widget.all()
 []
->>> Widget(name='fresh').insert()
+>>> Widget(name="fresh").insert()
 Widget(id=1, name='fresh')
 
 ```
@@ -148,7 +148,7 @@ When a test _reuses_ one database (for example a session-scoped file that is exp
 >>> Widget.truncate()
 >>> Widget.all()
 []
->>> Widget(name='after reset').insert()
+>>> Widget(name="after reset").insert()
 Widget(id=1, name='after reset')
 
 ```

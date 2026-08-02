@@ -96,7 +96,7 @@ docs = [
 ]
 lint = [
   "poethepoet",
-  "ruff>=0.14",
+  "ruff>=0.16",
 ]
 test = [
   "fastapi",

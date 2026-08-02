@@ -16,7 +16,7 @@ The setup below is everything the API needs: an in-memory database (see [Storage
 >>>
 >>> db = TinyDB(storage=MemoryStorage)
 >>>
->>> class User(TinydanticModel, database=db, table_name='users'):
+>>> class User(TinydanticModel, database=db, table_name="users"):
 ...     name: str
 ...     email: str
 >>>
@@ -26,18 +26,18 @@ The setup below is everything the API needs: an in-memory database (see [Storage
 >>>
 >>> app = FastAPI()
 >>>
->>> @app.post('/users', status_code=status.HTTP_201_CREATED)
+>>> @app.post("/users", status_code=status.HTTP_201_CREATED)
 ... def create_user(payload: UserCreate) -> User:
 ...     return User(**payload.model_dump()).insert()
 >>>
->>> @app.get('/users/{user_id}')
+>>> @app.get("/users/{user_id}")
 ... def read_user(user_id: int) -> User:
 ...     user = User.get_by_id(user_id)
 ...     if user is None:
-...         raise HTTPException(status_code=404, detail='User not found')
+...         raise HTTPException(status_code=404, detail="User not found")
 ...     return user
 >>>
->>> @app.get('/users')
+>>> @app.get("/users")
 ... def list_users() -> list[User]:
 ...     return User.all()
 >>>
@@ -56,7 +56,9 @@ A few things worth calling out:
 Posting a body creates the document and returns it with `id` populated and a `201 Created` status:
 
 ```pycon
->>> response = client.post('/users', json={'name': 'Ada', 'email': 'ada@example.com'})
+>>> response = client.post(
+...     "/users", json={"name": "Ada", "email": "ada@example.com"}
+... )
 >>> response.status_code
 201
 >>> response.json()
@@ -67,7 +69,9 @@ Posting a body creates the document and returns it with `id` populated and a `20
 A second create is assigned the next id:
 
 ```pycon
->>> client.post('/users', json={'name': 'Grace', 'email': 'grace@example.com'}).json()
+>>> client.post(
+...     "/users", json={"name": "Grace", "email": "grace@example.com"}
+... ).json()
 {'id': 2, 'name': 'Grace', 'email': 'grace@example.com'}
 
 ```
@@ -77,7 +81,7 @@ A second create is assigned the next id:
 Fetching an existing id returns the document; the `id` in the path maps straight to TinyDB's document id:
 
 ```pycon
->>> response = client.get('/users/1')
+>>> response = client.get("/users/1")
 >>> response.status_code
 200
 >>> response.json()
@@ -88,7 +92,7 @@ Fetching an existing id returns the document; the `id` in the path maps straight
 A missing id returns `404` with the handler's detail message, because `get_by_id` returned `None`:
 
 ```pycon
->>> response = client.get('/users/999')
+>>> response = client.get("/users/999")
 >>> response.status_code
 404
 >>> response.json()
@@ -101,7 +105,7 @@ A missing id returns `404` with the handler's detail message, because `get_by_id
 The collection endpoint returns every document via [all()][tinydantic.TinydanticModel.all], serialized through the `User` response model:
 
 ```pycon
->>> response = client.get('/users')
+>>> response = client.get("/users")
 >>> response.status_code
 200
 >>> response.json()
