@@ -503,10 +503,19 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             raise ValueError(msg)
 
         if cond is not None and has_id_condition(cond):
-            # Conditions on Model.id are translated to document-id
-            # operations (see search()).
-            results = cls.search(cond)
-            return results[0] if results else None
+            if isinstance(cond, DocIdCondition) and cond.opname == "==":
+                # Pure id equality: search() does a direct key
+                # lookup and validates at most one document.
+                results = cls.search(cond)
+                return results[0] if results else None
+            # Other id conditions: stop at the first match in
+            # table order, validating only the returned document —
+            # the same semantics TinyDB's get(cond) and the
+            # field-condition path give.
+            for doc in iter(cls.get_table()):
+                if cond(doc):
+                    return cls.from_tinydb_document(doc)
+            return None
 
         result = cls.get_table().get(
             cond=cond,
