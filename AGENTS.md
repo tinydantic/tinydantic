@@ -21,7 +21,8 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 - REUSE licensing: new code files need SPDX headers; `**.md` and listed files are covered by `REUSE.toml` aggregates.
 - cspell gates commits: new legit words go in `project-words.txt` (case-insensitive sorted).
 - interrogate demands 100% docstring coverage.
-- NEVER file issues on external repositories without explicit approval — draft collateral in `docs/upstream/` instead. If TinyDB friction blocks work, the sanctioned fallback is the <https://github.com/tinydantic/tinydb> fork.
+- NEVER file issues on external repositories without explicit approval — draft collateral in `docs/upstream/` instead.
+- Prefer TinyDB's public API. Internal/private TinyDB APIs (underscore-prefixed) may be used ONLY when the needed behavior is impossible through the public API; every such use must be explicitly called out and approved during planning/review, and documented — reason plus proposed upstream fix — on `docs/contributing/tinydb_limitations.md`. Keep that page current whenever TinyDB friction is found, worked around, or resolved. Forking or vendoring TinyDB was considered and rejected (2026-07-13) — don't propose it as a fallback.
 - Do not store tinydantic config in pydantic's `model_config` (pydantic#9992) — see the `src/tinydantic/_config.py` module docstring.
 
 ## Docs
