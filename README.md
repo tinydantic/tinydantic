@@ -8,8 +8,10 @@
 
 <!-- prettier-ignore-start -->
 
-> [!NOTE]
-> `tinydantic` is an experimental project under active development and should not be considered stable for use in a production environment.
+> [!WARNING]
+> `tinydantic` is an experimental project under active development and should not be considered stable 🏗️
+>
+> At this point, you probably don't want to use this for anything real, but feel free to grab your hard hat and have a look around! 👷
 >
 > Releases follow the [SemVer versioning spec](https://semver.org):
 >
