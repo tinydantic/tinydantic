@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://tinydantic.dev/latest/usage/configuration/">
+        <link rel="canonical" href="https://tinydantic.dev/latest/contributing/tinydb_limitations/">
       
       
-        <link rel="prev" href="../storage/">
+        <link rel="prev" href="../development_guide/">
       
       
-        <link rel="next" href="../testing/">
+        <link rel="next" href="../CODE_OF_CONDUCT/">
       
       
         
@@ -34,7 +34,7 @@
     
     
       
-        <title>Configuration - tinydantic</title>
+        <title>TinyDB Limitations - tinydantic</title>
       
     
     
@@ -96,7 +96,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#configuration" class="md-skip">
+        <a href="#tinydb-limitations" class="md-skip">
           Skip to content
         </a>
       
@@ -136,7 +136,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Configuration
+              TinyDB Limitations
             
           </span>
         </div>
@@ -278,13 +278,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../usage/" class="md-tabs__link">
           
   
   
@@ -324,11 +322,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../contributing/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -531,8 +531,6 @@
       
   
   
-    
-  
   
   
     
@@ -566,23 +564,22 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../usage/" class="md-nav__link ">
               
   
   
@@ -600,13 +597,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -626,7 +623,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../introduction/" class="md-nav__link">
+      <a href="../../usage/introduction/" class="md-nav__link">
         
   
   
@@ -654,7 +651,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/" class="md-nav__link">
+      <a href="../../usage/installation/" class="md-nav__link">
         
   
   
@@ -682,7 +679,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../quickstart/" class="md-nav__link">
+      <a href="../../usage/quickstart/" class="md-nav__link">
         
   
   
@@ -710,7 +707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../crud/" class="md-nav__link">
+      <a href="../../usage/crud/" class="md-nav__link">
         
   
   
@@ -738,7 +735,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../queries/" class="md-nav__link">
+      <a href="../../usage/queries/" class="md-nav__link">
         
   
   
@@ -766,7 +763,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../../usage/models/" class="md-nav__link">
         
   
   
@@ -794,7 +791,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../storage/" class="md-nav__link">
+      <a href="../../usage/storage/" class="md-nav__link">
         
   
   
@@ -819,37 +816,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Configuration
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../usage/configuration/" class="md-nav__link">
         
   
   
@@ -865,114 +835,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc">
-      
-        <li class="md-nav__item">
-  <a href="#class-keyword-arguments" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Class keyword arguments
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#table-name-derivation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Table-name derivation
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration-inheritance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration inheritance
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#late-binding-with-bind" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Late binding with bind()
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#databasenotbounderror" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DatabaseNotBoundError
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ambiguousconfigerror" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        AmbiguousConfigError
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#design-notes-why-config-is-not-in-model_config" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Design notes: why config is not in model_config
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#where-next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where next
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -985,7 +847,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../testing/" class="md-nav__link">
+      <a href="../../usage/testing/" class="md-nav__link">
         
   
   
@@ -1013,7 +875,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../fastapi/" class="md-nav__link">
+      <a href="../../usage/fastapi/" class="md-nav__link">
         
   
   
@@ -1580,6 +1442,8 @@
       
   
   
+    
+  
   
   
     
@@ -1599,22 +1463,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../contributing/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1632,13 +1497,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1658,7 +1523,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/development_guide/" class="md-nav__link">
+      <a href="../development_guide/" class="md-nav__link">
         
   
   
@@ -1683,10 +1548,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../contributing/tinydb_limitations/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TinyDB Limitations
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1702,6 +1594,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc">
+      
+        <li class="md-nav__item">
+  <a href="#query-conditions-never-see-the-document-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query conditions never see the document id
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#update_multiple-cannot-select-documents-by-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_multiple() cannot select documents by id
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#update-field-mappings-are-mistyped-as-callables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update() field mappings are mistyped as callables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#document-ids-are-stringified-before-reaching-storages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Document ids are stringified before reaching storages
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#private-api-usage-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Private API usage registry
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1714,7 +1681,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/CODE_OF_CONDUCT/" class="md-nav__link">
+      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
         
   
   
@@ -1938,10 +1905,10 @@
     <ul class="md-nav__list" data-md-component="toc">
       
         <li class="md-nav__item">
-  <a href="#class-keyword-arguments" class="md-nav__link">
+  <a href="#query-conditions-never-see-the-document-id" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Class keyword arguments
+        Query conditions never see the document id
       
     </span>
   </a>
@@ -1949,10 +1916,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#table-name-derivation" class="md-nav__link">
+  <a href="#update_multiple-cannot-select-documents-by-id" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Table-name derivation
+        update_multiple() cannot select documents by id
       
     </span>
   </a>
@@ -1960,10 +1927,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration-inheritance" class="md-nav__link">
+  <a href="#update-field-mappings-are-mistyped-as-callables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration inheritance
+        update() field mappings are mistyped as callables
       
     </span>
   </a>
@@ -1971,10 +1938,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#late-binding-with-bind" class="md-nav__link">
+  <a href="#document-ids-are-stringified-before-reaching-storages" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Late binding with bind()
+        Document ids are stringified before reaching storages
       
     </span>
   </a>
@@ -1982,43 +1949,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#databasenotbounderror" class="md-nav__link">
+  <a href="#private-api-usage-registry" class="md-nav__link">
     <span class="md-ellipsis">
       
-        DatabaseNotBoundError
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ambiguousconfigerror" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        AmbiguousConfigError
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#design-notes-why-config-is-not-in-model_config" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Design notes: why config is not in model_config
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#where-next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where next
+        Private API usage registry
       
     </span>
   </a>
@@ -2040,7 +1974,7 @@
                 
                   
   
-    <a href="https://github.com/tinydantic/tinydantic/edit/main/docs/usage/configuration.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/tinydantic/tinydantic/edit/main/docs/contributing/tinydb_limitations.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75z"/></svg>
     </a>
@@ -2049,107 +1983,77 @@
     
       
     
-    <a href="https://github.com/tinydantic/tinydantic/raw/main/docs/usage/configuration.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/tinydantic/tinydantic/raw/main/docs/contributing/tinydb_limitations.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5 5 5 0 0 1 5-5 5 5 0 0 1 5 5 5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5"/></svg>
     </a>
   
 
 
-<h1 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">¤</a></h1>
-<p>Configuration is how a model learns <em>where</em> its documents live: which <a class="autorefs autorefs-external" href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.database.TinyDB">TinyDB</a> database, and which table within it. <code>tinydantic</code> takes both as class keyword arguments — the same shape as SQLModel's <code>class Hero(SQLModel, table=True)</code>. This page covers the two config keys, how the table name is derived, how config flows through subclassing, late binding with <code>bind()</code>, the errors you can hit, and — in a closing design note — why this config deliberately lives outside Pydantic's <code>model_config</code>.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb</span><span class="w"> </span><span class="kn">import</span> <span class="n">TinyDB</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb.storages</span><span class="w"> </span><span class="kn">import</span> <span class="n">MemoryStorage</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">TinydanticModel</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">TinyDB</span><span class="p">(</span><span class="n">storage</span><span class="o">=</span><span class="n">MemoryStorage</span><span class="p">)</span>
-</span></code></pre></div>
-<h2 id="class-keyword-arguments">Class keyword arguments<a class="headerlink" href="#class-keyword-arguments" title="Permanent link">¤</a></h2>
-<p>A model is configured with two keyword arguments on the class statement: <code>database=</code> (a TinyDB instance) and <code>table_name=</code> (a string).</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s1">&#39;users&#39;</span><span class="p">):</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Alice&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">User(id=1, name=&#39;Alice&#39;)</span>
-</span></code></pre></div>
-<h2 id="table-name-derivation">Table-name derivation<a class="headerlink" href="#table-name-derivation" title="Permanent link">¤</a></h2>
-<p><code>table_name=</code> is optional. When you omit it, the table name is derived from the class name converted to <code>snake_case</code> via <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/latest/api/pydantic/config/#pydantic.alias_generators.to_snake">pydantic.alias_generators.to_snake</a> — so <code>AdminUser</code> stores its documents in a table named <code>admin_user</code>:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">AdminUser</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">AdminUser</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;root&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="go">AdminUser(id=1, name=&#39;root&#39;)</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">AdminUser</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="go">&#39;admin_user&#39;</span>
-</span></code></pre></div>
-<h2 id="configuration-inheritance">Configuration inheritance<a class="headerlink" href="#configuration-inheritance" title="Permanent link">¤</a></h2>
-<p>Config keys are resolved by walking the class's <a href="https://docs.python.org/3/glossary.html#term-method-resolution-order">MRO</a>: each key is looked up on the class itself first, then its bases, and the first class that sets it wins. A subclass therefore inherits its parent's config and can override any single key while leaving the rest intact.</p>
-<p>Here <code>Base</code> is bound to <code>db</code> with an explicit table name. <code>Child</code> sets only <code>table_name</code> — it inherits <code>database</code> from <code>Base</code>:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Base</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s1">&#39;base_table&#39;</span><span class="p">):</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="gp">... </span>    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Base</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s1">&#39;child_table&#39;</span><span class="p">):</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="gp">... </span>    <span class="n">b</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Child</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span> <span class="ow">is</span> <span class="n">db</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="go">True</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Child</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="go">&#39;child_table&#39;</span>
-</span></code></pre></div>
-<p>Each class stores only the keys explicitly set on it, so overriding a key on a child never mutates the parent:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Base</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="go">&#39;base_table&#39;</span>
-</span></code></pre></div>
-<h2 id="late-binding-with-bind">Late binding with <code>bind()</code><a class="headerlink" href="#late-binding-with-bind" title="Permanent link">¤</a></h2>
-<p>Sometimes no <code>TinyDB</code> instance exists when the class is defined — a common case in tests and application factories, where the database is created at startup. Define the model with no <code>database=</code>, then attach one later with <a class="autorefs autorefs-internal" title="            bind
-
-
-  
-      classmethod
-  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.bind">bind()</a>:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Product</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s1">&#39;products&#39;</span><span class="p">):</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="gp">... </span>    <span class="n">sku</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">)</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="p">(</span><span class="n">sku</span><span class="o">=</span><span class="s1">&#39;ABC-123&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="go">Product(id=1, sku=&#39;ABC-123&#39;)</span>
-</span></code></pre></div>
-<p><code>bind()</code> updates only the keys you pass, leaving the others (including inherited ones) untouched, and binding a subclass never affects its parents.</p>
-<h2 id="databasenotbounderror"><code>DatabaseNotBoundError</code><a class="headerlink" href="#databasenotbounderror" title="Permanent link">¤</a></h2>
-<p>Any table operation on a model that has no database anywhere in its class hierarchy raises <a class="autorefs autorefs-internal" title="            DatabaseNotBoundError" href="../../reference/api/tinydantic/#tinydantic.DatabaseNotBoundError">DatabaseNotBoundError</a>. The message points at both ways to fix it:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Orphan</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">):</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Orphan</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="gr">tinydantic._errors.DatabaseNotBoundError</span>: <span class="n">No database is bound to &#39;Orphan&#39;. Pass database=&lt;TinyDB instance&gt; as a class keyword when defining the model, or call Orphan.bind(database=...) before using it.</span>
-</span></code></pre></div>
-<h2 id="ambiguousconfigerror"><code>AmbiguousConfigError</code><a class="headerlink" href="#ambiguousconfigerror" title="Permanent link">¤</a></h2>
-<p>MRO lookup gives a single, unambiguous answer when config comes down <em>one</em> inheritance chain. The one case where it could not is a diamond: a class inheriting from two <em>unrelated</em> bases that each set the same key to different values. Rather than silently pick one, <code>tinydantic</code> raises <a class="autorefs autorefs-internal" title="            AmbiguousConfigError" href="../../reference/api/tinydantic/#tinydantic.AmbiguousConfigError">AmbiguousConfigError</a> at class-definition time.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">other_db</span> <span class="o">=</span> <span class="n">TinyDB</span><span class="p">(</span><span class="n">storage</span><span class="o">=</span><span class="n">MemoryStorage</span><span class="p">)</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">FromMain</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="gp">... </span>    <span class="k">pass</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">FromOther</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">other_db</span><span class="p">):</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="gp">... </span>    <span class="k">pass</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Combined</span><span class="p">(</span><span class="n">FromMain</span><span class="p">,</span> <span class="n">FromOther</span><span class="p">):</span>
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="gr">tinydantic._errors.AmbiguousConfigError</span>: <span class="n">&#39;Combined&#39; inherits conflicting values for tinydantic config key &#39;database&#39; from unrelated base classes &#39;FromMain&#39; and &#39;FromOther&#39;. Set database= explicitly on &#39;Combined&#39; to resolve the ambiguity.</span>
-</span></code></pre></div>
-<p>Setting the key explicitly on the new class resolves the conflict — the class's own value wins, and no lookup ambiguity remains:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Combined</span><span class="p">(</span><span class="n">FromMain</span><span class="p">,</span> <span class="n">FromOther</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Combined</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span> <span class="ow">is</span> <span class="n">db</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="go">True</span>
-</span></code></pre></div>
-<h2 id="design-notes-why-config-is-not-in-model_config">Design notes: why config is not in <code>model_config</code><a class="headerlink" href="#design-notes-why-config-is-not-in-model_config" title="Permanent link">¤</a></h2>
-<p><code>tinydantic</code> stores its config in a per-class <code>__tinydantic_config__</code> attribute and resolves it by walking the MRO — deliberately <em>not</em> in Pydantic's <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/latest/api/pydantic/base_model/#pydantic.BaseModel.model_config">model_config</a>. The reason is a mismatch in ordering semantics.</p>
-<p>Pydantic merges <code>model_config</code> across multiple base classes in "last wins" order — the <em>opposite</em> of Python's MRO (<a href="https://github.com/pydantic/pydantic/issues/9992">pydantic#9992</a>). Community fixes were rejected as breaking changes, and the behavior may yet change in Pydantic v3. Storing <code>tinydantic</code>'s keys there would inherit those surprising semantics, risk future key collisions with Pydantic's own <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/latest/api/pydantic/config/#pydantic.config.ConfigDict">ConfigDict</a>, and couple binding resolution to behavior Pydantic itself may flip.</p>
-<p>Using a separate attribute with plain MRO lookup sidesteps all three problems. There is no scenario where "our order versus Pydantic's order" silently matters: a single inheritance chain resolves identically under both orderings, and the only case where they <em>could</em> disagree — two unrelated bases with conflicting values — is turned into a loud <code>AmbiguousConfigError</code> rather than a quiet guess. This matches the rationale documented in the <code>tinydantic._config</code> module docstring.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><code>tinydantic</code> keeps one legitimate key in <code>model_config</code>: <code>protected_namespaces=("tinydantic_",)</code>, which reserves the <code>tinydantic_</code> prefix so future methods cannot collide with your field names. That is a genuine Pydantic setting, so it belongs there.</p>
-</div>
-<h2 id="where-next">Where next<a class="headerlink" href="#where-next" title="Permanent link">¤</a></h2>
+<h1 id="tinydb-limitations">TinyDB Limitations<a class="headerlink" href="#tinydb-limitations" title="Permanent link">¤</a></h1>
+<p>This page documents the places where TinyDB's current implementation causes friction for <code>tinydantic</code>, the workarounds we carry because of them, and the improvements we would suggest upstream. It is written so that a TinyDB maintainer can read any section standalone and understand the limitation, why it matters to an ODM layered on top, and what change would resolve it.</p>
+<p>Two project policies anchor this page (see <code>AGENTS.md</code>):</p>
 <ul>
-<li><a href="../storage/">Storage</a> — the TinyDB backends you can bind a model to.</li>
-<li><a href="../crud/">CRUD tour</a> — the read and write methods that use this configuration.</li>
+<li><code>tinydantic</code> prefers TinyDB's public API. An internal/private TinyDB API (underscore-prefixed) may be used only when the needed behavior is impossible through the public API, only with explicit approval during planning/review, and every such use must be documented in the <a href="#private-api-usage-registry">registry below</a> with its reason and the upstream change that would make it unnecessary.</li>
+<li>Proposals to TinyDB are drafted in <code>upstream/</code> (at the repository root) and are never filed on the TinyDB issue tracker without explicit approval.</li>
 </ul>
+<p>This page must be kept current: whenever TinyDB friction is found, worked around, or resolved, update the relevant section here in the same change.</p>
+<p>All observations below were verified against TinyDB 4.8.2.</p>
+<h2 id="query-conditions-never-see-the-document-id">Query conditions never see the document id<a class="headerlink" href="#query-conditions-never-see-the-document-id" title="Permanent link">¤</a></h2>
+<p><strong>Limitation.</strong> TinyDB evaluates every query condition against the raw document <em>body</em> mapping — the value in the <code>{doc_id: body}</code> table dict — never against a <a href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.table.Document"><code>Document</code></a> carrying <code>doc_id</code>. All five evaluation sites behave this way: <code>Table.search()</code>, <code>Table.get(cond=...)</code>, and the updater loops inside <code>Table.update(cond=...)</code>, <code>Table.update_multiple()</code>, and <code>Table.remove(cond=...)</code>. (<code>Table._update_table()</code>'s docstring notes that skipping the <code>Document</code> wrap is a deliberate optimization.) Only <code>Table.__iter__</code> yields <code>Document</code> instances. Consequently, no query object — however it is constructed — can express "document id equals 1": the id is structurally invisible to the condition, even though it sits right there as the dict key in every evaluation loop.</p>
+<p><strong>Why it matters to an ODM.</strong> Every mainstream document ODM lets users query by the model's id attribute (Beanie and ODMantic translate <code>Model.id</code> to MongoDB's <code>_id</code>; Firestore special-cases <code>FieldPath.documentId()</code> because — exactly like TinyDB — its document key is not a body field). <code>tinydantic</code> maps its <code>id</code> field to <code>doc_id</code>, so supporting <code>User.get(User.id == 1)</code> required a translation layer: id-bearing conditions are detected in every model method and executed via <code>doc_id=</code>/<code>doc_ids=</code> operations or by iterating the table (the one API that yields <code>Document</code>s). See <code>src/tinydantic/_query.py</code> and the id-condition branches in <code>src/tinydantic/_model.py</code>.</p>
+<p><strong>Suggested improvement.</strong> An opt-in protocol that keeps the existing fast path free:</p>
+<ol>
+<li>Give <code>QueryInstance</code> a <code>needs_doc_id: bool = False</code> attribute, propagated through <code>__and__</code>/<code>__or__</code>/<code>__invert__</code> (<code>self.needs_doc_id or other.needs_doc_id</code>).</li>
+<li>Add a <code>DocId</code> query type to <code>tinydb.queries</code> whose comparisons build <code>QueryInstance</code>s with <code>needs_doc_id=True</code> and test <code>doc.doc_id</code>.</li>
+<li>At each of the five evaluation sites: <code>if getattr(cond, "needs_doc_id", False)</code>, wrap the body in <code>self.document_class(doc, self.document_id_class(doc_id))</code> before calling the condition; otherwise call it with the raw body exactly as today.</li>
+</ol>
+<p>Existing queries and third-party <code>QueryLike</code> objects pay nothing (the <code>getattr</code> default preserves current behavior); id queries work in every API including <code>update_multiple()</code>; the storage format is untouched. This would let <code>tinydantic</code> delete its entire translation layer.</p>
+<h2 id="update_multiple-cannot-select-documents-by-id"><code>update_multiple()</code> cannot select documents by id<a class="headerlink" href="#update_multiple-cannot-select-documents-by-id" title="Permanent link">¤</a></h2>
+<p><strong>Limitation.</strong> <code>Table.update(fields, cond, doc_ids)</code> and <code>Table.remove(cond, doc_ids)</code> both accept a <code>doc_ids</code> selector, but <code>Table.update_multiple(updates)</code> accepts only <code>(fields, cond)</code> pairs. Combined with the evaluation limitation above, there is no way to run a batched update that targets documents by id — neither via a condition (conditions cannot see ids) nor via an explicit selector (the parameter does not exist).</p>
+<p><strong>Why it matters to an ODM.</strong> <code>update_multiple()</code> is TinyDB's only batched write — the whole batch runs in one atomic read-modify-write cycle (<code>Table._update_table()</code>), which is the reason to use it over looping <code>update()</code>. <code>tinydantic</code> translates id conditions to <code>doc_ids=</code> operations where a public landing spot exists, but <code>update_multiple()</code> offers none, so supporting id conditions there (without sacrificing the batch's single-write atomicity) required the private-API use recorded in the <a href="#private-api-usage-registry">registry below</a>.</p>
+<p><strong>Suggested improvement.</strong> Either of:</p>
+<ul>
+<li>Accept an optional per-pair id selector, e.g. <code>update_multiple(updates: Iterable[tuple[fields, cond | None, doc_ids | None]])</code> (or a parallel <code>update_multiple_by_ids()</code>), mirroring the <code>update()</code>/<code>remove()</code> signatures.</li>
+<li>Ship the <code>needs_doc_id</code>/<code>DocId</code> improvement above, which subsumes this: id conditions would then work in <code>update_multiple()</code>'s existing signature.</li>
+</ul>
+<h2 id="update-field-mappings-are-mistyped-as-callables"><code>update()</code> field mappings are mistyped as callables<a class="headerlink" href="#update-field-mappings-are-mistyped-as-callables" title="Permanent link">¤</a></h2>
+<p><strong>Limitation.</strong> <code>Table.update()</code> and <code>Table.update_multiple()</code> annotate their <code>fields</code> parameter as <code>Callable[[Mapping], None]</code>, but both accept (and the documentation describes) plain mappings as well — the implementation branches on <code>callable(fields)</code>. Static type checkers therefore reject the documented mapping form.</p>
+<p><strong>Why it matters.</strong> Every <code>tinydantic</code> call into these methods carries a <code>cast("Callable[[Mapping], None]", fields)</code> band-aid, marked with <code>TODO @cdwilson: remove this cast once the annotation is fixed in TinyDB</code> (see <code>src/tinydantic/_model.py</code>). The transform parameter is also under-annotated for its actual contract: the callable receives a mutable <code>dict</code>, so <code>Callable[[MutableMapping], None]</code> would describe it better.</p>
+<p><strong>Suggested improvement.</strong> Annotate as <code>fields: Mapping | Callable[[MutableMapping], None]</code> (and the corresponding tuple type in <code>update_multiple</code>).</p>
+<h2 id="document-ids-are-stringified-before-reaching-storages">Document ids are stringified before reaching storages<a class="headerlink" href="#document-ids-are-stringified-before-reaching-storages" title="Permanent link">¤</a></h2>
+<p><strong>Limitation.</strong> Before table data is handed to the storage layer, document ids are converted to strings (<code>{str(doc_id): doc}</code> in <code>Table._update_table()</code>), because the reference JSON storage requires string keys. Storages and middlewares therefore never see the native int ids, and serialized output sorts ids lexicographically (<code>"10"</code> before <code>"2"</code>). See the upstream discussion <a href="https://github.com/msiemens/tinydb/discussions/466">msiemens/tinydb#466</a>.</p>
+<p><strong>Why it matters.</strong> Human-readable storage output (a design goal of <code>tinydantic</code>'s YAML storage) lists documents in confusing lexicographic order. <code>tinydantic</code> ships <code>SortIntDocIDsMiddleware</code> (<code>src/tinydantic/tinydb/middlewares.py</code>) purely to undo the stringification — it converts keys back to ints and forces <code>sort_keys=True</code> — and that middleware has to reach into the wrapped storage's <code>kwargs</code> and pass ints where the <code>Storage</code> protocol declares strings, both acknowledged hacks.</p>
+<p><strong>Suggested improvement.</strong> Let storages opt into native id keys (for example, a class attribute on <code>Storage</code> declaring whether keys must be strings), or perform the stringification inside <code>JSONStorage</code> rather than in <code>Table</code>, so key formatting becomes a storage concern.</p>
+<h2 id="private-api-usage-registry">Private API usage registry<a class="headerlink" href="#private-api-usage-registry" title="Permanent link">¤</a></h2>
+<p>Every approved use of a TinyDB internal/private API in <code>tinydantic</code> is recorded here. An empty table means the shipped code uses only the public API.</p>
+<table>
+<thead>
+<tr>
+<th>TinyDB internal</th>
+<th>Used by</th>
+<th>Status</th>
+<th>Reason</th>
+<th>Upstream change that would remove it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>QueryInstance._hash</code> (read-only attribute access)</td>
+<td><code>tinydantic._query.has_id_condition()</code> — detecting id conditions inside composed queries</td>
+<td><strong>In use</strong> (approved 2026-08-02; shipped with the original id-query work)</td>
+<td>Composing queries (<code>&amp;</code>/<code>\|</code>/<code>~</code>) produces plain <code>QueryInstance</code> objects, so a custom condition type cannot survive composition — the hashval tree is the only place a marker does. The access is read-only via <code>getattr(cond, "_hash", None)</code> and degrades loudly, never silently: if a future TinyDB renames the attribute, bare id conditions are still detected by <code>isinstance</code>, and undetected compositions raise <code>DocumentIDConditionError</code> when TinyDB's evaluator runs them.</td>
+<td>The <code>needs_doc_id</code>/<code>DocId</code> evaluator improvement above (composition would propagate a public flag); alternatively, a public accessor for a query's hash tree.</td>
+</tr>
+<tr>
+<td><code>Table._update_table(updater)</code></td>
+<td><code>TinydanticModel._run_id_condition_write_cycle()</code> — the id-condition write paths of <code>update()</code>, <code>remove()</code>, <code>upsert()</code>, and <code>update_multiple()</code></td>
+<td><strong>In use</strong> (approved 2026-07-13)</td>
+<td>The only way to select write targets by id inside one atomic read-modify-write cycle: <code>update_multiple()</code> has no <code>doc_ids</code> parameter, and conditions cannot see ids (the two limitations above). The custom updater evaluates every condition against <code>Document(body, doc_id)</code> wrappers inside upstream's own read → mutate → write → cache-clear lifecycle, applies mutations copy-on-write (so an aborted cycle leaks nothing, even on <code>MemoryStorage</code>, whose <code>read()</code> shares body dicts by reference), and skips the storage write entirely when nothing matched. Benchmarked ~23% faster than the two-pass public-API alternative on a 5,000-document JSONStorage table (one full file read saved per write).</td>
+<td>Either <code>update_multiple()</code> improvement above; the <code>needs_doc_id</code>/<code>DocId</code> evaluator change removes the need entirely.</td>
+</tr>
+</tbody>
+</table>
 
 
 
@@ -2203,7 +2107,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../storage/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Storage">
+          <a href="../development_guide/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Development Guide">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2213,20 +2117,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Storage
+                Development Guide
               </div>
             </div>
           </a>
         
         
           
-          <a href="../testing/" class="md-footer__link md-footer__link--next" aria-label="Next: Testing">
+          <a href="../CODE_OF_CONDUCT/" class="md-footer__link md-footer__link--next" aria-label="Next: Code of Conduct">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Testing
+                Code of Conduct
               </div>
             </div>
             <div class="md-footer__button md-icon">
