@@ -13,11 +13,13 @@ import pytest
 from pydantic import ValidationError
 from tinydb import where
 from tinydb.queries import QueryInstance
+from tinydb.table import Table
 
 from tests.model.models import UserBase
 from tinydantic import (
     DocumentIDConditionError,
     DocumentIDUpdateError,
+    TinydanticError,
     q,
 )
 from tinydantic._query import (
@@ -27,7 +29,7 @@ from tinydantic._query import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Mapping
 
 
 class TestDocIdQuery:
@@ -360,16 +362,98 @@ class TestIdConditionWrites:
         assert document.id == 4
         assert users.count() == 4
 
-    def test_update_multiple_id_condition_raises(
+    def test_update_multiple_by_id_condition(
         self,
         users: type[UserBase],
     ) -> None:
-        """update_multiple() refuses id conditions loudly."""
-        with pytest.raises(
-            DocumentIDConditionError,
-            match="update_multiple",
-        ):
-            users.update_multiple([({"age": 1}, q(users.id) == 1)])
+        """update_multiple() applies id-condition pairs in a batch."""
+        ids = users.update_multiple(
+            [
+                ({"age": 1}, q(users.id) == 1),
+                ({"age": 2}, q(users.id).one_of([2, 3])),
+            ],
+        )
+        assert sorted(ids) == [1, 2, 3]
+        doc = users.get_table().get(doc_id=3)
+        assert isinstance(doc, dict)
+        assert doc["age"] == 2
+
+    def test_update_multiple_mixed_pairs(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """Field-condition and id-condition pairs mix in one batch."""
+        ids = users.update_multiple(
+            [
+                ({"age": 50}, where("name") == "Alice"),
+                ({"age": 60}, (q(users.id) > 1) & (q(users.age) == 35)),
+            ],
+        )
+        assert sorted(ids) == [1, 3]
+
+    def test_update_multiple_overlapping_pairs(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """Overlapping pairs keep upstream batch semantics.
+
+        One id per matching pair, in order, and later pairs see
+        earlier pairs' mutations.
+        """
+        ids = users.update_multiple(
+            [
+                ({"age": 1}, q(users.id) == 2),
+                ({"name": "Bobby"}, q(users.id) == 2),
+            ],
+        )
+        assert ids == [2, 2]
+        doc = users.get_table().get(doc_id=2)
+        assert isinstance(doc, dict)
+        assert doc["age"] == 1
+        assert doc["name"] == "Bobby"
+
+    def test_update_multiple_no_match_returns_empty(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """No matching ids: empty result, nothing changed."""
+        result = users.update_multiple(
+            [({"age": 9}, q(users.id) == 999)],
+        )
+        assert result == []
+        assert users.count() == 3
+
+    def test_update_multiple_raise_aborts_whole_batch(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """An exception mid-batch aborts before anything persists."""
+
+        def boom(_doc: Mapping) -> None:
+            """Fail mid-batch to test the abort guarantee."""
+            msg = "boom"
+            raise RuntimeError(msg)
+
+        with pytest.raises(RuntimeError, match="boom"):
+            users.update_multiple(
+                [
+                    ({"age": 99}, q(users.id) == 1),
+                    (boom, q(users.id) == 2),
+                ],
+            )
+        doc = users.get_table().get(doc_id=1)
+        assert isinstance(doc, dict)
+        assert doc["age"] == 30
+
+    def test_missing_private_api_raises(
+        self,
+        users: type[UserBase],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A TinyDB without _update_table fails loudly."""
+        monkeypatch.delattr(Table, "_update_table")
+        with pytest.raises(TinydanticError, match="_update_table"):
+            users.update({"age": 1}, q(users.id) == 1)
 
     def test_update_mapping_id_key_raises(
         self,

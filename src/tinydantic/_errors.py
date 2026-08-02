@@ -93,9 +93,8 @@ class DocumentIDConditionError(TinydanticUserError):
     operations by the tinydantic model methods. TinyDB itself
     evaluates query conditions against the document body, which
     never contains the document id, so an id condition that
-    reaches TinyDB's raw evaluator — or an API with no ``doc_ids``
-    variant, like ``update_multiple()`` — raises this error
-    instead of silently matching nothing.
+    reaches TinyDB's raw evaluator raises this error instead of
+    silently matching nothing.
     """
 
     def __init__(self, message: str) -> None:

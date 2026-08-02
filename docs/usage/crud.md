@@ -242,7 +242,7 @@ tinydantic._errors.DocumentIDUpdateError: update() cannot set 'id'
 
 ### `update_multiple`
 
-[update_multiple()][tinydantic.TinydanticModel.update_multiple] applies several `(fields, cond)` updates in one call and returns all updated ids. It cannot take conditions on `Book.id` — TinyDB has no bulk-update-by-id API — and raises [DocumentIDConditionError][tinydantic.DocumentIDConditionError] for them; call [update()][tinydantic.TinydanticModel.update] once per condition instead.
+[update_multiple()][tinydantic.TinydanticModel.update_multiple] applies several `(fields, cond)` updates in one call and returns all updated ids.
 
 ```pycon
 >>> Book.update_multiple([
@@ -250,6 +250,16 @@ tinydantic._errors.DocumentIDUpdateError: update() cannot set 'id'
 ...     ({'in_stock': True}, Book.author == 'Gibson'),
 ... ])
 [1, 2]
+
+```
+
+Pairs may use conditions on `Book.id` (see [Queries](queries.md)) and mix them freely with field conditions — the whole batch still runs as one atomic write:
+
+```pycon
+>>> Book.update_multiple([
+...     ({'in_stock': False}, Book.id == 1),
+... ])
+[1]
 
 ```
 
