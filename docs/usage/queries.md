@@ -176,7 +176,25 @@ tinydantic._errors.DocumentIDConditionError: An id condition reached TinyDB's ra
 
 > [!WARNING]
 >
-> Ordered id comparisons (`User.id > 2`) are supported for consistency, but document ids restart from 1 after [truncate()][tinydantic.TinydanticModel.truncate] — don't treat id ranges as a stable insertion-order proxy.
+> Ordered comparisons match against a document's _current_ id, and ids are reused: [truncate()][tinydantic.TinydanticModel.truncate] resets the counter so new documents start again at 1, and [save()][tinydantic.TinydanticModel.save] can re-insert a document under its old id. A stored bookmark like "poll for `User.id > 50`" silently misses everything inserted after a reset — use a real timestamp or sequence field for insertion-order logic.
+
+The reset trap, concretely — a checkpoint recorded before a truncate silently misses everything inserted after it:
+
+```pycon
+>>> class Draft(TinydanticModel, database=db, table_name='drafts'):
+...     text: str
+>>> drafts = Draft.insert_multiple(
+...     [Draft(text='a'), Draft(text='b'), Draft(text='c')])
+>>> [draft.id for draft in drafts]
+[1, 2, 3]
+>>> checkpoint = 3
+>>> Draft.truncate()
+>>> Draft(text='newest, after the reset').insert()
+Draft(id=1, text='newest, after the reset')
+>>> Draft.search(Draft.id > checkpoint)
+[]
+
+```
 
 ## Sharp edge: fields that shadow query methods
 
