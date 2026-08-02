@@ -57,6 +57,19 @@ The next section describes how to set up a development environment and create a 
 
 ## Development Guide
 
+### Clone the repository
+
+Some of the setup steps below read files that ship with the repository (e.g. the pinned Python version in `.python-version` and the Node.js dependency lockfile `package-lock.json`), so the first step is to get a copy of the repository onto your development system.
+
+[Fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo) the `tinydantic` repository, clone your fork, and change directory to the project root.
+
+```sh
+git clone git@github.com:<your GitHub username>/tinydantic.git
+cd tinydantic
+```
+
+The remainder of this guide assumes that commands are run from the project root unless otherwise noted.
+
 ### Prerequisites
 
 #### Python
@@ -73,17 +86,17 @@ This project is written in [Python](https://www.python.org/) and requires a Pyth
     uv --version
     ```
 
-    Next, use uv to install Python 3.10 or later. We'll install the latest version of Python provided by uv (currently `3.13` at the time of writing).
+    Next, use uv to install the project's pinned version of Python. When run from the project root, `uv python install` reads the pinned version from the [`.python-version`](https://docs.astral.sh/uv/concepts/python-versions/#project-python-versions) file at the project root and installs it.
 
     ```sh
-    uv python install 3.13
+    uv python install
     ```
-
-    NOTE: As long as you have Python 3.10 or later installed, you should be able to follow the remainder of this guide.
 
 === "Install Python without uv"
 
     The simplest way to install Python is to [download an official installer](https://www.python.org/downloads/). Check out [this article](https://realpython.com/installing-python/#macos-how-to-install-python-using-the-official-installer) for an overview of some alternative installation options.
+
+    NOTE: The version of Python used for development is pinned in the `.python-version` file at the project root, but as long as you have Python 3.10 or later installed, you should be able to follow the remainder of this guide.
 
 #### uv
 
@@ -118,14 +131,7 @@ The [`npm ci`](https://docs.npmjs.com/cli/commands/npm-ci) command installs the 
 
 #### Installation and setup
 
-[Fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo) the `tinydantic` repository, clone it, and change directory to the project root.
-
-```sh
-git clone git@github.com:<your GitHub username>/tinydantic.git
-cd tinydantic
-```
-
-Install the project along with all of its development dependencies.
+From the project root of the repository you cloned in [Clone the repository](#clone-the-repository), install the project along with all of its development dependencies.
 
 ```sh
 uv sync --all-groups
