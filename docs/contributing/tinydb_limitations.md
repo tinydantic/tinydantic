@@ -5,7 +5,7 @@ This page documents the places where TinyDB's current implementation causes fric
 Two project policies anchor this page (see `AGENTS.md`):
 
 - `tinydantic` prefers TinyDB's public API. An internal/private TinyDB API (underscore-prefixed) may be used only when the needed behavior is impossible through the public API, only with explicit approval during planning/review, and every such use must be documented in the [registry below](#private-api-usage-registry) with its reason and the upstream change that would make it unnecessary.
-- Proposals to TinyDB are drafted in `docs/upstream/` and are never filed on the TinyDB issue tracker without explicit approval.
+- Proposals to TinyDB are drafted in `upstream/` (at the repository root) and are never filed on the TinyDB issue tracker without explicit approval.
 
 This page must be kept current: whenever TinyDB friction is found, worked around, or resolved, update the relevant section here in the same change.
 
