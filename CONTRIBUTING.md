@@ -64,7 +64,7 @@ Some of the setup steps below read files that ship with the repository (e.g. the
 [Fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo) the `tinydantic` repository, clone your fork, and change directory to the project root.
 
 ```sh
-git clone git@github.com:<your GitHub username>/tinydantic.git
+git clone git@github.com:YOUR-USERNAME/tinydantic.git
 cd tinydantic
 ```
 
