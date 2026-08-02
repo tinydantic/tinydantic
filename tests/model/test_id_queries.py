@@ -269,6 +269,24 @@ class TestIdConditionReads:
         with pytest.raises(ValidationError):
             users.search(q(users.id) > 3)
 
+    def test_get_validates_only_the_first_match(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """get() stops at the first match, like TinyDB's get().
+
+        A schema-invalid document that matches the condition later
+        in table order must not affect the result — only the
+        returned document is validated (search(), by contrast,
+        validates every match).
+        """
+        users.get_table().insert({"name": 123, "age": "not an int"})
+        found = users.get(q(users.id) >= 1)
+        assert found is not None
+        assert found.id == 1
+        with pytest.raises(ValidationError):
+            users.search(q(users.id) >= 1)
+
     def test_raw_table_search_raises(
         self,
         users: type[UserBase],
