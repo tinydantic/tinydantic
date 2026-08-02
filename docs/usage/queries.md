@@ -13,16 +13,33 @@ The examples share an in-memory database of three users. Run them in order.
 >>> class Address(BaseModel):
 ...     city: str
 ...     country: str
->>> class User(TinydanticModel, database=db, table_name='users'):
+>>> class User(TinydanticModel, database=db, table_name="users"):
 ...     name: str
 ...     age: int
 ...     email: str
 ...     address: Address
->>> users = User.insert_multiple([
-...     User(name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US')),
-...     User(name='Bob', age=25, email='bob@example.org', address=Address(city='Berlin', country='DE')),
-...     User(name='Carol', age=35, email='carol@example.com', address=Address(city='Berlin', country='DE')),
-... ])
+>>> users = User.insert_multiple(
+...     [
+...         User(
+...             name="Alice",
+...             age=30,
+...             email="alice@example.com",
+...             address=Address(city="Portland", country="US"),
+...         ),
+...         User(
+...             name="Bob",
+...             age=25,
+...             email="bob@example.org",
+...             address=Address(city="Berlin", country="DE"),
+...         ),
+...         User(
+...             name="Carol",
+...             age=35,
+...             email="carol@example.com",
+...             address=Address(city="Berlin", country="DE"),
+...         ),
+...     ]
+... )
 >>> [user.id for user in users]
 [1, 2, 3]
 
@@ -33,9 +50,9 @@ The examples share an in-memory database of three users. Run them in order.
 Equality and the ordering operators build the query you would expect:
 
 ```pycon
->>> User.get(User.name == 'Alice')
+>>> User.get(User.name == "Alice")
 User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))
->>> User.search(User.name != 'Alice')
+>>> User.search(User.name != "Alice")
 [User(id=2, name='Bob', age=25, email='bob@example.org', address=Address(city='Berlin', country='DE')),
   User(id=3, name='Carol', age=35, email='carol@example.com', address=Address(city='Berlin', country='DE'))]
 >>> User.search(User.age < 30)
@@ -46,10 +63,10 @@ User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city
 The query object also exposes TinyDB's own methods. `.matches` tests the _whole_ value against a regular expression, `.search` looks for the pattern _anywhere_ in the value, and `.test` runs an arbitrary predicate:
 
 ```pycon
->>> User.search(User.email.matches(r'.*@example\.com'))
+>>> User.search(User.email.matches(r".*@example\.com"))
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US')),
   User(id=3, name='Carol', age=35, email='carol@example.com', address=Address(city='Berlin', country='DE'))]
->>> User.search(User.email.search('example.org'))
+>>> User.search(User.email.search("example.org"))
 [User(id=2, name='Bob', age=25, email='bob@example.org', address=Address(city='Berlin', country='DE'))]
 >>> User.search(User.age.test(lambda v: v >= 30))
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US')),
@@ -62,12 +79,12 @@ The query object also exposes TinyDB's own methods. `.matches` tests the _whole_
 Combine conditions with `&` (and), `|` (or), and `~` (not). Parenthesize each operand — Python's bitwise operators bind more loosely than comparisons.
 
 ```pycon
->>> User.search((User.age >= 30) & (User.address.country == 'US'))
+>>> User.search((User.age >= 30) & (User.address.country == "US"))
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))]
->>> User.search((User.name == 'Alice') | (User.name == 'Bob'))
+>>> User.search((User.name == "Alice") | (User.name == "Bob"))
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US')),
   User(id=2, name='Bob', age=25, email='bob@example.org', address=Address(city='Berlin', country='DE'))]
->>> User.search(~(User.address.country == 'DE'))
+>>> User.search(~(User.address.country == "DE"))
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))]
 
 ```
@@ -77,7 +94,7 @@ Combine conditions with `&` (and), `|` (or), and `~` (not). Parenthesize each op
 Chain attribute access to query into a nested model. `User.address.city` builds a query against the `city` key inside the stored `address` object.
 
 ```pycon
->>> User.search(User.address.city == 'Berlin')
+>>> User.search(User.address.city == "Berlin")
 [User(id=2, name='Bob', age=25, email='bob@example.org', address=Address(city='Berlin', country='DE')),
   User(id=3, name='Carol', age=35, email='carol@example.com', address=Address(city='Berlin', country='DE'))]
 
@@ -90,7 +107,7 @@ The field syntax covers the common cases, but TinyDB's [Query][tinydb.queries.Qu
 ```pycon
 >>> from tinydb import Query
 >>> query = Query()
->>> User.search(query.name.one_of(['Alice', 'Carol']))
+>>> User.search(query.name.one_of(["Alice", "Carol"]))
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US')),
   User(id=3, name='Carol', age=35, email='carol@example.com', address=Address(city='Berlin', country='DE'))]
 
@@ -104,7 +121,7 @@ The [q()][tinydantic.q] helper resolves this. It returns its argument unchanged 
 
 ```pycon
 >>> from tinydantic import q
->>> User.search(q(User.name) == 'Alice')
+>>> User.search(q(User.name) == "Alice")
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))]
 
 ```
@@ -116,7 +133,7 @@ The [q()][tinydantic.q] helper resolves this. It returns its argument unchanged 
 `q()` also accepts a field name as a string, building a query on that document key. This form exists for the shadowed-field escape hatch below.
 
 ```pycon
->>> User.search(q('name') == 'Alice')
+>>> User.search(q("name") == "Alice")
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))]
 
 ```
@@ -137,7 +154,7 @@ User(id=2, name='Bob', age=25, email='bob@example.org', address=Address(city='Be
 The full comparison set works (`==`, `!=`, `<`, `<=`, `>`, `>=`, `one_of`), and id conditions compose with field conditions:
 
 ```pycon
->>> User.search((User.id >= 2) & (User.address.country == 'DE'))
+>>> User.search((User.id >= 2) & (User.address.country == "DE"))
 [User(id=2, name='Bob', age=25, email='bob@example.org', address=Address(city='Berlin', country='DE')),
   User(id=3, name='Carol', age=35, email='carol@example.com', address=Address(city='Berlin', country='DE'))]
 
@@ -146,7 +163,12 @@ The full comparison set works (`==`, `!=`, `<`, `<=`, `>`, `>=`, `one_of`), and 
 An id condition only accepts an int. Anything else raises immediately — including `None`, which is what `id` is on a model that was never inserted:
 
 ```pycon
->>> draft = User(name='Dana', age=41, email='dana@example.com', address=Address(city='Oslo', country='NO'))
+>>> draft = User(
+...     name="Dana",
+...     age=41,
+...     email="dana@example.com",
+...     address=Address(city="Oslo", country="NO"),
+... )
 >>> User.get(User.id == draft.id)
 Traceback (most recent call last):
   ...
@@ -159,7 +181,7 @@ TypeError: id conditions require an int document id, got None
 ```pycon
 >>> User.search(q(User.id) == 1)
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))]
->>> User.search(q('id') == 1)
+>>> User.search(q("id") == 1)
 []
 
 ```
@@ -167,7 +189,7 @@ TypeError: id conditions require an int document id, got None
 Because TinyDB's own query evaluator only ever sees the document body, an id condition that bypasses the model methods fails loudly rather than silently matching nothing:
 
 ```pycon
->>> db.table('users').search(User.id == 1)
+>>> db.table("users").search(User.id == 1)
 Traceback (most recent call last):
   ...
 tinydantic._errors.DocumentIDConditionError: An id condition reached TinyDB's raw query evaluator
@@ -181,15 +203,16 @@ tinydantic._errors.DocumentIDConditionError: An id condition reached TinyDB's ra
 The reset trap, concretely — a checkpoint recorded before a truncate silently misses everything inserted after it:
 
 ```pycon
->>> class Draft(TinydanticModel, database=db, table_name='drafts'):
+>>> class Draft(TinydanticModel, database=db, table_name="drafts"):
 ...     text: str
 >>> drafts = Draft.insert_multiple(
-...     [Draft(text='a'), Draft(text='b'), Draft(text='c')])
+...     [Draft(text="a"), Draft(text="b"), Draft(text="c")]
+... )
 >>> [draft.id for draft in drafts]
 [1, 2, 3]
 >>> checkpoint = 3
 >>> Draft.truncate()
->>> Draft(text='newest, after the reset').insert()
+>>> Draft(text="newest, after the reset").insert()
 Draft(id=1, text='newest, after the reset')
 >>> Draft.search(Draft.id > checkpoint)
 []
@@ -203,13 +226,15 @@ A read method or query method shares its name with a field at your peril. Becaus
 Consider a model with a field literally named `search`:
 
 ```pycon
->>> class Command(TinydanticModel, database=db, table_name='commands'):
+>>> class Command(TinydanticModel, database=db, table_name="commands"):
 ...     name: str
 ...     search: str
->>> commands = Command.insert_multiple([
-...     Command(name='find', search='fuzzy'),
-...     Command(name='grep', search='regex'),
-... ])
+>>> commands = Command.insert_multiple(
+...     [
+...         Command(name="find", search="fuzzy"),
+...         Command(name="grep", search="regex"),
+...     ]
+... )
 >>> [command.id for command in commands]
 [1, 2]
 
@@ -218,7 +243,7 @@ Consider a model with a field literally named `search`:
 `Command.search` is the [search()][tinydantic.TinydanticModel.search] classmethod, not a field query. Comparing it to a string does not build a query — it just evaluates to `False`, which would silently match nothing:
 
 ```pycon
->>> Command.search == 'fuzzy'
+>>> Command.search == "fuzzy"
 False
 
 ```
@@ -230,7 +255,7 @@ False
 Reach the shadowed field by passing its name to [q()][tinydantic.q], which builds a query on that document key:
 
 ```pycon
->>> Command.search(q('search') == 'fuzzy')
+>>> Command.search(q("search") == "fuzzy")
 [Command(id=1, name='find', search='fuzzy')]
 
 ```
@@ -239,9 +264,9 @@ A raw [Query][tinydb.queries.Query] (or [where()](https://tinydb.readthedocs.io/
 
 ```pycon
 >>> from tinydb import Query, where
->>> Command.search(Query()['search'] == 'fuzzy')
+>>> Command.search(Query()["search"] == "fuzzy")
 [Command(id=1, name='find', search='fuzzy')]
->>> Command.search(where('search') == 'regex')
+>>> Command.search(where("search") == "regex")
 [Command(id=2, name='grep', search='regex')]
 
 ```

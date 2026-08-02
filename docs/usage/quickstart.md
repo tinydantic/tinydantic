@@ -20,7 +20,7 @@ A document model is a subclass of [TinydanticModel][tinydantic.TinydanticModel].
 ```pycon
 >>> from pydantic import EmailStr
 >>> from tinydantic import TinydanticModel
->>> class User(TinydanticModel, database=db, table_name='users'):
+>>> class User(TinydanticModel, database=db, table_name="users"):
 ...     name: str
 ...     email: EmailStr
 
@@ -35,7 +35,7 @@ A document model is a subclass of [TinydanticModel][tinydantic.TinydanticModel].
 Create an instance and call [insert()][tinydantic.TinydanticModel.insert]. Before insertion the model's `id` is `None`; afterwards it carries the document id TinyDB assigned.
 
 ```pycon
->>> alice = User(name='Alice', email='alice@example.com')
+>>> alice = User(name="Alice", email="alice@example.com")
 >>> alice
 User(id=None, name='Alice', email='alice@example.com')
 >>> alice.insert()
@@ -48,7 +48,7 @@ User(id=1, name='Alice', email='alice@example.com')
 Query the table by building a condition from a model field. [get()][tinydantic.TinydanticModel.get] returns a single validated model instance (or `None`).
 
 ```pycon
->>> User.get(User.name == 'Alice')
+>>> User.get(User.name == "Alice")
 User(id=1, name='Alice', email='alice@example.com')
 
 ```
@@ -58,10 +58,10 @@ User(id=1, name='Alice', email='alice@example.com')
 Mutate the instance and call [save()][tinydantic.TinydanticModel.save]. Because the model already has an `id`, `save()` updates the stored document in place.
 
 ```pycon
->>> alice.email = 'alice@work.example.com'
+>>> alice.email = "alice@work.example.com"
 >>> alice.save()
 User(id=1, name='Alice', email='alice@work.example.com')
->>> User.get(User.name == 'Alice')
+>>> User.get(User.name == "Alice")
 User(id=1, name='Alice', email='alice@work.example.com')
 
 ```
@@ -72,7 +72,7 @@ Call [delete()][tinydantic.TinydanticModel.delete] to remove the document. Query
 
 ```pycon
 >>> alice.delete()
->>> print(User.get(User.name == 'Alice'))
+>>> print(User.get(User.name == "Alice"))
 None
 
 ```
@@ -82,11 +82,11 @@ None
 Because `tinydantic` is built on top of TinyDB, you can always drop down to TinyDB itself — the database and its tables are ordinary TinyDB objects. For comparison, here is the same kind of insert-and-query flow against the `users` table directly, without `tinydantic`:
 
 ```pycon
->>> users_table = db.table('users')
->>> users_table.insert({'name': 'Bob', 'email': 'bob@example.com'})
+>>> users_table = db.table("users")
+>>> users_table.insert({"name": "Bob", "email": "bob@example.com"})
 2
 >>> from tinydb import where
->>> users_table.get(where('name') == 'Bob')
+>>> users_table.get(where("name") == "Bob")
 {'name': 'Bob', 'email': 'bob@example.com'}
 
 ```
@@ -98,9 +98,9 @@ Notice that TinyDB does not restrict what you insert, and the raw document comes
 So what happens if an invalid document somehow ends up in the database? Let's insert one directly with TinyDB — bypassing the model — that is missing the `email` field the `User` model requires:
 
 ```pycon
->>> users_table.insert({'name': 'Carol'})
+>>> users_table.insert({"name": "Carol"})
 3
->>> User.get(User.name == 'Carol')
+>>> User.get(User.name == "Carol")
 Traceback (most recent call last):
   ...
 pydantic_core._pydantic_core.ValidationError: 1 validation error for User

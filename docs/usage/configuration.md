@@ -15,9 +15,9 @@ Configuration is how a model learns _where_ its documents live: which [TinyDB][t
 A model is configured with two keyword arguments on the class statement: `database=` (a TinyDB instance) and `table_name=` (a string).
 
 ```pycon
->>> class User(TinydanticModel, database=db, table_name='users'):
+>>> class User(TinydanticModel, database=db, table_name="users"):
 ...     name: str
->>> User(name='Alice').insert()
+>>> User(name="Alice").insert()
 User(id=1, name='Alice')
 
 ```
@@ -29,7 +29,7 @@ User(id=1, name='Alice')
 ```pycon
 >>> class AdminUser(TinydanticModel, database=db):
 ...     name: str
->>> AdminUser(name='root').insert()
+>>> AdminUser(name="root").insert()
 AdminUser(id=1, name='root')
 >>> AdminUser.get_table().name
 'admin_user'
@@ -43,9 +43,9 @@ Config keys are resolved by walking the class's [MRO](https://docs.python.org/3/
 Here `Base` is bound to `db` with an explicit table name. `Child` sets only `table_name` — it inherits `database` from `Base`:
 
 ```pycon
->>> class Base(TinydanticModel, database=db, table_name='base_table'):
+>>> class Base(TinydanticModel, database=db, table_name="base_table"):
 ...     a: int
->>> class Child(Base, table_name='child_table'):
+>>> class Child(Base, table_name="child_table"):
 ...     b: int
 >>> Child.get_database() is db
 True
@@ -67,10 +67,10 @@ Each class stores only the keys explicitly set on it, so overriding a key on a c
 Sometimes no `TinyDB` instance exists when the class is defined — a common case in tests and application factories, where the database is created at startup. Define the model with no `database=`, then attach one later with [bind()][tinydantic.TinydanticModel.bind]:
 
 ```pycon
->>> class Product(TinydanticModel, table_name='products'):
+>>> class Product(TinydanticModel, table_name="products"):
 ...     sku: str
 >>> Product.bind(database=db)
->>> Product(sku='ABC-123').insert()
+>>> Product(sku="ABC-123").insert()
 Product(id=1, sku='ABC-123')
 
 ```

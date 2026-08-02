@@ -11,9 +11,9 @@ Every `tinydantic` model reads and writes through a [TinyDB](https://tinydb.read
 >>> from tinydb.storages import MemoryStorage
 >>> from tinydantic import TinydanticModel
 >>> db = TinyDB(storage=MemoryStorage)
->>> class Note(TinydanticModel, database=db, table_name='notes'):
+>>> class Note(TinydanticModel, database=db, table_name="notes"):
 ...     text: str
->>> Note(text='scratch').insert()
+>>> Note(text="scratch").insert()
 Note(id=1, text='scratch')
 
 ```
@@ -28,11 +28,11 @@ Passing a path to [TinyDB][tinydb.database.TinyDB] uses [JSONStorage][tinydb.sto
 >>> import os
 >>> import tempfile
 >>> tmpdir = tempfile.TemporaryDirectory()
->>> path = os.path.join(tmpdir.name, 'db.json')
+>>> path = os.path.join(tmpdir.name, "db.json")
 >>> db = TinyDB(path)
->>> class Person(TinydanticModel, database=db, table_name='people'):
+>>> class Person(TinydanticModel, database=db, table_name="people"):
 ...     name: str
->>> Person(name='Ada').insert()
+>>> Person(name="Ada").insert()
 Person(id=1, name='Ada')
 
 ```
@@ -72,11 +72,11 @@ A file-backed TinyDB holds an open file handle. Call [close()][tinydb.database.T
 ```pycon
 >>> from tinydantic.tinydb.storages import YAMLStorage
 >>> tmpdir = tempfile.TemporaryDirectory()
->>> yaml_path = os.path.join(tmpdir.name, 'db.yaml')
+>>> yaml_path = os.path.join(tmpdir.name, "db.yaml")
 >>> db = TinyDB(yaml_path, storage=YAMLStorage)
->>> class Item(TinydanticModel, database=db, table_name='items'):
+>>> class Item(TinydanticModel, database=db, table_name="items"):
 ...     name: str
->>> Item(name='widget').insert()
+>>> Item(name="widget").insert()
 Item(id=1, name='widget')
 >>> db.close()
 >>> with open(yaml_path) as f:
@@ -97,11 +97,11 @@ A [Middleware][tinydb.middlewares.Middleware] wraps a storage class to change _h
 >>> from tinydb.storages import JSONStorage
 >>> from tinydb.middlewares import CachingMiddleware
 >>> tmpdir = tempfile.TemporaryDirectory()
->>> cache_path = os.path.join(tmpdir.name, 'db.json')
+>>> cache_path = os.path.join(tmpdir.name, "db.json")
 >>> db = TinyDB(cache_path, storage=CachingMiddleware(JSONStorage))
->>> class Log(TinydanticModel, database=db, table_name='logs'):
+>>> class Log(TinydanticModel, database=db, table_name="logs"):
 ...     msg: str
->>> Log(msg='cached').insert()
+>>> Log(msg="cached").insert()
 Log(id=1, msg='cached')
 
 ```
