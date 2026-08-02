@@ -20,6 +20,12 @@ ignore = [
   "ANN003",  # https://docs.astral.sh/ruff/rules/missing-type-kwargs/
   "ANN401",  # https://docs.astral.sh/ruff/rules/any-type/
 
+  # flake8-copyright (CPY)
+  # SPDX headers are enforced by the reuse-lint-file pre-commit hook;
+  # CPY001's notice pattern expects a year, which REUSE-style
+  # SPDX-FileCopyrightText headers here intentionally omit.
+  "CPY001",  # https://docs.astral.sh/ruff/rules/missing-copyright-notice/
+
   # flake8-fixme (FIX)
   "FIX002",  # https://docs.astral.sh/ruff/rules/line-contains-todo/
 
