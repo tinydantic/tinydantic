@@ -201,8 +201,14 @@ def has_id_condition(cond: object) -> bool:
     if isinstance(cond, DocIdCondition):
         return True
     # QueryInstance keeps its hash tree in the private ``_hash``
-    # attribute; TinyDB offers no public accessor. getattr keeps
-    # this tolerant of arbitrary QueryLike objects.
+    # attribute; TinyDB offers no public accessor. This read-only
+    # dependency is recorded in the private-API registry on the
+    # TinyDB Limitations docs page. getattr keeps it tolerant of
+    # arbitrary QueryLike objects — and if a future TinyDB renames
+    # the attribute, detection degrades loudly, not silently:
+    # bare DocIdConditions are still caught by the isinstance
+    # check above, and undetected compositions raise
+    # DocumentIDConditionError when TinyDB evaluates them.
     return _tree_has_sentinel(getattr(cond, "_hash", None))
 
 

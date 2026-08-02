@@ -290,7 +290,8 @@ class TestIdConditionWrites:
 
     def test_update_by_id_condition(self, users: type[UserBase]) -> None:
         """update() resolves id conditions to doc_ids."""
-        assert users.update({"age": 26}, q(users.id) == 2) == [2]
+        updated = users.update({"age": 26}, q(users.id) == 2)
+        assert updated == [2]
         doc = users.get_table().get(doc_id=2)
         assert isinstance(doc, dict)
         assert doc["age"] == 26
@@ -311,7 +312,8 @@ class TestIdConditionWrites:
         users: type[UserBase],
     ) -> None:
         """No matching ids: no write, empty result."""
-        assert users.update({"age": 99}, q(users.id) == 999) == []
+        updated = users.update({"age": 99}, q(users.id) == 999)
+        assert updated == []
         assert users.count() == 3
 
     def test_update_doc_ids_wins_over_cond(
@@ -328,7 +330,8 @@ class TestIdConditionWrites:
 
     def test_remove_by_id_condition(self, users: type[UserBase]) -> None:
         """remove() resolves id conditions to doc_ids."""
-        assert users.remove(q(users.id).one_of([1, 3])) == [1, 3]
+        removed = users.remove(q(users.id).one_of([1, 3]))
+        assert removed == [1, 3]
         assert {user.id for user in users.all()} == {2}
 
     def test_remove_no_match_returns_empty(
@@ -336,7 +339,8 @@ class TestIdConditionWrites:
         users: type[UserBase],
     ) -> None:
         """No matching ids: nothing removed."""
-        assert users.remove(q(users.id) == 999) == []
+        removed = users.remove(q(users.id) == 999)
+        assert removed == []
         assert users.count() == 3
 
     def test_upsert_updates_matching_id(
@@ -345,7 +349,8 @@ class TestIdConditionWrites:
     ) -> None:
         """upsert() with a matching id condition updates."""
         document = users(name="Bobby", age=27)
-        assert users.upsert(document, q(users.id) == 2) == [2]
+        ids = users.upsert(document, q(users.id) == 2)
+        assert ids == [2]
         assert document.id == 2
         doc = users.get_table().get(doc_id=2)
         assert isinstance(doc, dict)
@@ -358,7 +363,8 @@ class TestIdConditionWrites:
     ) -> None:
         """upsert() with no matching id inserts a new document."""
         document = users(name="Dave", age=40)
-        assert users.upsert(document, q(users.id) == 999) == [4]
+        ids = users.upsert(document, q(users.id) == 999)
+        assert ids == [4]
         assert document.id == 4
         assert users.count() == 4
 
