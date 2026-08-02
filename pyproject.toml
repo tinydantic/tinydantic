@@ -229,6 +229,10 @@ cmd = "linkchecker --config .linkcheckerrc site"
 cmd = "mike deploy --config-file mkdocs.yaml --update-aliases --push"
 env = { PYTHONUNBUFFERED = "1", SOURCE_DATE_EPOCH = "1580601600" }
 
+[tool.poe.tasks.docs-ci-set-default]
+cmd = "mike set-default --config-file mkdocs.yaml --push"
+env = { PYTHONUNBUFFERED = "1", SOURCE_DATE_EPOCH = "1580601600" }
+
 [tool.poe.tasks.docs-serve]
 cmd = "properdocs serve --config-file mkdocs.yaml --dev-addr localhost:8000"
 env = { PYTHONUNBUFFERED = "1" }
