@@ -103,28 +103,59 @@ class TestUpsert:
     """Classmethod upsert() mirrors Table.upsert."""
 
     def test_upsert_inserts_when_no_match(self, user_class: type[UserBase]):
-        """Insert path."""
+        """Insert path sets id on the passed instance."""
+        document = user_class(name="Alice", age=37)
         ids = user_class.upsert(
-            user_class(name="Alice", age=37),
+            document,
             user_class.name == "Alice",  # type: ignore[arg-type]
         )
         assert len(ids) == 1
+        assert document.id == ids[0]
         fetched = user_class.get_by_id(ids[0])
         assert fetched is not None
         assert fetched.age == 37
 
     def test_upsert_updates_when_matched(self, user_class: type[UserBase]):
-        """Update path keeps the same document id."""
+        """Update path keeps the document id and links the instance."""
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
+        document = user_class(name="Alice", age=99)
         ids = user_class.upsert(
-            user_class(name="Alice", age=99),
+            document,
             user_class.name == "Alice",  # type: ignore[arg-type]
         )
         assert ids == [user.id]
+        assert document.id == user.id
         fetched = user_class.get_by_id(user.id)
         assert fetched is not None
         assert fetched.age == 99
+
+    def test_upsert_multiple_matches_leaves_id_unset(
+        self,
+        user_class: type[UserBase],
+    ):
+        """Updating several documents is ambiguous — id stays unset."""
+        user_class(name="Alice", age=1).insert()
+        user_class(name="Alice", age=2).insert()
+        document = user_class(name="Alice", age=99)
+        ids = user_class.upsert(
+            document,
+            user_class.name == "Alice",  # type: ignore[arg-type]
+        )
+        assert len(ids) == 2
+        assert document.id is None
+
+    def test_upsert_without_cond_keeps_id(
+        self,
+        user_class: type[UserBase],
+    ):
+        """The no-cond form (upsert by preset id) keeps the id."""
+        user = user_class(name="Alice", age=37).insert()
+        assert user.id is not None
+        user.age = 38
+        ids = user_class.upsert(user)
+        assert ids == [user.id]
+        assert user.id == ids[0]
 
 
 class TestRemove:

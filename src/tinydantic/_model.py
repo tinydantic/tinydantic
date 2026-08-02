@@ -729,6 +729,14 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         matches, the insert does not adopt the condition's id value —
         the document is inserted with a fresh id.
 
+        When exactly one document is affected — an insert, or an
+        update that matched a single document — ``document.id`` is
+        set to that document's id in place, mirroring
+        [insert][tinydantic.TinydanticModel.insert] and
+        [save][tinydantic.TinydanticModel.save]. When several
+        documents match, linking ``document`` to any one of them
+        would be arbitrary, so its ``id`` is left untouched.
+
         Returns:
             The ids of the updated (or inserted) documents.
         """
@@ -736,16 +744,21 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             matched = cls._match_id_condition_ids(cond)
             document_dict = document.to_tinydb_document(force_dict=True)
             if matched:
-                return cls.get_table().update(
+                ids = cls.get_table().update(
                     # See replace() for why this cast is needed.
                     cast("Callable[[Mapping], None]", document_dict),
                     doc_ids=matched,
                 )
-            return [cls.get_table().insert(document_dict)]
-        return cls.get_table().upsert(
-            document.to_tinydb_document(force_dict=cond is not None),
-            cond,
-        )
+            else:
+                ids = [cls.get_table().insert(document_dict)]
+        else:
+            ids = cls.get_table().upsert(
+                document.to_tinydb_document(force_dict=cond is not None),
+                cond,
+            )
+        if len(ids) == 1:
+            document.id = ids[0]
+        return ids
 
     @classmethod
     def remove(
