@@ -176,7 +176,7 @@ tinydantic._errors.DocumentIDConditionError: An id condition reached TinyDB's ra
 
 > [!WARNING]
 >
-> Ordered id comparisons (`User.id > 2`) are supported for consistency, but document ids restart from 1 after [truncate()][tinydantic.TinydanticModel.truncate] — don't treat id ranges as a stable insertion-order proxy. And `update_multiple()` cannot take id conditions at all (a TinyDB limitation); it raises [DocumentIDConditionError][tinydantic.DocumentIDConditionError] pointing you at per-condition [update()][tinydantic.TinydanticModel.update] calls.
+> Ordered id comparisons (`User.id > 2`) are supported for consistency, but document ids restart from 1 after [truncate()][tinydantic.TinydanticModel.truncate] — don't treat id ranges as a stable insertion-order proxy.
 
 ## Sharp edge: fields that shadow query methods
 

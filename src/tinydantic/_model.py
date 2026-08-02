@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from importlib import metadata
 from typing import TYPE_CHECKING, Any, ClassVar, cast, overload
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
@@ -21,10 +22,10 @@ from tinydantic._config import (
 )
 from tinydantic._errors import (
     DatabaseNotBoundError,
-    DocumentIDConditionError,
     DocumentIDRequiredError,
     DocumentIDUpdateError,
     DocumentNotFoundError,
+    TinydanticError,
 )
 from tinydantic._query import (
     DocIdCondition,
@@ -54,6 +55,16 @@ else:
 # Name of the per-class attribute caching per-field TypeAdapters
 # (built lazily by _field_adapter for update() serialization).
 _FIELD_ADAPTERS_ATTR = "__tinydantic_field_adapters__"
+
+
+class _NothingMatchedError(Exception):
+    """Internal control-flow marker for id-condition writes.
+
+    Raised inside the updater handed to ``Table._update_table``
+    when no document matched, aborting the cycle before its
+    storage write — a no-match write then costs one read and zero
+    writes, matching the public no-match paths.
+    """
 
 
 def q(field: Any) -> Query:
@@ -359,9 +370,65 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         never contain the id, so id-bearing conditions are instead
         evaluated against table iteration — the one TinyDB API that
         yields [Document][tinydb.table.Document] instances carrying
-        ``doc_id``.
+        ``doc_id``. Used by the read paths; the write paths run
+        their own single-cycle evaluation (see
+        ``_run_id_condition_write_cycle``).
         """
         return [doc.doc_id for doc in iter(cls.get_table()) if cond(doc)]
+
+    @classmethod
+    def _run_id_condition_write_cycle(
+        cls,
+        updater: Callable[[dict[int, Any]], list[int]],
+    ) -> list[int]:
+        """Run one atomic write cycle for an id-bearing condition.
+
+        ``updater`` receives the mutable ``{doc_id: body}`` table
+        dict, mutates matching bodies in place, and returns the
+        matched ids. The whole batch is one read-modify-write
+        cycle: an exception anywhere aborts before the storage
+        write, and when nothing matches the cycle is aborted the
+        same way, so a no-match call costs one read and zero
+        writes.
+
+        This is the project's single sanctioned use of a TinyDB
+        internal API (``Table._update_table``), approved
+        2026-07-13 — TinyDB's public API offers no ``doc_ids``
+        batch path and its query evaluator never exposes
+        ``doc_id`` to conditions. See the TinyDB Limitations page
+        in the docs for the reason and the upstream changes that
+        would remove it.
+
+        Raises:
+            TinydanticError: If the installed TinyDB does not
+                provide ``Table._update_table``.
+        """
+        table = cls.get_table()
+        if not hasattr(table, "_update_table"):
+            msg = (
+                "tinydantic needs TinyDB's internal "
+                "Table._update_table for id-condition writes, but "
+                f"tinydb {metadata.version('tinydb')} does not "
+                "provide it. Pin an older tinydb or upgrade "
+                "tinydantic (see the TinyDB Limitations page in "
+                "the tinydantic docs)."
+            )
+            raise TinydanticError(msg)
+        matched: list[int] = []
+
+        def run(data: dict[int, Any]) -> None:
+            """Collect matches, aborting the cycle when none."""
+            matched.extend(updater(data))
+            if not matched:
+                raise _NothingMatchedError
+
+        try:
+            # Private-API use approved per the AGENTS.md policy;
+            # documented on docs/contributing/tinydb_limitations.md.
+            table._update_table(run)  # noqa: SLF001
+        except _NothingMatchedError:
+            return []
+        return matched
 
     @classmethod
     def search(cls, cond: QueryLike) -> list[Self]:
@@ -623,13 +690,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         transform callable is handed to TinyDB as-is — what it writes
         is up to you.
 
-        Conditions on ``Model.id`` are translated to document-id
-        operations: matching ids are resolved in a read pass, then
-        updated via TinyDB's ``doc_ids=`` path — equivalent to
-        TinyDB's own read-modify-write under the single-process,
-        serialized-writes contract tinydantic documents. When
-        ``doc_ids`` is passed explicitly, TinyDB's precedence
-        applies and ``cond`` is not evaluated.
+        Conditions on ``Model.id`` are executed in one atomic
+        read-modify-write cycle (see
+        ``_run_id_condition_write_cycle``), with the condition
+        evaluated against [Document][tinydb.table.Document]
+        wrappers so it can read ``doc_id``. When ``doc_ids`` is
+        passed explicitly, TinyDB's precedence applies and
+        ``cond`` is not evaluated.
 
         Returns:
             The ids of all updated documents.
@@ -643,14 +710,33 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         if not callable(fields):
             fields = cls._serialize_update_fields(fields)
         if cond is not None and doc_ids is None and has_id_condition(cond):
-            matched = cls._match_id_condition_ids(cond)
-            if not matched:
-                return []
-            return cls.get_table().update(
-                # See replace() for why this cast is needed.
-                cast("Callable[[Mapping], None]", fields),
-                doc_ids=matched,
-            )
+            table = cls.get_table()
+            _cond = cond
+            _fields = fields
+
+            def apply_update(data: dict[int, Any]) -> list[int]:
+                """Apply the fields to documents matching the cond."""
+                matched: list[int] = []
+                for target_id in list(data):
+                    doc = table.document_class(
+                        data[target_id],
+                        target_id,
+                    )
+                    if _cond(doc):
+                        matched.append(target_id)
+                        # Copy-on-write: mutate a copy and assign
+                        # it back, so an aborted cycle never leaks
+                        # partial changes into storages that share
+                        # body dicts by reference (MemoryStorage).
+                        body = dict(data[target_id])
+                        if callable(_fields):
+                            _fields(body)
+                        else:
+                            body.update(_fields)
+                        data[target_id] = body
+                return matched
+
+            return cls._run_id_condition_write_cycle(apply_update)
         return cls.get_table().update(
             # See replace() for why this cast is needed.
             # TODO @cdwilson: remove this cast once the annotation is
@@ -674,40 +760,63 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         Each update's fields mapping is validated and serialized
         exactly as in [update][tinydantic.TinydanticModel.update];
-        transform callables pass through to TinyDB as-is.
+        transform callables pass through as-is.
+
+        Pairs may use conditions on ``Model.id`` (bare or composed
+        with field conditions) and mix freely with plain
+        field-condition pairs. A batch containing an id condition
+        runs in one atomic read-modify-write cycle (see
+        ``_run_id_condition_write_cycle``), with every pair's
+        condition evaluated against
+        [Document][tinydb.table.Document] wrappers so id
+        conditions can read ``doc_id`` — TinyDB's own batch
+        semantics are preserved: documents are visited in table
+        order, pairs apply in order per document (later pairs see
+        earlier pairs' changes), and a document appears in the
+        result once per pair that matched it.
 
         Returns:
             The ids of all updated documents.
 
         Raises:
-            DocumentIDConditionError: If a condition contains an id
-                condition — TinyDB's ``update_multiple()`` cannot
-                select documents by id; call
-                [update][tinydantic.TinydanticModel.update] once per
-                condition instead.
             DocumentIDUpdateError: If a mapping contains an ``id``
                 key.
             pydantic.ValidationError: If a mapping value fails
                 validation against its field's type.
         """
-        prepared = []
-        for fields, cond in updates:
-            if has_id_condition(cond):
-                msg = (
-                    "id conditions are not supported in "
-                    "update_multiple() — TinyDB's update_multiple() "
-                    "cannot select documents by id. Call update() "
-                    "once per condition instead."
-                )
-                raise DocumentIDConditionError(msg)
-            prepared.append(
-                (
-                    fields
-                    if callable(fields)
-                    else cls._serialize_update_fields(fields),
-                    cond,
-                ),
+        prepared = [
+            (
+                fields
+                if callable(fields)
+                else cls._serialize_update_fields(fields),
+                cond,
             )
+            for fields, cond in updates
+        ]
+        if any(has_id_condition(cond) for _, cond in prepared):
+            table = cls.get_table()
+
+            def apply_pairs(data: dict[int, Any]) -> list[int]:
+                """Apply each matching (fields, cond) pair in order."""
+                matched: list[int] = []
+                for target_id in list(data):
+                    for fields, cond in prepared:
+                        doc = table.document_class(
+                            data[target_id],
+                            target_id,
+                        )
+                        if cond(doc):
+                            matched.append(target_id)
+                            # Copy-on-write: see update().
+                            body = dict(data[target_id])
+                            if callable(fields):
+                                fields(body)
+                            else:
+                                body.update(fields)
+                            data[target_id] = body
+                return matched
+
+            return cls._run_id_condition_write_cycle(apply_pairs)
         return cls.get_table().update_multiple(
             # See replace() for why this cast is needed.
             cast(
@@ -741,16 +850,29 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             The ids of the updated (or inserted) documents.
         """
         if cond is not None and has_id_condition(cond):
-            matched = cls._match_id_condition_ids(cond)
             document_dict = document.to_tinydb_document(force_dict=True)
-            if matched:
-                ids = cls.get_table().update(
-                    # See replace() for why this cast is needed.
-                    cast("Callable[[Mapping], None]", document_dict),
-                    doc_ids=matched,
-                )
-            else:
-                ids = [cls.get_table().insert(document_dict)]
+            table = cls.get_table()
+            _cond = cond
+
+            def apply_upsert(data: dict[int, Any]) -> list[int]:
+                """Merge the document body into matching documents."""
+                matched: list[int] = []
+                for target_id in list(data):
+                    doc = table.document_class(
+                        data[target_id],
+                        target_id,
+                    )
+                    if _cond(doc):
+                        matched.append(target_id)
+                        # Copy-on-write: see update().
+                        body = dict(data[target_id])
+                        body.update(document_dict)
+                        data[target_id] = body
+                return matched
+
+            ids = cls._run_id_condition_write_cycle(apply_upsert)
+            if not ids:
+                ids = [table.insert(document_dict)]
         else:
             ids = cls.get_table().upsert(
                 document.to_tinydb_document(force_dict=cond is not None),
@@ -769,19 +891,35 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     ) -> list[int]:
         """Remove matching documents.
 
-        Conditions on ``Model.id`` are translated to document-id
-        operations (matching ids resolved in a read pass, removed
-        via ``doc_ids=``). When ``doc_ids`` is passed explicitly,
-        TinyDB's precedence applies and ``cond`` is not evaluated.
+        Conditions on ``Model.id`` are executed in one atomic
+        read-modify-write cycle (see
+        ``_run_id_condition_write_cycle``), with the condition
+        evaluated against [Document][tinydb.table.Document]
+        wrappers so it can read ``doc_id``. When ``doc_ids`` is
+        passed explicitly, TinyDB's precedence applies and
+        ``cond`` is not evaluated.
 
         Returns:
             The ids of all removed documents.
         """
         if cond is not None and doc_ids is None and has_id_condition(cond):
-            matched = cls._match_id_condition_ids(cond)
-            if not matched:
-                return []
-            return cls.get_table().remove(doc_ids=matched)
+            table = cls.get_table()
+            _cond = cond
+
+            def apply_remove(data: dict[int, Any]) -> list[int]:
+                """Pop documents matching the id condition."""
+                matched: list[int] = []
+                for target_id in list(data):
+                    doc = table.document_class(
+                        data[target_id],
+                        target_id,
+                    )
+                    if _cond(doc):
+                        matched.append(target_id)
+                        data.pop(target_id)
+                return matched
+
+            return cls._run_id_condition_write_cycle(apply_remove)
         return cls.get_table().remove(cond=cond, doc_ids=doc_ids)
 
     @classmethod
