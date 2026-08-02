@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
-- The code license is now MIT only (previously dual-licensed under Apache-2.0 OR MIT). Documentation and images remain CC-BY-4.0.
+- The code license is now MIT only (previously dual-licensed under Apache-2.0 OR MIT). The relicense is not retroactive: released versions up to and including 0.4.0 remain available under Apache-2.0 OR MIT. Documentation and images remain CC-BY-4.0.
 
 ## [0.4.0] - 2026-07-10
 
