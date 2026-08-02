@@ -57,6 +57,7 @@ httpx
 hynek
 importlib
 inlinehilite
+ints
 ipynb
 ipython
 isinstance
@@ -84,6 +85,8 @@ minversion
 mkdocs
 mkdocstrings
 mkdostrings
+monkeypatched
+msiemens
 mypy
 Neuromancer
 njpwerner
@@ -157,6 +160,7 @@ tightenings
 tinydantic
 tinydb
 tmpdir
+TOCTOU
 tombi
 tomli
 traceback
