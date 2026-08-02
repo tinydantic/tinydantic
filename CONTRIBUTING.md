@@ -8,17 +8,12 @@ If you want to see how this project compares to [recommended community standards
 
 ## Table of Contents
 
-- [Code of Conduct](#code-of-conduct)
 - [I have a question](#i-have-a-question)
 - [I found a bug](#i-found-a-bug)
 - [I want to contribute](#i-want-to-contribute)
   - [Development Guide](#development-guide)
 
 <!-- toc-end -->
-
-## Code of Conduct
-
-This project and everyone participating in it is governed by the [tinydantic Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior [directly on GitHub](https://docs.github.com/en/communities/maintaining-your-safety-on-github/reporting-abuse-or-spam) so that the issue can be [managed and resolved on the platform](https://docs.github.com/en/communities/moderating-comments-and-conversations/managing-reported-content-in-your-organizations-repository). Please also feel free to reach out directly at <christopher.david.wilson@gmail.com>.
 
 ## I have a question
 
