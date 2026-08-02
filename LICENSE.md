@@ -12,7 +12,7 @@ When you contribute to this repository you are doing so under the above licenses
 
 [![REUSE status](https://api.reuse.software/badge/github.com/tinydantic/tinydantic)](https://api.reuse.software/info/github.com/tinydantic/tinydantic)
 
-This repository is compliant with version 3.2 of the [REUSE Specification](https://reuse.software/spec/).
+This repository is compliant with version 3.3 of the [REUSE Specification](https://reuse.software/spec/).
 
 License files are contained in the [LICENSES/](https://github.com/tinydantic/tinydantic/tree/main/LICENSES) directory and additional copyright & license information can be found in [REUSE.toml](https://github.com/tinydantic/tinydantic/blob/main/REUSE.toml).
 
