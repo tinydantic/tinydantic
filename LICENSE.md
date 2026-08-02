@@ -2,7 +2,7 @@
 
 Copyright © Chris Wilson and contributors.
 
-Code, including source files and any code samples in the content, is dual-licensed under either the [MIT](https://opensource.org/license/mit/) or the [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license. This means you can use the code in your own projects under either license of your choosing.
+Code, including source files and any code samples in the content, is licensed under the [MIT](https://opensource.org/license/mit/) license.
 
 All other content (e.g. documentation and images) is licensed under the [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) license. This gives you permission to use the content for almost any purpose (but does not grant you any trademark permissions), so long as you note the license and give credit (see [Best practices for attribution](https://wiki.creativecommons.org/wiki/Best_practices_for_attribution) for examples).
 
