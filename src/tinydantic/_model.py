@@ -391,12 +391,14 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         same way, so a no-match call costs one read and zero
         writes.
 
-        This is the project's single sanctioned use of a TinyDB
-        internal API (``Table._update_table``), approved
-        2026-07-13 — TinyDB's public API offers no ``doc_ids``
-        batch path and its query evaluator never exposes
-        ``doc_id`` to conditions. See the TinyDB Limitations page
-        in the docs for the reason and the upstream changes that
+        This is the project's only *call* into a TinyDB internal
+        API (``Table._update_table``), approved 2026-07-13 —
+        TinyDB's public API offers no ``doc_ids`` batch path and
+        its query evaluator never exposes ``doc_id`` to
+        conditions. Every sanctioned private-API dependency
+        (including the read-only ``QueryInstance._hash`` walk in
+        ``has_id_condition``) is recorded in the registry on the
+        TinyDB Limitations page, with the upstream changes that
         would remove it.
 
         Raises:
