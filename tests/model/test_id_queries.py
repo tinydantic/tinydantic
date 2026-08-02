@@ -344,6 +344,7 @@ class TestIdConditionWrites:
         """upsert() with a matching id condition updates."""
         document = users(name="Bobby", age=27)
         assert users.upsert(document, q(users.id) == 2) == [2]
+        assert document.id == 2
         doc = users.get_table().get(doc_id=2)
         assert isinstance(doc, dict)
         assert doc["name"] == "Bobby"
@@ -356,6 +357,7 @@ class TestIdConditionWrites:
         """upsert() with no matching id inserts a new document."""
         document = users(name="Dave", age=40)
         assert users.upsert(document, q(users.id) == 999) == [4]
+        assert document.id == 4
         assert users.count() == 4
 
     def test_update_multiple_id_condition_raises(

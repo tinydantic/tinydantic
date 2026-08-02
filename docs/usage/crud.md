@@ -45,13 +45,16 @@ Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
 
 ### `upsert`
 
-[upsert()][tinydantic.TinydanticModel.upsert] updates every document matching a condition, or inserts the document if nothing matches. Either way it returns the affected ids. The first call below inserts (no `Hyperion` exists yet); the second updates the same document.
+[upsert()][tinydantic.TinydanticModel.upsert] updates every document matching a condition, or inserts the document if nothing matches. Either way it returns the affected ids — and when exactly one document is affected, it also sets the passed instance's `id` in place, just like [insert()][tinydantic.TinydanticModel.insert]. (When several documents match, linking the instance to any one of them would be arbitrary, so `id` is left untouched.) The first call below inserts (no `Hyperion` exists yet); the second updates the same document and links the instance to it:
 
 ```pycon
 >>> Book.upsert(Book(title='Hyperion', author='Simmons', year=1989), Book.title == 'Hyperion')
 [4]
->>> Book.upsert(Book(title='Hyperion', author='Dan Simmons', year=1989), Book.title == 'Hyperion')
+>>> hyperion = Book(title='Hyperion', author='Dan Simmons', year=1989)
+>>> Book.upsert(hyperion, Book.title == 'Hyperion')
 [4]
+>>> hyperion.id
+4
 
 ```
 
