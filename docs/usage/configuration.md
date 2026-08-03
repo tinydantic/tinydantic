@@ -116,7 +116,32 @@ Product(id=1, sku='ABC-123')
 
 ```
 
-`bind()` updates only the keys you pass, leaving the others (including inherited ones) untouched, and binding a subclass never affects its parents.
+`bind()` updates only the keys you pass, leaving the others (including inherited ones) untouched, and binding a subclass never affects its parents. Every configuration key on this page can be bound late — `database=`, `table_name=`, `validate_writes=`, and `shadowed_fields=`.
+
+### Undo it with `unbind()`
+
+[unbind()][tinydantic.TinydanticModel.unbind] is the inverse, built for test fixtures that attach a database in setup and must detach it in teardown. Pass key names to remove specific settings, or nothing to remove everything this class set:
+
+```pycon
+>>> Product.unbind("database")
+>>> Product.get_database()
+Traceback (most recent call last):
+  ...
+tinydantic._errors.DatabaseNotBoundError: ...
+
+```
+
+In a pytest fixture, the pair looks like this (the `yield` runs the test between them):
+
+```python
+@pytest.fixture
+def bound_product(tmp_path):
+    Product.bind(database=TinyDB(tmp_path / "test.json"))
+    yield Product
+    Product.unbind("database")
+```
+
+`unbind()` removes only settings made on the class itself — a value inherited from a base class resurfaces, exactly as `bind()` on a subclass never affects its parents. Unbinding a key the class never set is a no-op, and an unknown key name raises `ValueError`.
 
 ## `DatabaseNotBoundError`
 
