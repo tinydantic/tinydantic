@@ -202,6 +202,7 @@ class Session(TinydanticModel, database=db):
 ```
 
 Three rules worth remembering: field-level writes (`update()`, `patch()`) fire **neither** hook — they never write the whole model, so fields set in `before_save()` would be silently dropped; a raising hook **aborts the write** with nothing written; and hooks are ordinary methods, so mixins can cooperate via `super().before_save()`. Prefer hooks over `model_validator` for side effects: validators also fire on construction, on every read, and on every assignment — a timestamp bumped there is stamped by reads too.
+
 ## Unique fields
 
 Mark a field with the [Unique][tinydantic.Unique] annotation and tinydantic refuses writes that would duplicate its value in the table:
