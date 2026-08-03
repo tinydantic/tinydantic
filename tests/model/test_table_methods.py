@@ -6,9 +6,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import pytest
+
+from pydantic import ValidationError, model_validator
 
 from tinydantic import (
     TinydanticModel,
@@ -18,6 +20,12 @@ from tinydantic import (
 from tinydantic.tinydb.operations import replace
 
 if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Mapping,
+        MutableMapping,
+    )
+
     from tinydb import TinyDB
 
     from tests.model.models import UserBase
@@ -303,3 +311,178 @@ class TestUpdateExtraKeys:
                 {"widget": 1, "gadget": 2, "name": "Bo"},
                 q(User.name) == "Al",
             )
+
+
+class TestUpdateMergedValidation:
+    """update() validates each matched document's merged result."""
+
+    def test_mapping_enforces_cross_field_invariants(self, db: TinyDB):
+        """A merged result violating an after-validator is refused."""
+
+        class Event(TinydanticModel, database=db):
+            """Test model with a cross-field invariant."""
+
+            start: int
+            end: int
+
+            @model_validator(mode="after")
+            def ordered(self) -> Event:
+                """Require end >= start."""
+                if self.end < self.start:
+                    msg = "end must be >= start"
+                    raise ValueError(msg)
+                return self
+
+        event = Event(start=10, end=20).insert()
+        with pytest.raises(ValidationError):
+            Event.update({"end": 5}, q(Event.start) == 10)
+        assert event.id is not None
+        loaded = Event.get_by_id(event.id)
+        assert loaded is not None
+        assert loaded.end == 20
+
+    def test_transform_output_is_validated(self, db: TinyDB):
+        """Transform callables can no longer write junk by default."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            age: int
+
+        user = User(age=30).insert()
+
+        def poison(body: MutableMapping) -> None:
+            """Write an invalid age."""
+            body["age"] = "junk"
+
+        with pytest.raises(ValidationError):
+            User.update(
+                # TinyDB annotates transforms with Mapping though it
+                # passes a mutable dict; same cast as replace().
+                cast("Callable[[Mapping], None]", poison),
+                q(User.age) == 30,
+            )
+        assert user.id is not None
+        loaded = User.get_by_id(user.id)
+        assert loaded is not None
+        assert loaded.age == 30
+
+    def test_validation_failure_aborts_whole_batch(self, db: TinyDB):
+        """One bad merged result means nothing is written."""
+
+        class Item(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+            qty: int
+
+        Item(name="a", qty=1).insert()
+        Item(name="b", qty=2).insert()
+
+        def poison_b(body: MutableMapping) -> None:
+            """Corrupt only document b."""
+            body["qty"] = "junk" if body["name"] == "b" else 99
+
+        with pytest.raises(ValidationError):
+            Item.update(
+                # TinyDB annotates transforms with Mapping though it
+                # passes a mutable dict; same cast as replace().
+                cast("Callable[[Mapping], None]", poison_b),
+            )
+        assert sorted(item.qty for item in Item.all()) == [1, 2]
+
+    def test_update_preserves_stored_extra_keys(self, db: TinyDB):
+        """Merged validation ignores and preserves stored extras."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        user = User(name="Al").insert()
+        assert user.id is not None
+        User.update({"legacy": "kept"}, doc_ids=[user.id], extra_keys="allow")
+        User.update({"name": "Bob"}, doc_ids=[user.id])
+        raw = User.get_table().get(doc_id=user.id)
+        assert isinstance(raw, dict)
+        assert raw["name"] == "Bob"
+        assert raw["legacy"] == "kept"
+
+    def test_merged_validators_see_real_id(self, db: TinyDB):
+        """Merged validation runs with the target doc_id visible."""
+
+        class Audited(TinydanticModel, database=db):
+            """Test model recording the id its validator saw."""
+
+            name: str
+            seen_id: int | None = None
+
+            @model_validator(mode="after")
+            def record_id(self) -> Audited:
+                """Record the id visible during validation."""
+                self.__dict__["seen_id"] = self.id
+                return self
+
+        recorder: list[int | None] = []
+
+        class Spy(Audited, database=db, table_name="spy"):
+            """Test model reporting ids seen during validation."""
+
+            @model_validator(mode="after")
+            def report(self) -> Spy:
+                """Report the id visible during validation."""
+                recorder.append(self.id)
+                return self
+
+        spy = Spy(name="x").insert()
+        recorder.clear()
+        Spy.update({"name": "y"}, doc_ids=[spy.id] if spy.id else None)
+        assert spy.id in recorder
+
+    def test_update_multiple_enforces_invariants(self, db: TinyDB):
+        """update_multiple() validates merged results per pair."""
+
+        class Event(TinydanticModel, database=db):
+            """Test model with a cross-field invariant."""
+
+            start: int
+            end: int
+
+            @model_validator(mode="after")
+            def ordered(self) -> Event:
+                """Require end >= start."""
+                if self.end < self.start:
+                    msg = "end must be >= start"
+                    raise ValueError(msg)
+                return self
+
+        event = Event(start=10, end=20).insert()
+        with pytest.raises(ValidationError):
+            Event.update_multiple([({"end": 5}, q(Event.start) == 10)])
+        assert event.id is not None
+        loaded = Event.get_by_id(event.id)
+        assert loaded is not None
+        assert loaded.end == 20
+
+    def test_validate_writes_false_restores_old_update(self, db: TinyDB):
+        """The knob restores per-field-only update validation."""
+
+        class Event(TinydanticModel, database=db, validate_writes=False):
+            """Test model with write validation off."""
+
+            start: int
+            end: int
+
+            @model_validator(mode="after")
+            def ordered(self) -> Event:
+                """Require end >= start."""
+                if self.end < self.start:
+                    msg = "end must be >= start"
+                    raise ValueError(msg)
+                return self
+
+        event = Event(start=10, end=20).insert()
+        Event.update({"end": 5}, q(Event.start) == 10)
+        raw = Event.get_table().get(doc_id=event.id)
+        assert isinstance(raw, dict)
+        assert raw["end"] == 5

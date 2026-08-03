@@ -391,34 +391,69 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         yields [Document][tinydb.table.Document] instances carrying
         ``doc_id``. Used by the read paths; the write paths run
         their own single-cycle evaluation (see
-        ``_run_id_condition_write_cycle``).
+        ``_run_write_cycle``).
         """
         return [doc.doc_id for doc in iter(cls.get_table()) if cond(doc)]
 
     @classmethod
-    def _run_id_condition_write_cycle(
+    def _apply_and_validate(
+        cls,
+        data: dict[int, Any],
+        target_id: int,
+        fields: Mapping | Callable[[Mapping], None],
+        *,
+        validate: bool,
+    ) -> None:
+        """Merge ``fields`` into one document body, then validate.
+
+        Mutates a copy and assigns it back (copy-on-write), so an
+        aborted cycle never leaks partial changes into storages
+        that share body dicts by reference (MemoryStorage). When
+        ``validate`` is true the merged body is validated with the
+        real document id in the payload — the same check the next
+        read performs — so a failing merge aborts the whole cycle
+        before its storage write.
+
+        Raises:
+            pydantic.ValidationError: If the merged body fails
+                model validation.
+        """
+        body = dict(data[target_id])
+        if callable(fields):
+            fields(body)
+        else:
+            body.update(fields)
+        if validate:
+            cls.model_validate({**body, "id": target_id})
+        data[target_id] = body
+
+    @classmethod
+    def _run_write_cycle(
         cls,
         updater: Callable[[dict[int, Any]], list[int]],
     ) -> list[int]:
-        """Run one atomic write cycle for an id-bearing condition.
+        """Run one atomic read-modify-write cycle.
 
         ``updater`` receives the mutable ``{doc_id: body}`` table
         dict, mutates matching bodies in place, and returns the
         matched ids. The whole batch is one read-modify-write
-        cycle: an exception anywhere aborts before the storage
-        write, and when nothing matches the cycle is aborted the
-        same way, so a no-match call costs one read and zero
-        writes.
+        cycle: an exception anywhere (including a merged-result
+        validation failure) aborts before the storage write, and
+        when nothing matches the cycle is aborted the same way, so
+        a no-match call costs one read and zero writes.
 
         This is the project's only *call* into a TinyDB internal
-        API (``Table._update_table``), approved 2026-07-13 —
-        TinyDB's public API offers no ``doc_ids`` batch path and
-        its query evaluator never exposes ``doc_id`` to
-        conditions. Every sanctioned private-API dependency
-        (including the read-only ``QueryInstance._hash`` walk in
-        ``has_id_condition``) is recorded in the registry on the
-        TinyDB Limitations page, with the upstream changes that
-        would remove it.
+        API (``Table._update_table``) — approved 2026-07-13 for
+        id-condition writes, extended 2026-08-02 to all validated
+        ``update()``/``update_multiple()`` writes. TinyDB's public
+        API offers no ``doc_ids`` batch path, never exposes
+        ``doc_id`` to conditions, and cannot validate-then-write
+        atomically (a public two-pass alternative has a
+        read-modify-write race between passes). Every sanctioned
+        private-API dependency (including the read-only
+        ``QueryInstance._hash`` walk in ``has_id_condition``) is
+        recorded in the registry on the TinyDB Limitations page,
+        with the upstream changes that would remove it.
 
         Raises:
             TinydanticError: If the installed TinyDB does not
@@ -428,7 +463,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         if not hasattr(table, "_update_table"):
             msg = (
                 "tinydantic needs TinyDB's internal "
-                "Table._update_table for id-condition writes, but "
+                "Table._update_table for validated and "
+                "id-condition writes, but "
                 f"tinydb {metadata.version('tinydb')} does not "
                 "provide it. Pin an older tinydb or upgrade "
                 "tinydantic (see the TinyDB Limitations page in "
@@ -738,13 +774,37 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         transform callable is handed to TinyDB as-is — what it writes
         is up to you.
 
-        Conditions on ``Model.id`` are executed in one atomic
-        read-modify-write cycle (see
-        ``_run_id_condition_write_cycle``), with the condition
-        evaluated against [Document][tinydb.table.Document]
-        wrappers so it can read ``doc_id``. When ``doc_ids`` is
-        passed explicitly, TinyDB's precedence applies and
-        ``cond`` is not evaluated.
+        Unless the model opts out via ``validate_writes=False``,
+        each matched document's merged result — stored body plus
+        the new fields, or the transform's output — is validated
+        before anything is written, so an update can never persist
+        a body its next read would reject. Cross-field
+        ``model_validator(mode="after")`` invariants run against
+        the merge with the real document id visible; stored keys
+        the model does not know are ignored by validation and
+        preserved in the written body. The whole batch is one
+        atomic read-modify-write cycle (see ``_run_write_cycle``):
+        a validation failure on any matched document means nothing
+        is written.
+
+        Conditions on ``Model.id`` are supported (bare or composed
+        with field conditions), evaluated against
+        [Document][tinydb.table.Document] wrappers so they can
+        read ``doc_id``. When ``doc_ids`` is passed explicitly,
+        TinyDB's precedence applies and ``cond`` is not evaluated.
+
+        Args:
+            fields: A mapping of new field values, or a transform
+                callable applied to each matched document body.
+            cond: The query condition selecting documents.
+            doc_ids: Explicit document ids to update instead of a
+                condition.
+            extra_keys: ``"reject"`` (default) raises for mapping
+                keys that are not model fields — they would be
+                written without any validation. ``"allow"`` writes
+                them through unchanged (for databases shared with
+                other tools or schema-evolution keys this model
+                does not know yet).
 
         Returns:
             The ids of all updated documents.
@@ -752,50 +812,65 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         Raises:
             DocumentIDUpdateError: If a mapping contains an ``id``
                 key.
+            UnknownUpdateFieldError: If a mapping contains keys
+                that are not model fields and ``extra_keys`` is
+                ``"reject"`` (the default).
             pydantic.ValidationError: If a mapping value fails
-                validation against its field's type.
+                validation against its field's type, or a matched
+                document's merged result fails model validation.
         """
         if not callable(fields):
             fields = cls._serialize_update_fields(
                 fields,
                 extra_keys=extra_keys,
             )
-        if cond is not None and doc_ids is None and has_id_condition(cond):
-            table = cls.get_table()
-            _cond = cond
-            _fields = fields
-
-            def apply_update(data: dict[int, Any]) -> list[int]:
-                """Apply the fields to documents matching the cond."""
-                matched: list[int] = []
-                for target_id in list(data):
-                    doc = table.document_class(
-                        data[target_id],
-                        target_id,
-                    )
-                    if _cond(doc):
-                        matched.append(target_id)
-                        # Copy-on-write: mutate a copy and assign
-                        # it back, so an aborted cycle never leaks
-                        # partial changes into storages that share
-                        # body dicts by reference (MemoryStorage).
-                        body = dict(data[target_id])
-                        if callable(_fields):
-                            _fields(body)
-                        else:
-                            body.update(_fields)
-                        data[target_id] = body
-                return matched
-
-            return cls._run_id_condition_write_cycle(apply_update)
-        return cls.get_table().update(
-            # See replace() for why this cast is needed.
-            # TODO @cdwilson: remove this cast once the annotation is
-            # fixed in TinyDB.
-            cast("Callable[[Mapping], None]", fields),
-            cond=cond,
-            doc_ids=doc_ids,
+        validate = get_config_value(cls, "validate_writes", default=True)
+        id_cond = (
+            cond is not None and doc_ids is None and has_id_condition(cond)
         )
+        if not validate and not id_cond:
+            return cls.get_table().update(
+                # See replace() for why this cast is needed.
+                # TODO @cdwilson: remove this cast once the
+                # annotation is fixed in TinyDB.
+                cast("Callable[[Mapping], None]", fields),
+                cond=cond,
+                doc_ids=doc_ids,
+            )
+        table = cls.get_table()
+        _cond, _fields, _doc_ids = cond, fields, doc_ids
+
+        def apply_update(data: dict[int, Any]) -> list[int]:
+            """Apply the fields to each selected document."""
+            if _doc_ids is not None:
+                # TinyDB's public update(doc_ids=...) raises
+                # KeyError for a missing id; data[target_id] in
+                # _apply_and_validate preserves that contract,
+                # aborting before the storage write.
+                targets = list(_doc_ids)
+            elif _cond is not None:
+                targets = [
+                    target_id
+                    for target_id in list(data)
+                    if _cond(
+                        table.document_class(
+                            data[target_id],
+                            target_id,
+                        ),
+                    )
+                ]
+            else:
+                targets = list(data)
+            for target_id in targets:
+                cls._apply_and_validate(
+                    data,
+                    target_id,
+                    _fields,
+                    validate=validate,
+                )
+            return targets
+
+        return cls._run_write_cycle(apply_update)
 
     @classmethod
     def update_multiple(
@@ -815,12 +890,16 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         exactly as in [update][tinydantic.TinydanticModel.update];
         transform callables pass through as-is.
 
+        Unless the model opts out via ``validate_writes=False``,
+        each matched document's merged result is validated exactly
+        as in [update][tinydantic.TinydanticModel.update], and the
+        whole batch is one atomic read-modify-write cycle (see
+        ``_run_write_cycle``): a validation failure on any matched
+        document means nothing is written.
+
         Pairs may use conditions on ``Model.id`` (bare or composed
         with field conditions) and mix freely with plain
-        field-condition pairs. A batch containing an id condition
-        runs in one atomic read-modify-write cycle (see
-        ``_run_id_condition_write_cycle``), with every pair's
-        condition evaluated against
+        field-condition pairs, every condition evaluated against
         [Document][tinydb.table.Document] wrappers so id
         conditions can read ``doc_id`` — TinyDB's own batch
         semantics are preserved: documents are visited in table
@@ -828,14 +907,25 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         earlier pairs' changes), and a document appears in the
         result once per pair that matched it.
 
+        Args:
+            updates: ``(fields_or_transform, cond)`` pairs.
+            extra_keys: ``"reject"`` (default) raises for mapping
+                keys that are not model fields; ``"allow"`` writes
+                them through unchanged — see
+                [update][tinydantic.TinydanticModel.update].
+
         Returns:
             The ids of all updated documents.
 
         Raises:
             DocumentIDUpdateError: If a mapping contains an ``id``
                 key.
+            UnknownUpdateFieldError: If a mapping contains keys
+                that are not model fields and ``extra_keys`` is
+                ``"reject"`` (the default).
             pydantic.ValidationError: If a mapping value fails
-                validation against its field's type.
+                validation against its field's type, or a matched
+                document's merged result fails model validation.
         """
         prepared = [
             (
@@ -849,7 +939,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             )
             for fields, cond in updates
         ]
-        if any(has_id_condition(cond) for _, cond in prepared):
+        validate = get_config_value(cls, "validate_writes", default=True)
+        if validate or any(has_id_condition(cond) for _, cond in prepared):
             table = cls.get_table()
 
             def apply_pairs(data: dict[int, Any]) -> list[int]:
@@ -863,16 +954,15 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                         )
                         if cond(doc):
                             matched.append(target_id)
-                            # Copy-on-write: see update().
-                            body = dict(data[target_id])
-                            if callable(fields):
-                                fields(body)
-                            else:
-                                body.update(fields)
-                            data[target_id] = body
+                            cls._apply_and_validate(
+                                data,
+                                target_id,
+                                fields,
+                                validate=validate,
+                            )
                 return matched
 
-            return cls._run_id_condition_write_cycle(apply_pairs)
+            return cls._run_write_cycle(apply_pairs)
         return cls.get_table().update_multiple(
             # See replace() for why this cast is needed.
             cast(
@@ -926,7 +1016,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                         data[target_id] = body
                 return matched
 
-            ids = cls._run_id_condition_write_cycle(apply_upsert)
+            ids = cls._run_write_cycle(apply_upsert)
             if not ids:
                 ids = [table.insert(document_dict)]
         else:
@@ -949,7 +1039,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         Conditions on ``Model.id`` are executed in one atomic
         read-modify-write cycle (see
-        ``_run_id_condition_write_cycle``), with the condition
+        ``_run_write_cycle``), with the condition
         evaluated against [Document][tinydb.table.Document]
         wrappers so it can read ``doc_id``. When ``doc_ids`` is
         passed explicitly, TinyDB's precedence applies and
@@ -975,7 +1065,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                         data.pop(target_id)
                 return matched
 
-            return cls._run_id_condition_write_cycle(apply_remove)
+            return cls._run_write_cycle(apply_remove)
         return cls.get_table().remove(cond=cond, doc_ids=doc_ids)
 
     @classmethod
