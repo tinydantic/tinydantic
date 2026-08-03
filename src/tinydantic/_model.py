@@ -29,6 +29,7 @@ from tinydantic._config import (
 )
 from tinydantic._errors import (
     DatabaseNotBoundError,
+    DocumentAlreadyExistsError,
     DocumentIDRequiredError,
     DocumentIDUpdateError,
     DocumentNotFoundError,
@@ -359,11 +360,37 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         Returns:
             The inserted models, with ``id`` set, in insertion order.
+
+        Raises:
+            DocumentAlreadyExistsError: If any model's ``id`` is
+                already stored, or repeated within the batch;
+                nothing is inserted.
         """
         docs = list(documents)
-        doc_ids = cls.get_table().insert_multiple(
-            [doc.to_tinydb_document() for doc in docs],
-        )
+        # Serialize before the try: pydantic.ValidationError is a
+        # ValueError and must never be mistaken for a duplicate id.
+        serialized = [doc.to_tinydb_document() for doc in docs]
+        table = cls.get_table()
+        try:
+            doc_ids = table.insert_multiple(serialized)
+        except ValueError as exc:
+            # The aborted batch wrote nothing, so the table still
+            # reflects the pre-call state; scan the provided ids
+            # for ones already stored or repeated in the batch.
+            provided = [doc.id for doc in docs if doc.id is not None]
+            taken = sorted(
+                {
+                    doc_id
+                    for index, doc_id in enumerate(provided)
+                    if table.contains(doc_id=doc_id)
+                    or doc_id in provided[:index]
+                },
+            )
+            raise DocumentAlreadyExistsError(
+                model_name=cls.__name__,
+                table_name=table.name,
+                doc_ids=taken or provided,
+            ) from exc
         for doc, doc_id in zip(docs, doc_ids, strict=True):
             doc.id = doc_id
         return docs
@@ -1215,10 +1242,20 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             This instance, with ``id`` set to the new document id.
 
         Raises:
-            ValueError: If ``id`` is set to an id that already exists in
-                the table (raised by TinyDB).
+            DocumentAlreadyExistsError: If ``id`` is set to an id
+                that already exists in the table.
         """
-        self.id = self.get_table().insert(self.to_tinydb_document())
+        # Serialize before the try: pydantic.ValidationError is a
+        # ValueError and must never be mistaken for a duplicate id.
+        doc = self.to_tinydb_document()
+        try:
+            self.id = self.get_table().insert(doc)
+        except ValueError as exc:
+            raise DocumentAlreadyExistsError(
+                model_name=type(self).__name__,
+                table_name=self.get_table().name,
+                doc_ids=[cast("int", self.id)],
+            ) from exc
 
         return self
 

@@ -86,6 +86,34 @@ class DocumentNotFoundError(TinydanticError):
         )
 
 
+class DocumentAlreadyExistsError(TinydanticError, ValueError):
+    """A document with this id already exists in the table.
+
+    Raised by ``insert()`` and ``insert_multiple()`` when a model
+    arrives with an ``id`` that is already taken — by a stored
+    document, or by another model in the same batch. A
+    ``ValueError`` subclass, so handlers written for TinyDB's raw
+    error keep working.
+    """
+
+    def __init__(
+        self,
+        *,
+        model_name: str,
+        table_name: str,
+        doc_ids: list[int],
+    ) -> None:
+        """Initialize with the model, table, and taken id(s)."""
+        ids = ", ".join(str(doc_id) for doc_id in doc_ids)
+        noun = "id" if len(doc_ids) == 1 else "ids"
+        super().__init__(
+            f"Document with {noun} {ids} already exists in table "
+            f"{table_name!r} (model {model_name!r}). Omit id to "
+            "let TinyDB assign one, or use save()/upsert() to "
+            "update the existing document.",
+        )
+
+
 class DocumentIDConditionError(TinydanticUserError):
     """An id condition was used where ``doc_id`` is unavailable.
 
