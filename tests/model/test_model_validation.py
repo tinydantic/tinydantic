@@ -8,9 +8,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
+import pytest
 import tinydb.table
 
-from pydantic import model_validator
+from pydantic import ConfigDict, ValidationError, model_validator
 
 from tinydantic import TinydanticModel
 
@@ -115,3 +116,67 @@ class TestValidationSeesRealID:
             name: str
 
         assert Plain.from_tinydb_document({"name": "x"}).id is None
+
+
+class TestAssignmentValidation:
+    """Attribute assignment validates by default."""
+
+    def test_assignment_validates(self, db: TinyDB):
+        """Assigning an invalid value raises immediately."""
+
+        class Book(TinydanticModel, database=db):
+            """Test model."""
+
+            year: int
+
+        book = Book(year=1965)
+        with pytest.raises(ValidationError):
+            book.year = "not a year"  # type: ignore[assignment]
+        assert book.year == 1965
+
+    def test_assignment_coerces(self, db: TinyDB):
+        """Coercible assigned values are validated and converted."""
+
+        class Book(TinydanticModel, database=db):
+            """Test model."""
+
+            year: int
+
+        book = Book(year=1965)
+        book.year = "1966"  # type: ignore[assignment]
+        assert book.year == 1966
+
+    def test_assignment_runs_after_validators(self, db: TinyDB):
+        """Cross-field invariants re-run on assignment."""
+
+        class Event(TinydanticModel, database=db):
+            """Test model with a cross-field invariant."""
+
+            start: int
+            end: int
+
+            @model_validator(mode="after")
+            def ordered(self) -> Event:
+                """Require end >= start."""
+                if self.end < self.start:
+                    msg = "end must be >= start"
+                    raise ValueError(msg)
+                return self
+
+        event = Event(start=1, end=2)
+        with pytest.raises(ValidationError):
+            event.end = 0
+
+    def test_subclass_can_opt_out(self, db: TinyDB):
+        """validate_assignment=False restores loose assignment."""
+
+        class Loose(TinydanticModel, database=db):
+            """Test model opting out of assignment validation."""
+
+            model_config = ConfigDict(validate_assignment=False)
+
+            year: int
+
+        loose = Loose(year=1)
+        loose.year = "junk"  # type: ignore[assignment]
+        assert loose.year == "junk"
