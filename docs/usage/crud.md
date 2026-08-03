@@ -361,6 +361,57 @@ tinydantic._errors.UnknownUpdateFieldError: update() mapping for 'Book' ...
 >
 > Keys written via `extra_keys="allow"` are stored **unvalidated** (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the `validate_writes=False` class kwarg; per-field value validation (the `datetime` example above) always applies to mappings.
 
+### `patch`
+
+[patch()][tinydantic.TinydanticModel.patch] is the instance-level partial update: it validates the given fields, writes **only those fields** to the stored document, and updates the instance to match — one call, no drift between object and storage.
+
+```pycon
+>>> neuromancer = Book.get_by_id(2)
+>>> neuromancer.patch(year=1985)
+Book(id=2, title='Neuromancer', author='Gibson', year=1985, in_stock=True)
+
+```
+
+Because only the named fields are written, `patch()` avoids the lost-update trap that whole-document `save()` leaves open: a stale copy patching one field cannot clobber another writer's change to a different field.
+
+```pycon
+>>> stale_copy = Book.get_by_id(2)
+>>> stale_copy.patch(in_stock=False)  # holds year=1985 already
+Book(id=2, title='Neuromancer', author='Gibson', year=1985, in_stock=False)
+>>> Book.get_by_id(2)  # both changes survived in storage
+Book(id=2, title='Neuromancer', author='Gibson', year=1985, in_stock=False)
+
+```
+
+`patch()` is strict: it requires a persisted instance, the document must still exist, and only model fields are accepted (there is no `extra_keys=` escape at instance level — use [update][tinydantic.TinydanticModel.update] for non-model keys):
+
+```pycon
+>>> Book(title="Ghost", author="X", year=2000).patch(year=2001)
+Traceback (most recent call last):
+  ...
+tinydantic._errors.DocumentIDRequiredError: Cannot patch() ...
+>>> neuromancer.patch(shelf="B2")
+Traceback (most recent call last):
+  ...
+tinydantic._errors.UnknownUpdateFieldError: update() mapping ...
+
+```
+
+An empty `patch()` writes nothing but still verifies the document exists, so its error behavior does not depend on the payload — handy for HTTP PATCH endpoints fed `model_dump(exclude_unset=True)`.
+
+### Choosing a write verb
+
+Four verbs, four different contracts — in HTTP terms:
+
+| Verb | HTTP analogy | Writes | If the document vanished |
+| --- | --- | --- | --- |
+| [save()][tinydantic.TinydanticModel.save] | PUT | the whole instance | re-inserts under the same id |
+| [replace()][tinydantic.TinydanticModel.replace] | PUT (strict) | the whole instance | raises `DocumentNotFoundError` |
+| [patch()][tinydantic.TinydanticModel.patch] | PATCH | only the named fields | raises `DocumentNotFoundError` |
+| [update()][tinydantic.TinydanticModel.update] | bulk UPDATE-WHERE | mapped fields of every match | not applicable (matches nothing) |
+
+Reach for `patch()` when you mean "change these fields of this document" — it is the one verb whose write scope matches that intent, so concurrent changes to unrelated fields survive.
+
 ## Delete
 
 ### `delete`

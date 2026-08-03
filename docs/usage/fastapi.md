@@ -143,6 +143,7 @@ async def read_user(user_id: int):
 
 - **Run a single process.** Do not put a TinyDB file behind multiple worker processes (for example `uvicorn --workers 4` or several Gunicorn workers). Each process holds its own view of the file and they will clobber one another. Use one process — scale with the threadpool, not with processes.
 - **Serialize writes.** Route writes through one place. FastAPI's threadpool can run several `def` handlers at once, so guard write paths with a lock (or funnel them through a single worker) if concurrent writes are possible.
+- **Prefer [patch()][tinydantic.TinydanticModel.patch] for partial updates.** A lock serializes the writes themselves, but not the stale reads handlers hold between load and save — a whole-document `save()` from a stale copy silently overwrites other fields. `book.patch(**payload.model_dump(exclude_unset=True))` writes only the named fields, so concurrent changes to unrelated fields survive.
 
 > [!NOTE]
 >

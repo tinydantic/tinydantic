@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **BREAKING:** `patch` is now a reserved attribute name on tinydantic models — the first method added under the flat-namespace policy. A model with a field named `patch` raises `ShadowedFieldError` at class definition; opt out with `shadowed_fields=("patch",)` or rename the field.
+
 - **BREAKING:** A model field whose name shadows an existing class attribute — a tinydantic method (`search`, `count`, ...), a pydantic method (`copy`, `json`, ...), or a method from your own base classes — now raises `ShadowedFieldError` at class definition instead of pydantic's easily-missed warning followed by silently broken `Model.field` query sugar. Opt in deliberately with the new `shadowed_fields=("name", ...)` class kwarg (inherited like the other config keys) and query such fields with `q("name")`.
 
 - **BREAKING:** Selector misuse raises the new `SelectorError` (a `ValueError` subclass, so existing handlers keep working): zero-selector `get()`/`contains()`/`remove()` no longer leak TinyDB's `RuntimeError`, `upsert()` without a cond or a persisted `id` no longer leaks TinyDB's `ValueError` (whose "use a table.Document" hint means nothing in tinydantic), and the existing too-many-selector `ValueError` guards are upgraded to `SelectorError`. `remove()` with no selector points at `truncate()`.
@@ -22,6 +24,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The code license is now MIT only (previously dual-licensed under Apache-2.0 OR MIT). The relicense is not retroactive: released versions up to and including 0.4.0 remain available under Apache-2.0 OR MIT. Documentation and images remain CC-BY-4.0.
 
 ### Added
+
+- `patch()` — instance-level partial update: validates the given fields, writes only those fields to the stored document by id (atomic, merged-result-validated like `update()`), and syncs the instance after the write succeeds. Closes the lost-update trap of whole-document mutate-then-`save()` and the instance/storage drift of table-level `update(doc_ids=...)`.
 
 - `shadowed_fields` configuration key and `ShadowedFieldError` — loud, definition-time detection of fields that would break the `Model.field` query shorthand, with an explicit per-class opt-out.
 
