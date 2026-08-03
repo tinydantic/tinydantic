@@ -25,6 +25,7 @@ from tinydantic import (
     DocumentIDRequiredError,
     DocumentNotFoundError,
     TinydanticModel,
+    UnknownUpdateFieldError,
     q,
 )
 
@@ -175,14 +176,20 @@ class TestUpdateSerialization:
         with pytest.raises(ValidationError):
             user_class.update({"age": "not a number"}, doc_ids=[user.id])
 
-    def test_update_passes_unknown_keys_through(
+    def test_update_unknown_keys_need_explicit_allow(
         self,
         user_class: type[UserBase],
     ):
-        """Keys that are not model fields are written unchanged."""
+        """Non-field keys are rejected unless extra_keys='allow'."""
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
-        user_class.update({"nickname": "Al"}, doc_ids=[user.id])
+        with pytest.raises(UnknownUpdateFieldError, match="nickname"):
+            user_class.update({"nickname": "Al"}, doc_ids=[user.id])
+        user_class.update(
+            {"nickname": "Al"},
+            doc_ids=[user.id],
+            extra_keys="allow",
+        )
         raw = user_class.get_table().get(doc_id=user.id)
         assert isinstance(raw, Document)
         assert raw["nickname"] == "Al"

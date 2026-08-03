@@ -7,7 +7,14 @@
 from __future__ import annotations
 
 from importlib import metadata
-from typing import TYPE_CHECKING, Any, ClassVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+    cast,
+    overload,
+)
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from pydantic.alias_generators import to_snake
@@ -26,6 +33,7 @@ from tinydantic._errors import (
     DocumentIDUpdateError,
     DocumentNotFoundError,
     TinydanticError,
+    UnknownUpdateFieldError,
 )
 from tinydantic._query import (
     DocIdCondition,
@@ -663,7 +671,12 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         return adapter
 
     @classmethod
-    def _serialize_update_fields(cls, fields: Mapping) -> dict[str, Any]:
+    def _serialize_update_fields(
+        cls,
+        fields: Mapping,
+        *,
+        extra_keys: Literal["reject", "allow"] = "reject",
+    ) -> dict[str, Any]:
         """Validate and JSON-serialize known field values in a mapping.
 
         Each key that names a model field has its value validated
@@ -671,16 +684,22 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         same treatment ``insert()``/``save()`` give whole models — so
         rich values (datetime, UUID, nested models, ...) land in
         storage as JSON-safe primitives. Keys that are not model
-        fields pass through unchanged.
+        fields are rejected by default — they would bypass
+        validation entirely — and pass through unchanged only with
+        ``extra_keys="allow"``.
 
         Raises:
             DocumentIDUpdateError: If the mapping contains an ``id``
                 key — ``id`` maps to TinyDB's ``doc_id``, which an
                 update cannot change.
+            UnknownUpdateFieldError: If the mapping contains keys
+                that are not model fields and ``extra_keys`` is
+                ``"reject"`` (the default).
             pydantic.ValidationError: If a value fails validation
                 against its field's type.
         """
         serialized: dict[str, Any] = {}
+        unknown: list[str] = []
         for key, value in fields.items():
             if key == "id":
                 raise DocumentIDUpdateError(model_name=cls.__name__)
@@ -691,7 +710,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                     mode="json",
                 )
             else:
+                unknown.append(key)
                 serialized[key] = value
+        if unknown and extra_keys == "reject":
+            raise UnknownUpdateFieldError(
+                model_name=cls.__name__,
+                keys=unknown,
+            )
         return serialized
 
     @classmethod
@@ -701,6 +726,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         cond: QueryLike | None = None,
         *,
         doc_ids: Iterable[int] | None = None,
+        extra_keys: Literal["reject", "allow"] = "reject",
     ) -> list[int]:
         """Update matching documents with new fields or a transform.
 
@@ -730,7 +756,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 validation against its field's type.
         """
         if not callable(fields):
-            fields = cls._serialize_update_fields(fields)
+            fields = cls._serialize_update_fields(
+                fields,
+                extra_keys=extra_keys,
+            )
         if cond is not None and doc_ids is None and has_id_condition(cond):
             table = cls.get_table()
             _cond = cond
@@ -777,6 +806,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 QueryLike,
             ]
         ],
+        *,
+        extra_keys: Literal["reject", "allow"] = "reject",
     ) -> list[int]:
         """Apply several (fields_or_transform, cond) updates at once.
 
@@ -810,7 +841,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             (
                 fields
                 if callable(fields)
-                else cls._serialize_update_fields(fields),
+                else cls._serialize_update_fields(
+                    fields,
+                    extra_keys=extra_keys,
+                ),
                 cond,
             )
             for fields, cond in updates

@@ -10,9 +10,16 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from tinydantic import (
+    TinydanticModel,
+    UnknownUpdateFieldError,
+    q,
+)
 from tinydantic.tinydb.operations import replace
 
 if TYPE_CHECKING:
+    from tinydb import TinyDB
+
     from tests.model.models import UserBase
 
 
@@ -210,3 +217,89 @@ class TestOperationsEscapeHatch:
         assert fetched is not None
         assert fetched.name == "Alicia"
         assert fetched.age == 38
+
+
+class TestUpdateExtraKeys:
+    """update() mappings reject unknown keys by default."""
+
+    def test_update_rejects_unknown_keys(self, db: TinyDB):
+        """Unknown mapping keys raise UnknownUpdateFieldError."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        user = User(name="Al").insert()
+        with pytest.raises(UnknownUpdateFieldError, match="gadget"):
+            User.update({"gadget": 1}, q(User.name) == "Al")
+        raw = User.get_table().get(doc_id=user.id)
+        assert isinstance(raw, dict)
+        assert "gadget" not in raw
+
+    def test_update_extra_keys_allow(self, db: TinyDB):
+        """extra_keys='allow' passes unknown keys through."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        user = User(name="Al").insert()
+        User.update(
+            {"gadget": 1},
+            q(User.name) == "Al",
+            extra_keys="allow",
+        )
+        raw = User.get_table().get(doc_id=user.id)
+        assert isinstance(raw, dict)
+        assert raw["gadget"] == 1
+
+    def test_update_multiple_rejects_unknown_keys(self, db: TinyDB):
+        """update_multiple() applies the same default."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        User(name="Al").insert()
+        with pytest.raises(UnknownUpdateFieldError, match="gadget"):
+            User.update_multiple(
+                [({"gadget": 1}, q(User.name) == "Al")],
+            )
+
+    def test_update_multiple_extra_keys_allow(self, db: TinyDB):
+        """update_multiple() honors extra_keys='allow'."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        user = User(name="Al").insert()
+        User.update_multiple(
+            [({"gadget": 1}, q(User.name) == "Al")],
+            extra_keys="allow",
+        )
+        raw = User.get_table().get(doc_id=user.id)
+        assert isinstance(raw, dict)
+        assert raw["gadget"] == 1
+
+    def test_error_names_all_unknown_keys(self, db: TinyDB):
+        """The error message lists every offending key."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        User(name="Al").insert()
+        with pytest.raises(
+            UnknownUpdateFieldError,
+            match="'gadget', 'widget'",
+        ):
+            User.update(
+                {"widget": 1, "gadget": 2, "name": "Bo"},
+                q(User.name) == "Al",
+            )
