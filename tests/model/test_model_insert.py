@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from tinydantic import DocumentAlreadyExistsError
+
 if TYPE_CHECKING:
     from tests.model.models import UserBase
 
@@ -107,14 +109,14 @@ class TestModelInsert:
         assert result.age == 37
 
     def test_insert_existing_document(self, user_class: type[UserBase]):
-        """Re-inserting an existing id raises a ValueError."""
+        """Re-inserting an existing id raises the curated error."""
         user = user_class(name="Alice", age=37)
         user.insert()
         assert user.id is not None
         user_class.get(doc_id=user.id)
         with pytest.raises(
-            ValueError,
-            match=r"Document with ID .* already exists",
+            DocumentAlreadyExistsError,
+            match=rf"Document with id {user.id} already exists",
         ):
             user.insert()
 

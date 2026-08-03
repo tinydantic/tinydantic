@@ -10,7 +10,14 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tinydantic import SelectorError, TinydanticModel, q
+from pydantic import Field, ValidationError
+
+from tinydantic import (
+    DocumentAlreadyExistsError,
+    SelectorError,
+    TinydanticModel,
+    q,
+)
 
 if TYPE_CHECKING:
     from tinydb import TinyDB
@@ -106,3 +113,82 @@ class TestSelectorError:
         user = User(name="x").insert()
         user.name = "y"
         assert User.upsert(user) == [user.id]
+
+
+class TestDocumentAlreadyExists:
+    """Duplicate ids raise DocumentAlreadyExistsError."""
+
+    def test_insert_duplicate_id(self, db: TinyDB):
+        """insert() with an existing id names model, table, id."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        user = User(name="x").insert()
+        with pytest.raises(
+            DocumentAlreadyExistsError,
+            match=rf"id {user.id} already exists.*'user'",
+        ):
+            User(id=user.id, name="dup").insert()
+
+    def test_insert_duplicate_compat(self, db: TinyDB):
+        """Old except-ValueError handlers keep working."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        user = User(name="x").insert()
+        with pytest.raises(ValueError, match="already exists"):
+            User(id=user.id, name="dup").insert()
+
+    def test_insert_multiple_duplicate_id_atomic(self, db: TinyDB):
+        """A duplicate anywhere aborts the batch, nothing written."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        user = User(name="x").insert()
+        with pytest.raises(
+            DocumentAlreadyExistsError,
+            match=str(user.id),
+        ):
+            User.insert_multiple(
+                [User(name="new"), User(id=user.id, name="dup")],
+            )
+        assert User.count() == 1
+
+    def test_insert_multiple_batch_internal_duplicate(self, db: TinyDB):
+        """Two identical ids inside one batch are refused too."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        with pytest.raises(DocumentAlreadyExistsError, match="7"):
+            User.insert_multiple(
+                [User(id=7, name="a"), User(id=7, name="b")],
+            )
+        assert User.count() == 0
+
+    @pytest.mark.filterwarnings(
+        "ignore::UserWarning",  # serializer warns pre-validation
+    )
+    def test_insert_validation_error_not_swallowed(self, db: TinyDB):
+        """A corrupted instance still raises ValidationError."""
+
+        class Tagged(TinydanticModel, database=db):
+            """Test model with a list field."""
+
+            tags: list[int] = Field(default_factory=list)
+
+        tagged = Tagged(tags=[1])
+        tagged.tags.append("junk")  # type: ignore[arg-type]
+        with pytest.raises(ValidationError):
+            tagged.insert()
