@@ -38,7 +38,12 @@ if TYPE_CHECKING:
 # Name of the per-class attribute holding explicitly-set config.
 CONFIG_ATTR = "__tinydantic_config__"
 
-_CONFIG_KEYS = ("database", "table_name", "validate_writes")
+_CONFIG_KEYS = (
+    "database",
+    "shadowed_fields",
+    "table_name",
+    "validate_writes",
+)
 
 
 class TinydanticConfig(TypedDict, total=False):
@@ -63,6 +68,19 @@ class TinydanticConfig(TypedDict, total=False):
     When unset (or falsy), the table name is derived from the model
     class name converted to snake_case — for example, a model class
     named ``AdminUser`` uses the table ``admin_user``.
+    """
+
+    shadowed_fields: tuple[str, ...]
+    """Field names allowed to shadow class attributes.
+
+    Fields listed here may share a name with an existing class
+    attribute (a tinydantic or pydantic method, or one of your
+    own). Everything about them works — storage, instance access,
+    ``q("name")`` queries — except the ``Model.field`` query
+    sugar, which keeps resolving to the real attribute. Unlisted
+    shadowed fields raise
+    [ShadowedFieldError][tinydantic.ShadowedFieldError] at class
+    definition.
     """
 
     validate_writes: bool

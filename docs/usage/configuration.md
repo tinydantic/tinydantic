@@ -46,6 +46,23 @@ Attribute-assignment validation is separate — it is pydantic's own `validate_a
 
 ```
 
+## `shadowed_fields`
+
+A field whose name collides with an existing class attribute — a tinydantic method (`search`, `count`, ...), a pydantic method (`copy`, `json`, ...), or one of your own mixin methods — would break the `Model.field` query shorthand silently, so tinydantic refuses the class definition with [ShadowedFieldError][tinydantic.ShadowedFieldError]. `shadowed_fields=` is the explicit opt-out for when you need such a field anyway (for example, a table shared with another tool that writes a `search` key). Listed fields work everywhere except the `Model.field` shorthand; query them with [q()][tinydantic.q] — see the [queries guide](queries.md#sharp-edge-fields-that-shadow-query-methods) for the full walkthrough:
+
+```pycon
+>>> class Command(TinydanticModel, database=db, shadowed_fields=("search",)):
+...     name: str
+...     search: str
+
+```
+
+Like the other keys, `shadowed_fields` is inherited: subclasses of `Command` do not re-declare it.
+
+> [!NOTE]
+>
+> The flat method namespace means a future tinydantic release that adds a new model method may newly shadow one of your fields — the class definition will then fail loudly at upgrade time, and the fix is this same one-line opt-out (or a rename).
+
 ## Table-name derivation
 
 `table_name=` is optional. When you omit it, the table name is derived from the class name converted to `snake_case` via [pydantic.alias_generators.to_snake][] — so `AdminUser` stores its documents in a table named `admin_user`:

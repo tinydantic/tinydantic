@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **BREAKING:** A model field whose name shadows an existing class attribute — a tinydantic method (`search`, `count`, ...), a pydantic method (`copy`, `json`, ...), or a method from your own base classes — now raises `ShadowedFieldError` at class definition instead of pydantic's easily-missed warning followed by silently broken `Model.field` query sugar. Opt in deliberately with the new `shadowed_fields=("name", ...)` class kwarg (inherited like the other config keys) and query such fields with `q("name")`.
+
 - **BREAKING:** Selector misuse raises the new `SelectorError` (a `ValueError` subclass, so existing handlers keep working): zero-selector `get()`/`contains()`/`remove()` no longer leak TinyDB's `RuntimeError`, `upsert()` without a cond or a persisted `id` no longer leaks TinyDB's `ValueError` (whose "use a table.Document" hint means nothing in tinydantic), and the existing too-many-selector `ValueError` guards are upgraded to `SelectorError`. `remove()` with no selector points at `truncate()`.
 - **BREAKING:** `insert()`/`insert_multiple()` with an already-taken `id` raise the new `DocumentAlreadyExistsError` (also a `ValueError` subclass) naming the model, table, and taken id(s) — including ids repeated within one batch — instead of TinyDB's raw `ValueError`.
 - **BREAKING:** `update()`/`remove()` with an explicit `doc_ids` list containing a missing id raise `DocumentNotFoundError` (matching `replace()`/`delete()`) instead of a bare `KeyError`, and abort before anything is written.
@@ -20,6 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The code license is now MIT only (previously dual-licensed under Apache-2.0 OR MIT). The relicense is not retroactive: released versions up to and including 0.4.0 remain available under Apache-2.0 OR MIT. Documentation and images remain CC-BY-4.0.
 
 ### Added
+
+- `shadowed_fields` configuration key and `ShadowedFieldError` — loud, definition-time detection of fields that would break the `Model.field` query shorthand, with an explicit per-class opt-out.
 
 - `SelectorError` and `DocumentAlreadyExistsError` — completing the curated exception surface: no raw TinyDB or bare built-in exception leaks through tinydantic's public API.
 - `validate_writes` configuration key (class kwarg, inherited like `database=`/`table_name=`): controls write-boundary re-validation; defaults to `True`.

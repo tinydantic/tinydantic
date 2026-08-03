@@ -124,6 +124,7 @@ pypi
 pyproject
 pysemver
 pytest
+pytestmark
 pythonunbuffered
 pytype
 pyupgrade
@@ -175,6 +176,7 @@ typechecks
 typora
 uninspected
 unmigrated
+unshadowed
 unvalidated
 upsert
 upserts
