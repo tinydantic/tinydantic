@@ -2018,6 +2018,7 @@
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">¤</a></h3>
 <ul>
 <li>Lifecycle hooks: <code>before_save()</code> (runs before every whole-model write, before serialization — mutations are validated and persisted; raising aborts the write) and <code>after_load()</code> (runs after every read that materializes an instance, with the real <code>id</code> set). Overridable no-op methods, <code>super()</code>-chainable; field-level writes (<code>update()</code>, <code>patch()</code>) fire neither.</li>
+<li><code>Unique</code> field marker (<code>email: Annotated[str, Unique()]</code>) and <code>UniqueConstraintError</code> — duplicate values are refused on <code>insert()</code>/<code>insert_multiple()</code>/<code>save()</code>/<code>replace()</code>/<code>upsert()</code>/<code>patch()</code> with a check-then-write scan (in-process; <code>None</code> exempt; the bulk <code>update()</code> path is the documented bypass).</li>
 </ul>
 <ul>
 <li><code>patch()</code> — instance-level partial update: validates the given fields, writes only those fields to the stored document by id (atomic, merged-result-validated like <code>update()</code>), and syncs the instance after the write succeeds. Closes the lost-update trap of whole-document mutate-then-<code>save()</code> and the instance/storage drift of table-level <code>update(doc_ids=...)</code>.</li>
