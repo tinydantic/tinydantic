@@ -163,6 +163,46 @@ This is the design that makes round-tripping work with _any_ TinyDB storage back
 >
 > Because storage only ever sees JSON primitives, any model that is JSON-serializable round-trips through `tinydantic` faithfully. A type Pydantic cannot serialize to JSON will raise when you try to insert it — surface it as a JSON-safe representation (or a custom serializer) instead.
 
+## Lifecycle hooks
+
+Two overridable no-op methods mark the storage boundary. [before_save()][tinydantic.TinydanticModel.before_save] runs once at the start of every whole-model write (`insert()`, each document of `insert_multiple()`, `save()`, `replace()`, `upsert()`) — before serialization, so anything it sets is validated and persisted with the write. The classic use is audit timestamps:
+
+```pycon
+>>> import datetime
+>>> class Note(TinydanticModel, database=db, table_name="notes"):
+...     text: str
+...     created_at: datetime.datetime | None = None
+...     updated_at: datetime.datetime | None = None
+...
+...     def before_save(self) -> None:
+...         """Stamp audit timestamps."""
+...         now = datetime.datetime.now(tz=datetime.timezone.utc)
+...         if self.id is None:
+...             self.created_at = now
+...         self.updated_at = now
+>>> note = Note(text="draft").insert()
+>>> note.created_at == note.updated_at
+True
+>>> note.text = "final"
+>>> _ = note.save()
+>>> note.updated_at >= note.created_at
+True
+
+```
+
+[after_load()][tinydantic.TinydanticModel.after_load] runs after a stored document is validated into an instance — on every materializing read, with the real `id` set. Changes made there affect only the in-memory instance; reads never write. A sketch:
+
+```python
+class Session(TinydanticModel, database=db):
+    token: str
+
+    def after_load(self) -> None:
+        """Track which sessions this process touched."""
+        SEEN_SESSION_IDS.add(self.id)
+```
+
+Three rules worth remembering: field-level writes (`update()`, `patch()`) fire **neither** hook — they never write the whole model, so fields set in `before_save()` would be silently dropped; a raising hook **aborts the write** with nothing written; and hooks are ordinary methods, so mixins can cooperate via `super().before_save()`. Prefer hooks over `model_validator` for side effects: validators also fire on construction, on every read, and on every assignment — a timestamp bumped there is stamped by reads too.
+
 ## Where next
 
 - [Queries](queries.md) — build query conditions from model fields, including nested ones.
