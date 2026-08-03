@@ -2019,10 +2019,10 @@
 </tr>
 <tr>
 <td><code>Table._update_table(updater)</code></td>
-<td><code>TinydanticModel._run_id_condition_write_cycle()</code> — the id-condition write paths of <code>update()</code>, <code>remove()</code>, <code>upsert()</code>, and <code>update_multiple()</code></td>
-<td><strong>In use</strong> (approved 2026-07-13)</td>
-<td>The only way to select write targets by id inside one atomic read-modify-write cycle: <code>update_multiple()</code> has no <code>doc_ids</code> parameter, and conditions cannot see ids (the two limitations above). The custom updater evaluates every condition against <code>Document(body, doc_id)</code> wrappers inside upstream's own read → mutate → write → cache-clear lifecycle, applies mutations copy-on-write (so an aborted cycle leaks nothing, even on <code>MemoryStorage</code>, whose <code>read()</code> shares body dicts by reference), and skips the storage write entirely when nothing matched. Benchmarked ~23% faster than the two-pass public-API alternative on a 5,000-document JSONStorage table (one full file read saved per write).</td>
-<td>Either <code>update_multiple()</code> improvement above; the <code>needs_doc_id</code>/<code>DocId</code> evaluator change removes the need entirely.</td>
+<td><code>TinydanticModel._run_write_cycle()</code> — all <code>update()</code>/<code>update_multiple()</code> writes (which validate each matched document's merged result unless <code>validate_writes=False</code>), plus the id-condition paths of <code>remove()</code> and <code>upsert()</code></td>
+<td><strong>In use</strong> (approved 2026-07-13 for id-condition writes; scope extended 2026-08-02 to all validated update writes)</td>
+<td>The only way to select write targets by id inside one atomic read-modify-write cycle, and the only way to validate-then-write atomically: <code>update_multiple()</code> has no <code>doc_ids</code> parameter, conditions cannot see ids (the two limitations above), and a public two-pass validate-then-update has a read-modify-write race between passes. The custom updater evaluates every condition against <code>Document(body, doc_id)</code> wrappers inside upstream's own read → mutate → write → cache-clear lifecycle, validates merged bodies before the write, applies mutations copy-on-write (so an aborted or validation-failed cycle leaks nothing, even on <code>MemoryStorage</code>, whose <code>read()</code> shares body dicts by reference), and skips the storage write entirely when nothing matched. Benchmarked ~23% faster than the two-pass public-API alternative on a 5,000-document JSONStorage table (one full file read saved per write).</td>
+<td>Either <code>update_multiple()</code> improvement above plus an atomic validate-hook, or the <code>needs_doc_id</code>/<code>DocId</code> evaluator change combined with a public batched read-modify-write API.</td>
 </tr>
 </tbody>
 </table>
