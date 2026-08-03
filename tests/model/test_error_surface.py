@@ -14,6 +14,7 @@ from pydantic import Field, ValidationError
 
 from tinydantic import (
     DocumentAlreadyExistsError,
+    DocumentNotFoundError,
     SelectorError,
     TinydanticModel,
     q,
@@ -192,3 +193,63 @@ class TestDocumentAlreadyExists:
         tagged.tags.append("junk")  # type: ignore[arg-type]
         with pytest.raises(ValidationError):
             tagged.insert()
+
+
+class TestMissingDocIDs:
+    """Explicit doc_ids misses raise DocumentNotFoundError."""
+
+    def test_update_missing_doc_id(self, db: TinyDB):
+        """update(doc_ids=[missing]) names the missing id."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        User(name="x").insert()
+        with pytest.raises(DocumentNotFoundError, match="999"):
+            User.update({"name": "y"}, doc_ids=[999])
+        loaded = User.get_by_id(1)
+        assert loaded is not None
+        assert loaded.name == "x"
+
+    def test_update_partial_miss_writes_nothing(self, db: TinyDB):
+        """One missing id aborts the batch; valid ids untouched."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        user = User(name="x").insert()
+        assert user.id is not None
+        with pytest.raises(DocumentNotFoundError, match="999"):
+            User.update({"name": "y"}, doc_ids=[user.id, 999])
+        loaded = User.get_by_id(user.id)
+        assert loaded is not None
+        assert loaded.name == "x"
+
+    def test_update_missing_doc_id_unvalidated_model(self, db: TinyDB):
+        """The validate_writes=False delegation path wraps too."""
+
+        class Loose(TinydanticModel, database=db, validate_writes=False):
+            """Test model with write validation off."""
+
+            name: str
+
+        Loose(name="x").insert()
+        with pytest.raises(DocumentNotFoundError, match="999"):
+            Loose.update({"name": "y"}, doc_ids=[999])
+
+    def test_remove_missing_doc_id(self, db: TinyDB):
+        """remove(doc_ids=[missing]) names the missing id."""
+
+        class User(TinydanticModel, database=db):
+            """Test model."""
+
+            name: str
+
+        User(name="x").insert()
+        with pytest.raises(DocumentNotFoundError, match="999"):
+            User.remove(doc_ids=[999])
+        assert User.count() == 1
