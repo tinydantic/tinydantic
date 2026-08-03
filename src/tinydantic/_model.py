@@ -183,6 +183,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         # cannot collide with user-defined fields (the use case Samuel
         # Colvin described in pydantic#10315).
         protected_namespaces=("tinydantic_",),
+        # Assignment must not silently corrupt an instance that will
+        # later be persisted; subclasses may opt out via their own
+        # model_config.
+        validate_assignment=True,
     )
 
     __tinydantic_config__: ClassVar[TinydanticConfig] = {}
