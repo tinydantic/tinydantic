@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - Lifecycle hooks: `before_save()` (runs before every whole-model write, before serialization — mutations are validated and persisted; raising aborts the write) and `after_load()` (runs after every read that materializes an instance, with the real `id` set). Overridable no-op methods, `super()`-chainable; field-level writes (`update()`, `patch()`) fire neither.
+- `Unique` field marker (`email: Annotated[str, Unique()]`) and `UniqueConstraintError` — duplicate values are refused on `insert()`/`insert_multiple()`/`save()`/`replace()`/`upsert()`/`patch()` with a check-then-write scan (in-process; `None` exempt; the bulk `update()` path is the documented bypass).
 
 - `patch()` — instance-level partial update: validates the given fields, writes only those fields to the stored document by id (atomic, merged-result-validated like `update()`), and syncs the instance after the write succeeds. Closes the lost-update trap of whole-document mutate-then-`save()` and the instance/storage drift of table-level `update(doc_ids=...)`.
 - `unbind()` — the inverse of `bind()`: detach a late-bound database, reset `table_name` to its derived default, or clear any other config key this class set (no arguments clears them all). Values inherited from base classes resurface. Built for the test-fixture setup/teardown pattern.
