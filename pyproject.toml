@@ -264,6 +264,11 @@ filterwarnings = [
   # The queries.md "shadowing" section deliberately defines a field named
   # `search` to demonstrate the pitfall, so pydantic's warning is expected.
   'ignore:Field name "search" in "Command" shadows an attribute in parent "TinydanticModel":UserWarning',
+  # Write-boundary validation dumps a (possibly corrupted) model before
+  # validating the payload; pydantic's serializer warns on the dump and
+  # then validate_writes raises loudly, so for the deliberate-corruption
+  # examples in docs and tests the warning is redundant noise.
+  "ignore:Pydantic serializer warnings:UserWarning",
 ]
 minversion = "6.0"
 testpaths = [

@@ -112,6 +112,8 @@ email
 > [!TIP]
 >
 > Validation on load means a `tinydantic` read is a schema check, not just a fetch. Bad data surfaces as a loud [pydantic.ValidationError][pydantic_core.ValidationError] the moment you read it, rather than silently flowing into your application as an untyped dict.
+>
+> Writes hold the same line: attribute assignment is validated (`validate_assignment` is on for every tinydantic model; subclasses can opt out in their own `model_config`), every whole-model write re-validates its serialized payload before it reaches storage, and `update()` validates each matched document's merged result — so an update that would corrupt a field refuses to run, and a document that would fail its next read is never written. The write-side checks can be switched off per model with the `validate_writes=False` class kwarg (see [Configuration](configuration.md)) when bulk-write performance matters more than the guarantee.
 
 ```pycon
 >>> db.table("accounts").truncate()

@@ -12,13 +12,37 @@ Configuration is how a model learns _where_ its documents live: which [TinyDB][t
 
 ## Class keyword arguments
 
-A model is configured with two keyword arguments on the class statement: `database=` (a TinyDB instance) and `table_name=` (a string).
+A model is configured with keyword arguments on the class statement: `database=` (a TinyDB instance), `table_name=` (a string), and `validate_writes=` (a bool).
 
 ```pycon
 >>> class User(TinydanticModel, database=db, table_name="users"):
 ...     name: str
 >>> User(name="Alice").insert()
 User(id=1, name='Alice')
+
+```
+
+## `validate_writes`
+
+`validate_writes=` (default `True`) controls tinydantic's write-boundary re-validation: whole-model writes (`insert()`, `save()`, `replace()`, `upsert()`) validate their serialized payload before it reaches storage, and `update()`/`update_multiple()` validate each matched document's merged result — so a document that would fail its next read is never written (see the [CRUD tour](crud.md)).
+
+Set it to `False` when per-document validation cost matters more than the guarantee — the intended use case is performance-critical bulk writes:
+
+```pycon
+>>> class Metric(TinydanticModel, database=db, validate_writes=False):
+...     value: int
+
+```
+
+With `validate_writes=False`, writes behave as plain serialization: mapping values passed to `update()` are still validated per field, but nothing re-checks whole documents, so corrupted instances or transform output can reach storage and surface as [pydantic.ValidationError][pydantic_core.ValidationError] on a later read.
+
+Attribute-assignment validation is separate — it is pydantic's own `validate_assignment` (on by default for tinydantic models), and a subclass opts out through its `model_config`, not through tinydantic config:
+
+```pycon
+>>> from pydantic import ConfigDict
+>>> class Loose(TinydanticModel, database=db):
+...     model_config = ConfigDict(validate_assignment=False)
+...     value: int
 
 ```
 
