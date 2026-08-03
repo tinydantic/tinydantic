@@ -1,21 +1,20 @@
 {
   "recommendations": [
     "charliermarsh.ruff",
-    "donjayamanne.python-environment-manager",
+    "davidanson.vscode-markdownlint",
+    "dnut.rewrap-revived",
     "editorconfig.editorconfig",
     "esbenp.prettier-vscode",
-    "kennethlove.interrogate",
     "ms-python.debugpy",
     "ms-python.mypy-type-checker",
     "ms-python.python",
     "ms-python.vscode-pylance",
+    "ms-python.vscode-python-envs",
     "njpwerner.autodocstring",
     "redhat.vscode-yaml",
-    "stkb.rewrap",
     "streetsidesoftware.code-spell-checker",
     "tombi-toml.tombi",
     "trond-snekvik.simple-rst",
-    "vivaxy.vscode-conventional-commits",
-    "ms-python.vscode-python-envs"
+    "vivaxy.vscode-conventional-commits"
   ]
 }

@@ -25,10 +25,12 @@ connor
 crossref
 crossrefs
 cython
+davidanson
 debugpy
 dists
 dmypy
 dnspython
+dnut
 docid
 docstrings
 doctest
