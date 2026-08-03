@@ -359,7 +359,7 @@ tinydantic._errors.UnknownUpdateFieldError: update() mapping for 'Book' ...
 
 > [!NOTE]
 >
-> Keys written via `extra_keys="allow"` are stored **unvalidated** (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the `validate_writes=False` class kwarg; per-field value validation (the `datetime` example above) always applies to mappings.
+> Keys written via `extra_keys="allow"` are stored **unvalidated** (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the `validate_writes=False` class kwarg; per-field value validation (the `datetime` example above) always applies to mappings. `update()` and `update_multiple()` also do **not** enforce [unique fields](models.md#unique-fields) — they are the deliberate loose path; every other write verb checks uniqueness.
 
 ### `patch`
 
