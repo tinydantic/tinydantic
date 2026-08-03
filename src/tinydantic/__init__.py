@@ -24,6 +24,7 @@ from tinydantic._errors import (
     DocumentNotFoundError,
     TinydanticError,
     TinydanticUserError,
+    UnknownUpdateFieldError,
 )
 from tinydantic._model import TinydanticModel, q
 
@@ -40,6 +41,7 @@ __all__ = [
     "TinydanticError",
     "TinydanticModel",
     "TinydanticUserError",
+    "UnknownUpdateFieldError",
     "__version__",
     "q",
 ]

@@ -122,6 +122,29 @@ class DocumentIDUpdateError(TinydanticUserError):
         )
 
 
+class UnknownUpdateFieldError(TinydanticUserError):
+    """An update mapping contains keys that are not model fields.
+
+    Unknown keys are rejected by default: they bypass validation
+    entirely (pydantic ignores extra keys), so allowing them
+    through would persist unvalidated — even non-JSON-safe —
+    values. Pass ``extra_keys="allow"`` to write them anyway, for
+    example when the database file is shared with other tools or
+    carries schema-evolution keys this model does not know yet.
+    """
+
+    def __init__(self, *, model_name: str, keys: list[str]) -> None:
+        """Initialize with the model and the offending keys."""
+        joined = ", ".join(repr(key) for key in sorted(keys))
+        super().__init__(
+            f"update() mapping for {model_name!r} contains keys "
+            f"that are not model fields: {joined}. Unknown keys "
+            "are written without any validation, so they are "
+            'rejected by default; pass extra_keys="allow" to '
+            "write them anyway.",
+        )
+
+
 class DocumentIDRequiredError(TinydanticError):
     """Required document ID is missing.
 

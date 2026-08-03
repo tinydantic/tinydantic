@@ -38,6 +38,7 @@ doctested
 doctests
 donjayamanne
 editmsg
+elif
 esbenp
 excinfo
 fastapi
@@ -140,6 +141,7 @@ schemafile
 scrapy
 sdist
 setattr
+setitem
 sigstore
 snekvik
 spyder
