@@ -114,7 +114,11 @@ class TestQHelper:
     def test_q_string_reaches_a_shadowed_field(self, memory_db: TinyDB):
         """Fields that collide with methods stay queryable via q()."""
 
-        class Command(TinydanticModel, database=memory_db):
+        class Command(
+            TinydanticModel,
+            database=memory_db,
+            shadowed_fields=("search",),
+        ):
             """Test model with a field shadowed by search()."""
 
             name: str

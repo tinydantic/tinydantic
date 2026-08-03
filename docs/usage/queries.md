@@ -221,12 +221,27 @@ Draft(id=1, text='newest, after the reset')
 
 ## Sharp edge: fields that shadow query methods
 
-A read method or query method shares its name with a field at your peril. Because `search`, `get`, `count`, `matches`, `test`, and the like are real attributes on the model class (or on the Query object), a field with the same name is shadowed — attribute access finds the method, not a field query.
-
-Consider a model with a field literally named `search`:
+A field cannot silently share its name with a method. Because `search`, `get`, `count`, and the other model methods are real attributes on the model class, a field with the same name would be shadowed — attribute access would find the method, not a field query, so `Model.field` sugar would break. tinydantic refuses the class definition instead of letting that happen:
 
 ```pycon
 >>> class Command(TinydanticModel, database=db, table_name="commands"):
+...     name: str
+...     search: str
+Traceback (most recent call last):
+  ...
+tinydantic._errors.ShadowedFieldError: Field(s) on 'Command' shadow existing attributes ...
+
+```
+
+If you need the field anyway — say the table is shared with another tool that writes a `search` key — opt in explicitly with the `shadowed_fields=` class kwarg. The field then works everywhere (storage, instance access, validation) except the `Model.field` shorthand, which keeps resolving to the method:
+
+```pycon
+>>> class Command(
+...     TinydanticModel,
+...     database=db,
+...     table_name="commands",
+...     shadowed_fields=("search",),
+... ):
 ...     name: str
 ...     search: str
 >>> commands = Command.insert_multiple(
@@ -237,22 +252,12 @@ Consider a model with a field literally named `search`:
 ... )
 >>> [command.id for command in commands]
 [1, 2]
-
-```
-
-`Command.search` is the [search()][tinydantic.TinydanticModel.search] classmethod, not a field query. Comparing it to a string does not build a query — it just evaluates to `False`, which would silently match nothing:
-
-```pycon
->>> Command.search == "fuzzy"
+>>> Command.search == "fuzzy"  # still the method, not a query
 False
 
 ```
 
-> [!WARNING]
->
-> **A field whose name collides with a method is not reachable through the `Model.field` shorthand.** The expression compiles and runs, but it produces a plain `bool` instead of a query — a bug that fails silently. Name the field as a string instead.
-
-Reach the shadowed field by passing its name to [q()][tinydantic.q], which builds a query on that document key:
+Reach the opted-in field by passing its name to [q()][tinydantic.q], which builds a query on that document key:
 
 ```pycon
 >>> Command.search(q("search") == "fuzzy")
@@ -270,3 +275,7 @@ A raw [Query][tinydb.queries.Query] (or [where()](https://tinydb.readthedocs.io/
 [Command(id=2, name='grep', search='regex')]
 
 ```
+
+> [!NOTE]
+>
+> Pydantic also warns about shadowed fields at class definition (`Field name "search" ... shadows an attribute`). For a deliberate opt-in, silence it with `warnings.filterwarnings("ignore", message=r'Field name "search"')` — or treat the warning as a reminder that `q("search")` is the only query path for that field.

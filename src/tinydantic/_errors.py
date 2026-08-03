@@ -190,6 +190,39 @@ class SelectorError(TinydanticUserError, ValueError):
         super().__init__(message)
 
 
+class ShadowedFieldError(TinydanticUserError):
+    """A model field shadows an existing class attribute.
+
+    A real class attribute wins over the metaclass ``__getattr__``
+    that turns ``Model.field`` into a query, so a shadowed field's
+    query sugar silently evaluates to ``False`` and matches
+    nothing (or fails cryptically, depending on table contents).
+    tinydantic refuses the class definition instead. Rename the
+    field, or list it in the ``shadowed_fields=`` class kwarg and
+    query it with ``q("name")``.
+    """
+
+    def __init__(
+        self,
+        *,
+        model_name: str,
+        shadowed: dict[str, str],
+    ) -> None:
+        """Initialize with the model and the shadowed fields."""
+        pairs = ", ".join(
+            f"{name!r} shadows {owner}"
+            for name, owner in sorted(shadowed.items())
+        )
+        names = ", ".join(repr(name) for name in sorted(shadowed))
+        super().__init__(
+            f"Field(s) on {model_name!r} shadow existing "
+            f"attributes: {pairs}. Model.field query sugar would "
+            "silently break for them. Rename the field(s), or "
+            f"declare shadowed_fields=({names},) on the class "
+            "and query them with q(<field name>).",
+        )
+
+
 class DocumentIDRequiredError(TinydanticError):
     """Required document ID is missing.
 

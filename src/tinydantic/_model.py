@@ -34,6 +34,7 @@ from tinydantic._errors import (
     DocumentIDUpdateError,
     DocumentNotFoundError,
     SelectorError,
+    ShadowedFieldError,
     TinydanticError,
     UnknownUpdateFieldError,
 )
@@ -216,6 +217,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         database: TinyDB | None = None,
         table_name: str | None = None,
         validate_writes: bool | None = None,
+        shadowed_fields: tuple[str, ...] | None = None,
         **kwargs: Any,
     ) -> None:
         """Capture tinydantic class keywords.
@@ -236,6 +238,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             config["table_name"] = table_name
         if validate_writes is not None:
             config["validate_writes"] = validate_writes
+        if shadowed_fields is not None:
+            config["shadowed_fields"] = shadowed_fields
         setattr(cls, CONFIG_ATTR, config)
 
     @classmethod
@@ -246,9 +250,33 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             AmbiguousConfigError: If unrelated base classes supply
                 conflicting tinydantic config (see
                 ``check_config_ambiguity`` in ``tinydantic._config``).
+            ShadowedFieldError: If a model field shadows an
+                existing class attribute (the ``Model.field``
+                query sugar would silently break) and is not
+                listed in the ``shadowed_fields=`` class kwarg.
         """
         super().__pydantic_init_subclass__(**kwargs)
         check_config_ambiguity(cls)
+        allowed = get_config_value(cls, "shadowed_fields", default=())
+        shadowed: dict[str, str] = {}
+        for name in cls.model_fields:
+            if name == "id" or name in allowed:
+                # id is tinydantic's own (Model.id builds a
+                # DocIdQuery); allowed names are the documented
+                # opt-out.
+                continue
+            for klass in cls.__mro__:
+                if name in vars(klass):
+                    # A real class attribute wins over the
+                    # metaclass __getattr__ that builds queries,
+                    # so this field's sugar is broken.
+                    shadowed[name] = f"{klass.__name__}.{name}"
+                    break
+        if shadowed:
+            raise ShadowedFieldError(
+                model_name=cls.__name__,
+                shadowed=shadowed,
+            )
 
     @classmethod
     def bind(
