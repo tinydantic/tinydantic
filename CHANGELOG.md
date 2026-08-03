@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **BREAKING:** Selector misuse raises the new `SelectorError` (a `ValueError` subclass, so existing handlers keep working): zero-selector `get()`/`contains()`/`remove()` no longer leak TinyDB's `RuntimeError`, `upsert()` without a cond or a persisted `id` no longer leaks TinyDB's `ValueError` (whose "use a table.Document" hint means nothing in tinydantic), and the existing too-many-selector `ValueError` guards are upgraded to `SelectorError`. `remove()` with no selector points at `truncate()`.
+- **BREAKING:** `insert()`/`insert_multiple()` with an already-taken `id` raise the new `DocumentAlreadyExistsError` (also a `ValueError` subclass) naming the model, table, and taken id(s) — including ids repeated within one batch — instead of TinyDB's raw `ValueError`.
+- **BREAKING:** `update()`/`remove()` with an explicit `doc_ids` list containing a missing id raise `DocumentNotFoundError` (matching `replace()`/`delete()`) instead of a bare `KeyError`, and abort before anything is written.
 - **BREAKING:** Attribute assignment is now validated (`validate_assignment` in the base `model_config`): assigning a value that fails validation raises `pydantic.ValidationError` immediately, and `model_validator(mode="after")` invariants re-run on every assignment. Subclasses can opt out with `model_config = ConfigDict(validate_assignment=False)`.
 - **BREAKING:** Whole-model writes (`insert()`, `insert_multiple()`, `save()`, `replace()`, `upsert()`) validate their serialized payload before it reaches storage and raise `pydantic.ValidationError` for documents that would fail on their next read — closing the paths assignment validation cannot see (in-place container mutation, nested-model mutation, `object.__setattr__`). Opt out per model with the new `validate_writes=False` class kwarg.
 - **BREAKING:** `update()` and `update_multiple()` validate each matched document's merged result (stored body plus new fields, or a transform callable's output) with the real document id visible to validators, before anything is written; a validation failure anywhere aborts the whole batch with nothing written. Transform callables can no longer write schema-invalid data by default; `validate_writes=False` restores the previous behavior. All mapping/transform updates now run through the atomic write cycle previously reserved for id-condition writes.
@@ -18,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- `SelectorError` and `DocumentAlreadyExistsError` — completing the curated exception surface: no raw TinyDB or bare built-in exception leaks through tinydantic's public API.
 - `validate_writes` configuration key (class kwarg, inherited like `database=`/`table_name=`): controls write-boundary re-validation; defaults to `True`.
 - `UnknownUpdateFieldError` — raised for unknown keys in update mappings; a `TinydanticUserError` naming the offending keys and the escape hatch.
 
