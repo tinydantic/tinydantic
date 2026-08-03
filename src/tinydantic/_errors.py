@@ -114,6 +114,37 @@ class DocumentAlreadyExistsError(TinydanticError, ValueError):
         )
 
 
+class UniqueConstraintError(TinydanticError):
+    """A write would duplicate a unique field's value.
+
+    Raised by create-style and instance-level writes when a field
+    marked [Unique][tinydantic.Unique] already holds the same
+    value elsewhere — in the table, or earlier in the same
+    ``insert_multiple()`` batch.
+    """
+
+    def __init__(
+        self,
+        *,
+        model_name: str,
+        table_name: str,
+        field: str,
+        value: object,
+        doc_id: int | None,
+    ) -> None:
+        """Initialize with the clash location and value."""
+        where = (
+            f"document {doc_id}"
+            if doc_id is not None
+            else "another document in the same batch"
+        )
+        super().__init__(
+            f"Value {value!r} for unique field {field!r} already "
+            f"exists in table {table_name!r} (model "
+            f"{model_name!r}) — held by {where}.",
+        )
+
+
 class DocumentIDConditionError(TinydanticUserError):
     """An id condition was used where ``doc_id`` is unavailable.
 

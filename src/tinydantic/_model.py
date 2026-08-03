@@ -37,8 +37,10 @@ from tinydantic._errors import (
     SelectorError,
     ShadowedFieldError,
     TinydanticError,
+    UniqueConstraintError,
     UnknownUpdateFieldError,
 )
+from tinydantic._fields import Unique
 from tinydantic._query import (
     DocIdCondition,
     DocIdQuery,
@@ -47,7 +49,14 @@ from tinydantic._query import (
 from tinydantic.tinydb.operations import replace
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping
+    from collections.abc import (
+        Callable,
+        Iterable,
+        Mapping,
+    )
+    from collections.abc import (
+        Set as AbstractSet,
+    )
 
     # pydantic's ModelMetaclass lives in a private module. We
     # type-check against the real class but resolve it at runtime as
@@ -67,6 +76,10 @@ else:
 # Name of the per-class attribute caching per-field TypeAdapters
 # (built lazily by _field_adapter for update() serialization).
 _FIELD_ADAPTERS_ATTR = "__tinydantic_field_adapters__"
+
+# Name of the per-class attribute caching unique field names
+# (computed once in __pydantic_init_subclass__).
+_UNIQUE_FIELDS_ATTR = "__tinydantic_unique_fields__"
 
 
 class _NothingMatchedError(Exception):
@@ -307,6 +320,21 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 model_name=cls.__name__,
                 shadowed=shadowed,
             )
+        setattr(
+            cls,
+            _UNIQUE_FIELDS_ATTR,
+            tuple(
+                name
+                for name, info in cls.model_fields.items()
+                # The bare class is accepted alongside instances:
+                # treating Annotated[str, Unique] as inert would be
+                # a silent failure.
+                if any(
+                    meta is Unique or isinstance(meta, Unique)
+                    for meta in info.metadata
+                )
+            ),
+        )
 
     @classmethod
     def bind(
@@ -481,6 +509,29 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         # ValueError and must never be mistaken for a duplicate id.
         serialized = [doc.to_tinydb_document() for doc in docs]
         table = cls.get_table()
+        unique_fields: tuple[str, ...] = getattr(
+            cls,
+            _UNIQUE_FIELDS_ATTR,
+            (),
+        )
+        if unique_fields:
+            preset_ids = {doc.id for doc in docs if doc.id is not None}
+            seen: dict[str, set[Any]] = {name: set() for name in unique_fields}
+            for body in serialized:
+                cls._check_unique(body, exclude_doc_ids=preset_ids)
+                for name in unique_fields:
+                    value = body.get(name)
+                    if value is None:
+                        continue
+                    if value in seen[name]:
+                        raise UniqueConstraintError(
+                            model_name=cls.__name__,
+                            table_name=table.name,
+                            field=name,
+                            value=value,
+                            doc_id=None,
+                        )
+                    seen[name].add(value)
         try:
             doc_ids = table.insert_multiple(serialized)
         except ValueError as exc:
@@ -557,6 +608,96 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                     table_name=cls.get_table().name,
                     doc_id=doc_id,
                 )
+
+    @classmethod
+    def _check_unique(
+        cls,
+        body: Mapping,
+        *,
+        exclude_doc_ids: AbstractSet[int] = frozenset(),
+    ) -> None:
+        """Scan the table for unique-field clashes with ``body``.
+
+        Compares serialized values (what storage holds). ``None``
+        values are exempt, mirroring SQL ``NULL`` under UNIQUE.
+        Check-then-write with no cross-process coordination —
+        sound within tinydantic's documented single-process,
+        serialized-writes scope.
+
+        Raises:
+            UniqueConstraintError: If any non-None unique value in
+                ``body`` is already held by a document whose id is
+                not in ``exclude_doc_ids``.
+        """
+        unique_fields: tuple[str, ...] = getattr(
+            cls,
+            _UNIQUE_FIELDS_ATTR,
+            (),
+        )
+        relevant = [
+            name for name in unique_fields if body.get(name) is not None
+        ]
+        if not relevant:
+            return
+        table = cls.get_table()
+        for stored in iter(table):
+            if stored.doc_id in exclude_doc_ids:
+                continue
+            for name in relevant:
+                if stored.get(name) == body[name]:
+                    raise UniqueConstraintError(
+                        model_name=cls.__name__,
+                        table_name=table.name,
+                        field=name,
+                        value=body[name],
+                        doc_id=stored.doc_id,
+                    )
+
+    @classmethod
+    def _check_upsert_unique(
+        cls,
+        document: Self,
+        cond: QueryLike | None,
+    ) -> None:
+        """Enforce unique fields for an upsert's matched set.
+
+        Resolves the documents ``cond`` matches first: a payload
+        touching a unique field with more than one match raises
+        (N documents cannot share one unique value); otherwise the
+        payload is checked against everything except the matched
+        documents. With no cond (update-by-id), the document's own
+        id is the matched set.
+
+        Raises:
+            UniqueConstraintError: On any would-be duplicate.
+        """
+        unique_fields: tuple[str, ...] = getattr(
+            cls,
+            _UNIQUE_FIELDS_ATTR,
+            (),
+        )
+        if not unique_fields:
+            return
+        payload = document.to_tinydb_document(force_dict=True)
+        if cond is None:
+            matched = [cast("int", document.id)]
+        elif has_id_condition(cond):
+            matched = cls._match_id_condition_ids(cond)
+        else:
+            matched = [doc.doc_id for doc in cls.get_table().search(cond)]
+        touched = [
+            name for name in unique_fields if payload.get(name) is not None
+        ]
+        if touched and len(matched) > 1:
+            # N matched documents cannot share one unique value.
+            raise UniqueConstraintError(
+                model_name=cls.__name__,
+                table_name=cls.get_table().name,
+                field=touched[0],
+                value=payload[touched[0]],
+                doc_id=matched[0],
+            )
+        cls._check_unique(payload, exclude_doc_ids=set(matched))
 
     @classmethod
     def _apply_and_validate(
@@ -1191,6 +1332,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             )
             raise SelectorError(msg)
         document.before_save()
+        cls._check_upsert_unique(document, cond)
         if cond is not None and has_id_condition(cond):
             document_dict = document.to_tinydb_document(force_dict=True)
             table = cls.get_table()
@@ -1395,6 +1537,11 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         # Serialize before the try: pydantic.ValidationError is a
         # ValueError and must never be mistaken for a duplicate id.
         doc = self.to_tinydb_document()
+        cls = type(self)
+        cls._check_unique(
+            doc,
+            exclude_doc_ids=(frozenset() if self.id is None else {self.id}),
+        )
         try:
             self.id = self.get_table().insert(doc)
         except ValueError as exc:
@@ -1431,6 +1578,12 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             )
 
         self.before_save()
+        replacement = self.to_tinydb_document(force_dict=True)
+        cls = type(self)
+        cls._check_unique(
+            replacement,
+            exclude_doc_ids={self.id},
+        )
         try:
             updated_doc_ids = self.get_table().update(
                 # In TinyDB, the Table.update/update_multiple methods
@@ -1448,7 +1601,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 # is fixed in TinyDB.
                 cast(
                     "Callable[[Mapping], None]",
-                    replace(self.to_tinydb_document(force_dict=True)),
+                    replace(replacement),
                 ),
                 doc_ids=[self.id],
             )
@@ -1559,6 +1712,16 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 model_name=cls.__name__,
                 keys=unknown,
             )
+        cls._check_unique(
+            {
+                key: cls._field_adapter(key).dump_python(
+                    value,
+                    mode="json",
+                )
+                for key, value in validated.items()
+            },
+            exclude_doc_ids={self.id},
+        )
         cls.update(fields, doc_ids=[self.id])
         # Sync only after the write succeeded. Direct __dict__
         # assignment, NOT setattr: with validate_assignment on,
@@ -1584,5 +1747,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         if self.id is None:
             return self.insert()
         self.before_save()
-        self.id = self.get_table().upsert(self.to_tinydb_document())[0]
+        doc = self.to_tinydb_document()
+        cls = type(self)
+        cls._check_unique(doc, exclude_doc_ids={self.id})
+        self.id = self.get_table().upsert(doc)[0]
         return self

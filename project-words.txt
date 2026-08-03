@@ -25,6 +25,7 @@ connor
 crossref
 crossrefs
 cython
+dataclass
 davidanson
 debugpy
 dists
