@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **BREAKING:** `YAMLStorage.write` now serializes with `yaml.safe_dump` (matching the `yaml.safe_load` used by reads) and raises `yaml.representer.RepresenterError` for values the safe dumper cannot represent — before the file is touched. Previously, full-Dumper `yaml.dump` wrote arbitrary Python objects as `!!python/object` tags that the storage's own read then refused to load, leaving the database file unreadable until hand-edited.
 - The code license is now MIT only (previously dual-licensed under Apache-2.0 OR MIT). The relicense is not retroactive: released versions up to and including 0.4.0 remain available under Apache-2.0 OR MIT. Documentation and images remain CC-BY-4.0.
 
 ## [0.4.0] - 2026-07-10
