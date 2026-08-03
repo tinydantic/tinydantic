@@ -13,7 +13,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from pydantic import BaseModel, ValidationError
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    model_validator,
+)
 from tinydb.table import Document
 
 from tinydantic import (
@@ -313,3 +318,102 @@ class TestErrorContext:
         user = user_class(name="Alice", age=37)
         with pytest.raises(DocumentIDRequiredError, match=r"replace\(\)"):
             user.replace()
+
+
+class TestWriteBoundaryValidation:
+    """Whole-model writes refuse payloads that would fail on read."""
+
+    @pytest.mark.filterwarnings(
+        "ignore::UserWarning",  # serializer warns pre-validation
+    )
+    def test_save_refuses_container_corruption(self, db: TinyDB):
+        """In-place container mutation cannot reach storage."""
+
+        class Tagged(TinydanticModel, database=db):
+            """Test model with a list field."""
+
+            tags: list[int] = Field(default_factory=list)
+
+        tagged = Tagged(tags=[1]).insert()
+        tagged.tags.append("junk")  # type: ignore[arg-type]
+        with pytest.raises(ValidationError):
+            tagged.save()
+        assert tagged.id is not None
+        loaded = Tagged.get_by_id(tagged.id)
+        assert loaded is not None
+        assert loaded.tags == [1]
+
+    @pytest.mark.filterwarnings(
+        "ignore::UserWarning",  # serializer warns pre-validation
+    )
+    def test_save_refuses_nested_model_corruption(self, db: TinyDB):
+        """Mutating a nested plain BaseModel cannot reach storage."""
+
+        class Author(BaseModel):
+            """Nested model without assignment validation."""
+
+            name: str
+
+        class Book(TinydanticModel, database=db):
+            """Test model embedding Author."""
+
+            author: Author
+
+        book = Book(author=Author(name="F")).insert()
+        book.author.name = 123  # type: ignore[assignment]
+        with pytest.raises(ValidationError):
+            book.save()
+
+    @pytest.mark.filterwarnings(
+        "ignore::UserWarning",  # serializer warns pre-validation
+    )
+    def test_insert_refuses_corrupted_instance(self, db: TinyDB):
+        """insert() checks the payload, not just construction."""
+
+        class Tagged(TinydanticModel, database=db):
+            """Test model with a list field."""
+
+            tags: list[int] = Field(default_factory=list)
+
+        tagged = Tagged(tags=[1])
+        tagged.tags.append("junk")  # type: ignore[arg-type]
+        with pytest.raises(ValidationError):
+            tagged.insert()
+        assert Tagged.count() == 0
+
+    def test_boundary_validators_see_real_id(self, db: TinyDB):
+        """save() validation runs with the instance id visible."""
+
+        class Audited(TinydanticModel, database=db):
+            """Test model recording the id its validator saw."""
+
+            name: str
+            seen_id: int | None = None
+
+            @model_validator(mode="after")
+            def record_id(self) -> Audited:
+                """Record the id visible during validation."""
+                self.__dict__["seen_id"] = self.id
+                return self
+
+        audited = Audited(name="x").insert()
+        audited.save()
+        assert audited.id is not None
+
+    @pytest.mark.filterwarnings(
+        "ignore::UserWarning",  # serializer warns pre-validation
+    )
+    def test_validate_writes_false_restores_old_save(self, db: TinyDB):
+        """The knob opts a model out of boundary validation."""
+
+        class Loose(TinydanticModel, database=db, validate_writes=False):
+            """Test model with write validation off."""
+
+            tags: list[int] = Field(default_factory=list)
+
+        loose = Loose(tags=[1]).insert()
+        loose.tags.append("junk")  # type: ignore[arg-type]
+        loose.save()
+        raw = Loose.get_table().get(doc_id=loose.id)
+        assert isinstance(raw, dict)
+        assert raw["tags"] == [1, "junk"]
