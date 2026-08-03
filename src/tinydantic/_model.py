@@ -210,6 +210,35 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         description="Document ID",
     )
 
+    # --- lifecycle hooks ---
+
+    def before_save(self) -> None:
+        """Run before any whole-model write of ``self``.
+
+        Fires once at the start of ``insert()``, ``save()``,
+        ``replace()``, ``upsert()``, and for each document of
+        ``insert_multiple()`` — before serialization, so changes
+        made here (audit timestamps are the classic case) are
+        validated and persisted with the write. Raising aborts the
+        write. Field-level writes (``update()``, ``patch()``) do
+        not call it: they never write the whole model, so fields
+        set here would be silently dropped. The default does
+        nothing; overrides can chain with ``super().before_save()``.
+        """
+
+    def after_load(self) -> None:
+        """Run after a document is validated into a model.
+
+        Fires at the end of
+        [from_tinydb_document][tinydantic.TinydanticModel.from_tinydb_document]
+        — i.e. after every read that materializes an instance —
+        with the real ``id`` set. Not called on ordinary
+        construction, and changes made here affect only the
+        in-memory instance (reads persist nothing). The default
+        does nothing; overrides can chain with
+        ``super().after_load()``.
+        """
+
     # --- configuration ---
 
     def __init_subclass__(
@@ -414,10 +443,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             when ``document`` carries one.
         """
         if isinstance(document, Document):
-            return cls.model_validate(
+            instance = cls.model_validate(
                 {**document, "id": document.doc_id},
             )
-        return cls.model_validate(document)
+        else:
+            instance = cls.model_validate(document)
+        instance.after_load()
+        return instance
 
     @classmethod
     def insert_multiple(cls, documents: Iterable[Self]) -> list[Self]:
@@ -443,6 +475,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 nothing is inserted.
         """
         docs = list(documents)
+        for doc in docs:
+            doc.before_save()
         # Serialize before the try: pydantic.ValidationError is a
         # ValueError and must never be mistaken for a duplicate id.
         serialized = [doc.to_tinydb_document() for doc in docs]
@@ -1156,6 +1190,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 "first, or pass a query condition"
             )
             raise SelectorError(msg)
+        document.before_save()
         if cond is not None and has_id_condition(cond):
             document_dict = document.to_tinydb_document(force_dict=True)
             table = cls.get_table()
@@ -1356,6 +1391,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             DocumentAlreadyExistsError: If ``id`` is set to an id
                 that already exists in the table.
         """
+        self.before_save()
         # Serialize before the try: pydantic.ValidationError is a
         # ValueError and must never be mistaken for a duplicate id.
         doc = self.to_tinydb_document()
@@ -1394,6 +1430,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 operation="replace",
             )
 
+        self.before_save()
         try:
             updated_doc_ids = self.get_table().update(
                 # In TinyDB, the Table.update/update_multiple methods
@@ -1546,5 +1583,6 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         """
         if self.id is None:
             return self.insert()
+        self.before_save()
         self.id = self.get_table().upsert(self.to_tinydb_document())[0]
         return self

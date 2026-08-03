@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **BREAKING:** `before_save` and `after_load` are now reserved attribute names on tinydantic models (reserved words #27 and #28 under the flat-namespace policy). A model with a field of either name raises `ShadowedFieldError` at class definition; opt out with `shadowed_fields=` or rename the field.
+
 - **BREAKING:** `patch` is now a reserved attribute name on tinydantic models — the first method added under the flat-namespace policy. A model with a field named `patch` raises `ShadowedFieldError` at class definition; opt out with `shadowed_fields=("patch",)` or rename the field.
 
 - **BREAKING:** A model field whose name shadows an existing class attribute — a tinydantic method (`search`, `count`, ...), a pydantic method (`copy`, `json`, ...), or a method from your own base classes — now raises `ShadowedFieldError` at class definition instead of pydantic's easily-missed warning followed by silently broken `Model.field` query sugar. Opt in deliberately with the new `shadowed_fields=("name", ...)` class kwarg (inherited like the other config keys) and query such fields with `q("name")`.
@@ -24,6 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The code license is now MIT only (previously dual-licensed under Apache-2.0 OR MIT). The relicense is not retroactive: released versions up to and including 0.4.0 remain available under Apache-2.0 OR MIT. Documentation and images remain CC-BY-4.0.
 
 ### Added
+
+- Lifecycle hooks: `before_save()` (runs before every whole-model write, before serialization — mutations are validated and persisted; raising aborts the write) and `after_load()` (runs after every read that materializes an instance, with the real `id` set). Overridable no-op methods, `super()`-chainable; field-level writes (`update()`, `patch()`) fire neither.
 
 - `patch()` — instance-level partial update: validates the given fields, writes only those fields to the stored document by id (atomic, merged-result-validated like `update()`), and syncs the instance after the write succeeds. Closes the lost-update trap of whole-document mutate-then-`save()` and the instance/storage drift of table-level `update(doc_ids=...)`.
 - `unbind()` — the inverse of `bind()`: detach a late-bound database, reset `table_name` to its derived default, or clear any other config key this class set (no arguments clears them all). Values inherited from base classes resurface. Built for the test-fixture setup/teardown pattern.
