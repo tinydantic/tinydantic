@@ -27,8 +27,10 @@ from tinydantic._errors import (
     ShadowedFieldError,
     TinydanticError,
     TinydanticUserError,
+    UniqueConstraintError,
     UnknownUpdateFieldError,
 )
+from tinydantic._fields import Unique
 from tinydantic._model import TinydanticModel, q
 
 __version__: str = metadata.version("tinydantic")
@@ -47,6 +49,8 @@ __all__ = [
     "TinydanticError",
     "TinydanticModel",
     "TinydanticUserError",
+    "Unique",
+    "UniqueConstraintError",
     "UnknownUpdateFieldError",
     "__version__",
     "q",
