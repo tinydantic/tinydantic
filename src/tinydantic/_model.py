@@ -1009,12 +1009,29 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         never embedded in the document — it maps to TinyDB's
         ``doc_id``.
 
+        Unless the model opts out via ``validate_writes=False``, the
+        serialized payload is validated before it is returned — the
+        same check the document faces on its next read — so a write
+        can never persist a body that a later read would reject.
+        This catches what assignment validation cannot see:
+        in-place container mutation, mutation of nested models, and
+        ``object.__setattr__``. Validators observe the real ``id``
+        (or ``None`` before the first insert, as at construction).
+
         Args:
             force_dict: Return a plain dict even when ``id`` is set
                 (otherwise a [Document][tinydb.table.Document] carrying
                 ``doc_id`` is returned).
+
+        Raises:
+            pydantic.ValidationError: If the serialized payload
+                fails validation — the document is refused before
+                it can reach storage.
         """
         doc = self.model_dump(mode="json", exclude={"id"})
+
+        if get_config_value(type(self), "validate_writes", default=True):
+            type(self).model_validate({**doc, "id": self.id})
 
         if (force_dict is False) and (self.id is not None):
             doc = Document(doc, self.id)
