@@ -32,6 +32,7 @@ from tinydantic._errors import (
     DocumentIDRequiredError,
     DocumentIDUpdateError,
     DocumentNotFoundError,
+    SelectorError,
     TinydanticError,
     UnknownUpdateFieldError,
 )
@@ -550,12 +551,19 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         ordered by storage iteration, not by the ids passed in.
 
         Raises:
-            ValueError: If more than one selector is provided.
+            SelectorError: If no selector, or more than one, is
+                provided.
         """
         provided = [s for s in (cond, doc_id, doc_ids) if s is not None]
         if len(provided) > 1:
             msg = "Provide at most one of cond, doc_id, or doc_ids"
-            raise ValueError(msg)
+            raise SelectorError(msg)
+        if not provided:
+            msg = (
+                "get() needs a selector: pass a query condition, "
+                "doc_id=, or doc_ids="
+            )
+            raise SelectorError(msg)
 
         if cond is not None and has_id_condition(cond):
             if isinstance(cond, DocIdCondition) and cond.opname == "==":
@@ -639,7 +647,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         Raises:
             DocumentNotFoundError: If no matching document exists.
-            ValueError: If no selector or both selectors are provided.
+            SelectorError: If no selector or both selectors are
+                provided.
         """
         if cond is not None and doc_id is None:
             result = cls.get(cond)
@@ -647,7 +656,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             result = cls.get(doc_id=doc_id)
         else:
             msg = "Provide exactly one of cond or doc_id"
-            raise ValueError(msg)
+            raise SelectorError(msg)
         if result is None:
             raise DocumentNotFoundError(
                 model_name=cls.__name__,
@@ -670,11 +679,18 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         validated into a model.
 
         Raises:
-            ValueError: If both ``cond`` and ``doc_id`` are provided.
+            SelectorError: If no selector, or both selectors, are
+                provided.
         """
         if cond is not None and doc_id is not None:
             msg = "Provide at most one of cond or doc_id"
-            raise ValueError(msg)
+            raise SelectorError(msg)
+        if cond is None and doc_id is None:
+            msg = (
+                "contains() needs a selector: pass a query "
+                "condition or doc_id="
+            )
+            raise SelectorError(msg)
         if cond is not None and has_id_condition(cond):
             if isinstance(cond, DocIdCondition) and cond.opname == "==":
                 return cls.get_table().contains(
@@ -994,7 +1010,19 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         Returns:
             The ids of the updated (or inserted) documents.
+
+        Raises:
+            SelectorError: If ``cond`` is omitted and
+                ``document.id`` is ``None`` — without either there
+                is nothing to select the document to update by.
         """
+        if cond is None and document.id is None:
+            msg = (
+                "upsert() without a cond updates by id, but this "
+                "document's id is None — insert() or save() it "
+                "first, or pass a query condition"
+            )
+            raise SelectorError(msg)
         if cond is not None and has_id_condition(cond):
             document_dict = document.to_tinydb_document(force_dict=True)
             table = cls.get_table()
@@ -1047,7 +1075,19 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         Returns:
             The ids of all removed documents.
+
+        Raises:
+            SelectorError: If neither ``cond`` nor ``doc_ids`` is
+                provided — removing every document must be spelled
+                [truncate][tinydantic.TinydanticModel.truncate].
         """
+        if cond is None and doc_ids is None:
+            msg = (
+                "remove() needs a selector: pass a query condition "
+                "or doc_ids=. To remove every document, use "
+                "truncate()."
+            )
+            raise SelectorError(msg)
         if cond is not None and doc_ids is None and has_id_condition(cond):
             table = cls.get_table()
             _cond = cond

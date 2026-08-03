@@ -145,6 +145,23 @@ class UnknownUpdateFieldError(TinydanticUserError):
         )
 
 
+class SelectorError(TinydanticUserError, ValueError):
+    """A method got no selector, or conflicting selectors.
+
+    Selector-taking methods (``get()``, ``contains()``,
+    ``remove()``, ``get_or_raise()``, ``upsert()``) need exactly
+    one way to pick documents. tinydantic raises this — a
+    ``ValueError`` subclass, so existing handlers keep working —
+    instead of letting TinyDB's ``RuntimeError`` (which nothing
+    catches deliberately) or its hints about TinyDB internals
+    leak through.
+    """
+
+    def __init__(self, message: str) -> None:
+        """Initialize with a context-specific message."""
+        super().__init__(message)
+
+
 class DocumentIDRequiredError(TinydanticError):
     """Required document ID is missing.
 
