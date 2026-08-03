@@ -424,6 +424,31 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         return [doc.doc_id for doc in iter(cls.get_table()) if cond(doc)]
 
     @classmethod
+    def _check_doc_ids_exist(cls, doc_ids: list[int]) -> None:
+        """Raise for explicit doc_ids that are not in the table.
+
+        TinyDB raises a bare ``KeyError`` for a missing id in
+        ``update(doc_ids=...)``/``remove(doc_ids=...)``; checking
+        membership up front (one table read via iteration) turns
+        that into the same
+        [DocumentNotFoundError][tinydantic.DocumentNotFoundError]
+        that ``replace()`` and ``delete()`` raise, before anything
+        is written.
+
+        Raises:
+            DocumentNotFoundError: For the first id not present in
+                the table.
+        """
+        stored = {doc.doc_id for doc in iter(cls.get_table())}
+        for doc_id in doc_ids:
+            if doc_id not in stored:
+                raise DocumentNotFoundError(
+                    model_name=cls.__name__,
+                    table_name=cls.get_table().name,
+                    doc_id=doc_id,
+                )
+
+    @classmethod
     def _apply_and_validate(
         cls,
         data: dict[int, Any],
@@ -855,6 +880,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         Raises:
             DocumentIDUpdateError: If a mapping contains an ``id``
                 key.
+            DocumentNotFoundError: If an explicit ``doc_ids`` id
+                does not exist; nothing is written.
             UnknownUpdateFieldError: If a mapping contains keys
                 that are not model fields and ``extra_keys`` is
                 ``"reject"`` (the default).
@@ -867,6 +894,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 fields,
                 extra_keys=extra_keys,
             )
+        if doc_ids is not None:
+            doc_ids = list(doc_ids)
+            cls._check_doc_ids_exist(doc_ids)
         validate = get_config_value(cls, "validate_writes", default=True)
         id_cond = (
             cond is not None and doc_ids is None and has_id_condition(cond)
@@ -1107,6 +1137,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             SelectorError: If neither ``cond`` nor ``doc_ids`` is
                 provided — removing every document must be spelled
                 [truncate][tinydantic.TinydanticModel.truncate].
+            DocumentNotFoundError: If an explicit ``doc_ids`` id
+                does not exist; nothing is removed.
         """
         if cond is None and doc_ids is None:
             msg = (
@@ -1115,6 +1147,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 "truncate()."
             )
             raise SelectorError(msg)
+        if doc_ids is not None:
+            doc_ids = list(doc_ids)
+            cls._check_doc_ids_exist(doc_ids)
         if cond is not None and doc_ids is None and has_id_condition(cond):
             table = cls.get_table()
             _cond = cond
