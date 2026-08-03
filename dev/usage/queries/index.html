@@ -2168,34 +2168,35 @@
 </span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="go">[]</span>
 </span></code></pre></div>
 <h2 id="sharp-edge-fields-that-shadow-query-methods">Sharp edge: fields that shadow query methods<a class="headerlink" href="#sharp-edge-fields-that-shadow-query-methods" title="Permanent link">¤</a></h2>
-<p>A read method or query method shares its name with a field at your peril. Because <code>search</code>, <code>get</code>, <code>count</code>, <code>matches</code>, <code>test</code>, and the like are real attributes on the model class (or on the Query object), a field with the same name is shadowed — attribute access finds the method, not a field query.</p>
-<p>Consider a model with a field literally named <code>search</code>:</p>
+<p>A field cannot silently share its name with a method. Because <code>search</code>, <code>get</code>, <code>count</code>, and the other model methods are real attributes on the model class, a field with the same name would be shadowed — attribute access would find the method, not a field query, so <code>Model.field</code> sugar would break. tinydantic refuses the class definition instead of letting that happen:</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;commands&quot;</span><span class="p">):</span>
 </span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 </span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="gp">... </span>    <span class="n">search</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">commands</span> <span class="o">=</span> <span class="n">Command</span><span class="o">.</span><span class="n">insert_multiple</span><span class="p">(</span>
-</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="gp">... </span>    <span class="p">[</span>
-</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;find&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;fuzzy&quot;</span><span class="p">),</span>
-</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;grep&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;regex&quot;</span><span class="p">),</span>
-</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="gp">... </span>    <span class="p">]</span>
-</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="gp">... </span><span class="p">)</span>
-</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">command</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">command</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">]</span>
-</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="go">[1, 2]</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="gr">tinydantic._errors.ShadowedFieldError</span>: <span class="n">Field(s) on &#39;Command&#39; shadow existing attributes ...</span>
 </span></code></pre></div>
-<p><code>Command.search</code> is the <a class="autorefs autorefs-internal" title="            search
-
-
-  
-      classmethod
-  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.search">search()</a> classmethod, not a field query. Comparing it to a string does not build a query — it just evaluates to <code>False</code>, which would silently match nothing:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span>
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">False</span>
+<p>If you need the field anyway — say the table is shared with another tool that writes a <code>search</code> key — opt in explicitly with the <code>shadowed_fields=</code> class kwarg. The field then works everywhere (storage, instance access, validation) except the <code>Model.field</code> shorthand, which keeps resolving to the method:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="gp">... </span>    <span class="n">TinydanticModel</span><span class="p">,</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="gp">... </span>    <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="gp">... </span>    <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;commands&quot;</span><span class="p">,</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="gp">... </span>    <span class="n">shadowed_fields</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">,),</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="gp">... </span><span class="p">):</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="gp">... </span>    <span class="n">search</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">commands</span> <span class="o">=</span> <span class="n">Command</span><span class="o">.</span><span class="n">insert_multiple</span><span class="p">(</span>
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="gp">... </span>    <span class="p">[</span>
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;find&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;fuzzy&quot;</span><span class="p">),</span>
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;grep&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;regex&quot;</span><span class="p">),</span>
+</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="gp">... </span>    <span class="p">]</span>
+</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="gp">... </span><span class="p">)</span>
+</span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">command</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">command</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">]</span>
+</span><span id="__span-15-16"><a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="go">[1, 2]</span>
+</span><span id="__span-15-17"><a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span>  <span class="c1"># still the method, not a query</span>
+</span><span id="__span-15-18"><a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="go">False</span>
 </span></code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p><strong>A field whose name collides with a method is not reachable through the <code>Model.field</code> shorthand.</strong> The expression compiles and runs, but it produces a plain <code>bool</code> instead of a query — a bug that fails silently. Name the field as a string instead.</p>
-</div>
-<p>Reach the shadowed field by passing its name to <a class="autorefs autorefs-internal" title="            q" href="../../reference/api/tinydantic/#tinydantic.q">q()</a>, which builds a query on that document key:</p>
+<p>Reach the opted-in field by passing its name to <a class="autorefs autorefs-internal" title="            q" href="../../reference/api/tinydantic/#tinydantic.q">q()</a>, which builds a query on that document key:</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span><span class="p">)</span>
 </span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">[Command(id=1, name=&#39;find&#39;, search=&#39;fuzzy&#39;)]</span>
 </span></code></pre></div>
@@ -2206,6 +2207,10 @@
 </span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;regex&quot;</span><span class="p">)</span>
 </span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="go">[Command(id=2, name=&#39;grep&#39;, search=&#39;regex&#39;)]</span>
 </span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Pydantic also warns about shadowed fields at class definition (<code>Field name "search" ... shadows an attribute</code>). For a deliberate opt-in, silence it with <code>warnings.filterwarnings("ignore", message=r'Field name "search"')</code> — or treat the warning as a reminder that <code>q("search")</code> is the only query path for that field.</p>
+</div>
 
 
 

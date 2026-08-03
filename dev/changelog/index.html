@@ -1995,6 +1995,9 @@
 <h2 id="unreleased"><a href="https://github.com/tinydantic/tinydantic/compare/v0.4.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">¤</a></h2>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">¤</a></h3>
 <ul>
+<li><strong>BREAKING:</strong> A model field whose name shadows an existing class attribute — a tinydantic method (<code>search</code>, <code>count</code>, ...), a pydantic method (<code>copy</code>, <code>json</code>, ...), or a method from your own base classes — now raises <code>ShadowedFieldError</code> at class definition instead of pydantic's easily-missed warning followed by silently broken <code>Model.field</code> query sugar. Opt in deliberately with the new <code>shadowed_fields=("name", ...)</code> class kwarg (inherited like the other config keys) and query such fields with <code>q("name")</code>.</li>
+</ul>
+<ul>
 <li><strong>BREAKING:</strong> Selector misuse raises the new <code>SelectorError</code> (a <code>ValueError</code> subclass, so existing handlers keep working): zero-selector <code>get()</code>/<code>contains()</code>/<code>remove()</code> no longer leak TinyDB's <code>RuntimeError</code>, <code>upsert()</code> without a cond or a persisted <code>id</code> no longer leaks TinyDB's <code>ValueError</code> (whose "use a table.Document" hint means nothing in tinydantic), and the existing too-many-selector <code>ValueError</code> guards are upgraded to <code>SelectorError</code>. <code>remove()</code> with no selector points at <code>truncate()</code>.</li>
 <li><strong>BREAKING:</strong> <code>insert()</code>/<code>insert_multiple()</code> with an already-taken <code>id</code> raise the new <code>DocumentAlreadyExistsError</code> (also a <code>ValueError</code> subclass) naming the model, table, and taken id(s) — including ids repeated within one batch — instead of TinyDB's raw <code>ValueError</code>.</li>
 <li><strong>BREAKING:</strong> <code>update()</code>/<code>remove()</code> with an explicit <code>doc_ids</code> list containing a missing id raise <code>DocumentNotFoundError</code> (matching <code>replace()</code>/<code>delete()</code>) instead of a bare <code>KeyError</code>, and abort before anything is written.</li>
@@ -2007,6 +2010,9 @@
 <li>The code license is now MIT only (previously dual-licensed under Apache-2.0 OR MIT). The relicense is not retroactive: released versions up to and including 0.4.0 remain available under Apache-2.0 OR MIT. Documentation and images remain CC-BY-4.0.</li>
 </ul>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">¤</a></h3>
+<ul>
+<li><code>shadowed_fields</code> configuration key and <code>ShadowedFieldError</code> — loud, definition-time detection of fields that would break the <code>Model.field</code> query shorthand, with an explicit per-class opt-out.</li>
+</ul>
 <ul>
 <li><code>SelectorError</code> and <code>DocumentAlreadyExistsError</code> — completing the curated exception surface: no raw TinyDB or bare built-in exception leaks through tinydantic's public API.</li>
 <li><code>validate_writes</code> configuration key (class kwarg, inherited like <code>database=</code>/<code>table_name=</code>): controls write-boundary re-validation; defaults to <code>True</code>.</li>
