@@ -2015,8 +2015,8 @@
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">¤</a></h3>
 <ul>
 <li><code>patch()</code> — instance-level partial update: validates the given fields, writes only those fields to the stored document by id (atomic, merged-result-validated like <code>update()</code>), and syncs the instance after the write succeeds. Closes the lost-update trap of whole-document mutate-then-<code>save()</code> and the instance/storage drift of table-level <code>update(doc_ids=...)</code>.</li>
-</ul>
-<ul>
+<li><code>unbind()</code> — the inverse of <code>bind()</code>: detach a late-bound database, reset <code>table_name</code> to its derived default, or clear any other config key this class set (no arguments clears them all). Values inherited from base classes resurface. Built for the test-fixture setup/teardown pattern.</li>
+<li><code>bind()</code> now covers every configuration key: <code>validate_writes=</code> and <code>shadowed_fields=</code> join <code>database=</code> and <code>table_name=</code>.</li>
 <li><code>shadowed_fields</code> configuration key and <code>ShadowedFieldError</code> — loud, definition-time detection of fields that would break the <code>Model.field</code> query shorthand, with an explicit per-class opt-out.</li>
 </ul>
 <ul>

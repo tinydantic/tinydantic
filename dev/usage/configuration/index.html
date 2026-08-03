@@ -945,6 +945,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Late binding with bind()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#undo-it-with-unbind" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Undo it with unbind()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1993,6 +2010,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Late binding with bind()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#undo-it-with-unbind" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Undo it with unbind()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2148,34 +2182,55 @@
 </span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="p">(</span><span class="n">sku</span><span class="o">=</span><span class="s2">&quot;ABC-123&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
 </span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="go">Product(id=1, sku=&#39;ABC-123&#39;)</span>
 </span></code></pre></div>
-<p><code>bind()</code> updates only the keys you pass, leaving the others (including inherited ones) untouched, and binding a subclass never affects its parents.</p>
+<p><code>bind()</code> updates only the keys you pass, leaving the others (including inherited ones) untouched, and binding a subclass never affects its parents. Every configuration key on this page can be bound late — <code>database=</code>, <code>table_name=</code>, <code>validate_writes=</code>, and <code>shadowed_fields=</code>.</p>
+<h3 id="undo-it-with-unbind">Undo it with <code>unbind()</code><a class="headerlink" href="#undo-it-with-unbind" title="Permanent link">¤</a></h3>
+<p><a class="autorefs autorefs-internal" title="            unbind
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.unbind">unbind()</a> is the inverse, built for test fixtures that attach a database in setup and must detach it in teardown. Pass key names to remove specific settings, or nothing to remove everything this class set:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="s2">&quot;database&quot;</span><span class="p">)</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="gr">tinydantic._errors.DatabaseNotBoundError</span>: <span class="n">...</span>
+</span></code></pre></div>
+<p>In a pytest fixture, the pair looks like this (the <code>yield</code> runs the test between them):</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">bound_product</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="n">Product</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">TinyDB</span><span class="p">(</span><span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">&quot;test.json&quot;</span><span class="p">))</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span class="k">yield</span> <span class="n">Product</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="n">Product</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="s2">&quot;database&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p><code>unbind()</code> removes only settings made on the class itself — a value inherited from a base class resurfaces, exactly as <code>bind()</code> on a subclass never affects its parents. Unbinding a key the class never set is a no-op, and an unknown key name raises <code>ValueError</code>.</p>
 <h2 id="databasenotbounderror"><code>DatabaseNotBoundError</code><a class="headerlink" href="#databasenotbounderror" title="Permanent link">¤</a></h2>
 <p>Any table operation on a model that has no database anywhere in its class hierarchy raises <a class="autorefs autorefs-internal" title="            DatabaseNotBoundError" href="../../reference/api/tinydantic/#tinydantic.DatabaseNotBoundError">DatabaseNotBoundError</a>. The message points at both ways to fix it:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Orphan</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">):</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Orphan</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="gr">tinydantic._errors.DatabaseNotBoundError</span>: <span class="n">No database is bound to &#39;Orphan&#39;. Pass database=&lt;TinyDB instance&gt; as a class keyword when defining the model, or call Orphan.bind(database=...) before using it.</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Orphan</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">):</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Orphan</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="gr">tinydantic._errors.DatabaseNotBoundError</span>: <span class="n">No database is bound to &#39;Orphan&#39;. Pass database=&lt;TinyDB instance&gt; as a class keyword when defining the model, or call Orphan.bind(database=...) before using it.</span>
 </span></code></pre></div>
 <h2 id="ambiguousconfigerror"><code>AmbiguousConfigError</code><a class="headerlink" href="#ambiguousconfigerror" title="Permanent link">¤</a></h2>
 <p>MRO lookup gives a single, unambiguous answer when config comes down <em>one</em> inheritance chain. The one case where it could not is a diamond: a class inheriting from two <em>unrelated</em> bases that each set the same key to different values. Rather than silently pick one, <code>tinydantic</code> raises <a class="autorefs autorefs-internal" title="            AmbiguousConfigError" href="../../reference/api/tinydantic/#tinydantic.AmbiguousConfigError">AmbiguousConfigError</a> at class-definition time.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">other_db</span> <span class="o">=</span> <span class="n">TinyDB</span><span class="p">(</span><span class="n">storage</span><span class="o">=</span><span class="n">MemoryStorage</span><span class="p">)</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">FromMain</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="gp">... </span>    <span class="k">pass</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">FromOther</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">other_db</span><span class="p">):</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="gp">... </span>    <span class="k">pass</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Combined</span><span class="p">(</span><span class="n">FromMain</span><span class="p">,</span> <span class="n">FromOther</span><span class="p">):</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="gr">tinydantic._errors.AmbiguousConfigError</span>: <span class="n">&#39;Combined&#39; inherits conflicting values for tinydantic config key &#39;database&#39; from unrelated base classes &#39;FromMain&#39; and &#39;FromOther&#39;. Set database= explicitly on &#39;Combined&#39; to resolve the ambiguity.</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">other_db</span> <span class="o">=</span> <span class="n">TinyDB</span><span class="p">(</span><span class="n">storage</span><span class="o">=</span><span class="n">MemoryStorage</span><span class="p">)</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">FromMain</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="gp">... </span>    <span class="k">pass</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">FromOther</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">other_db</span><span class="p">):</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="gp">... </span>    <span class="k">pass</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Combined</span><span class="p">(</span><span class="n">FromMain</span><span class="p">,</span> <span class="n">FromOther</span><span class="p">):</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="gr">tinydantic._errors.AmbiguousConfigError</span>: <span class="n">&#39;Combined&#39; inherits conflicting values for tinydantic config key &#39;database&#39; from unrelated base classes &#39;FromMain&#39; and &#39;FromOther&#39;. Set database= explicitly on &#39;Combined&#39; to resolve the ambiguity.</span>
 </span></code></pre></div>
 <p>Setting the key explicitly on the new class resolves the conflict — the class's own value wins, and no lookup ambiguity remains:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Combined</span><span class="p">(</span><span class="n">FromMain</span><span class="p">,</span> <span class="n">FromOther</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Combined</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span> <span class="ow">is</span> <span class="n">db</span>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">True</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Combined</span><span class="p">(</span><span class="n">FromMain</span><span class="p">,</span> <span class="n">FromOther</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Combined</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span> <span class="ow">is</span> <span class="n">db</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">True</span>
 </span></code></pre></div>
 <h2 id="design-notes-why-config-is-not-in-model_config">Design notes: why config is not in <code>model_config</code><a class="headerlink" href="#design-notes-why-config-is-not-in-model_config" title="Permanent link">¤</a></h2>
 <p><code>tinydantic</code> stores its config in a per-class <code>__tinydantic_config__</code> attribute and resolves it by walking the MRO — deliberately <em>not</em> in Pydantic's <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/latest/api/pydantic/base_model/#pydantic.BaseModel.model_config">model_config</a>. The reason is a mismatch in ordering semantics.</p>
