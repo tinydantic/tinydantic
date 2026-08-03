@@ -202,6 +202,30 @@ class Session(TinydanticModel, database=db):
 ```
 
 Three rules worth remembering: field-level writes (`update()`, `patch()`) fire **neither** hook — they never write the whole model, so fields set in `before_save()` would be silently dropped; a raising hook **aborts the write** with nothing written; and hooks are ordinary methods, so mixins can cooperate via `super().before_save()`. Prefer hooks over `model_validator` for side effects: validators also fire on construction, on every read, and on every assignment — a timestamp bumped there is stamped by reads too.
+## Unique fields
+
+Mark a field with the [Unique][tinydantic.Unique] annotation and tinydantic refuses writes that would duplicate its value in the table:
+
+```pycon
+>>> from typing import Annotated
+>>> from tinydantic import Unique, UniqueConstraintError
+>>> class Member(TinydanticModel, database=db, table_name="members"):
+...     email: Annotated[str, Unique()]
+>>> Member(email="ada@example.com").insert()
+Member(id=1, email='ada@example.com')
+>>> Member(email="ada@example.com").insert()
+Traceback (most recent call last):
+  ...
+tinydantic._errors.UniqueConstraintError: Value 'ada@example.com' for unique field 'email' ...
+
+```
+
+The contract, in full:
+
+- Enforced on create-style and instance-level writes: `insert()`, `insert_multiple()` (including duplicates inside one batch), `save()`, `replace()`, `upsert()`, and `patch()`. A write that would clash raises [UniqueConstraintError][tinydantic.UniqueConstraintError] before anything reaches storage; rewriting a document's own value is never a clash.
+- `None` values are exempt — several documents may all leave a unique field unset, mirroring SQL's `NULL` under `UNIQUE`.
+- The table-level bulk path (`update()`/`update_multiple()`) deliberately does **not** enforce uniqueness — it is the documented loose escape, like `extra_keys="allow"`.
+- The check is check-then-write within one process. That is sound under tinydantic's documented single-process, serialized-writes scope, but it is not a database constraint: another process writing the same file concurrently can still create duplicates.
 
 ## Where next
 
