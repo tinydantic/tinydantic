@@ -1984,6 +1984,7 @@
 <h2 id="unreleased"><a href="https://github.com/tinydantic/tinydantic/compare/v0.4.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">¤</a></h2>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">¤</a></h3>
 <ul>
+<li><strong>BREAKING:</strong> <code>YAMLStorage.write</code> now serializes with <code>yaml.safe_dump</code> (matching the <code>yaml.safe_load</code> used by reads) and raises <code>yaml.representer.RepresenterError</code> for values the safe dumper cannot represent — before the file is touched. Previously, full-Dumper <code>yaml.dump</code> wrote arbitrary Python objects as <code>!!python/object</code> tags that the storage's own read then refused to load, leaving the database file unreadable until hand-edited.</li>
 <li>The code license is now MIT only (previously dual-licensed under Apache-2.0 OR MIT). The relicense is not retroactive: released versions up to and including 0.4.0 remain available under Apache-2.0 OR MIT. Documentation and images remain CC-BY-4.0.</li>
 </ul>
 <h2 id="040-2026-07-10"><a href="https://github.com/tinydantic/tinydantic/compare/v0.3.1...v0.4.0">0.4.0</a> - 2026-07-10<a class="headerlink" href="#040-2026-07-10" title="Permanent link">¤</a></h2>
