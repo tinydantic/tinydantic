@@ -1410,6 +1410,81 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 doc_id=self.id,
             )
 
+    def patch(self, /, **fields: Any) -> Self:
+        """Update only the given fields, in storage and on self.
+
+        The instance-level partial update: validates the new
+        values, merges exactly these fields into the stored
+        document by id (other stored fields are untouched — unlike
+        [save][tinydantic.TinydanticModel.save], which writes the
+        whole document from this instance), and then updates this
+        instance to match. The write is atomic and validated like
+        [update][tinydantic.TinydanticModel.update]; if anything
+        raises, storage and this instance are both left untouched.
+
+        Unknown keys are always rejected — there is deliberately
+        no ``extra_keys`` escape here; use the table-level
+        [update][tinydantic.TinydanticModel.update] to write
+        non-model keys. With no fields at all, nothing is written
+        but the document's existence is still checked, so the
+        error contract does not depend on the payload.
+
+        Like ``update()``, values land in storage as serialized
+        inputs: a ``model_validator`` that rewrites values applies
+        on the next read.
+
+        Returns:
+            This instance, with the patched fields set to their
+            validated values.
+
+        Raises:
+            DocumentIDRequiredError: If ``id`` is ``None`` (the
+                model was never inserted).
+            DocumentNotFoundError: If no document with this ``id``
+                exists in the table.
+            DocumentIDUpdateError: If ``fields`` contains ``id``.
+            UnknownUpdateFieldError: If a key is not a model
+                field.
+            pydantic.ValidationError: If a value fails validation
+                or the merged document violates a model invariant;
+                nothing is written.
+        """
+        cls = type(self)
+        if self.id is None:
+            raise DocumentIDRequiredError(
+                model_name=cls.__name__,
+                operation="patch",
+            )
+        if not fields:
+            cls._check_doc_ids_exist([self.id])
+            return self
+        unknown: list[str] = []
+        validated: dict[str, Any] = {}
+        for key, value in fields.items():
+            if key == "id":
+                raise DocumentIDUpdateError(model_name=cls.__name__)
+            if key not in cls.model_fields:
+                unknown.append(key)
+                continue
+            validated[key] = cls._field_adapter(key).validate_python(
+                value,
+            )
+        if unknown:
+            raise UnknownUpdateFieldError(
+                model_name=cls.__name__,
+                keys=unknown,
+            )
+        cls.update(fields, doc_ids=[self.id])
+        # Sync only after the write succeeded. Direct __dict__
+        # assignment, NOT setattr: with validate_assignment on,
+        # per-field assignment can trip a cross-field invariant on
+        # a transient state (start moved before end) even though
+        # the final state — already checked by the merged-result
+        # validation above — is valid.
+        self.__dict__.update(validated)
+        self.__pydantic_fields_set__.update(validated)
+        return self
+
     def save(self) -> Self:
         """Insert this model if it is new, otherwise update it by id.
 
