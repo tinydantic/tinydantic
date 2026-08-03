@@ -1112,6 +1112,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         read ``doc_id``. When ``doc_ids`` is passed explicitly,
         TinyDB's precedence applies and ``cond`` is not evaluated.
 
+        As the deliberate table-level loose path, ``update()``
+        does NOT enforce [Unique][tinydantic.Unique] field
+        markers; every other write verb does.
+
         Args:
             fields: A mapping of new field values, or a transform
                 callable applied to each matched document body.
@@ -1219,7 +1223,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         as in [update][tinydantic.TinydanticModel.update], and the
         whole batch is one atomic read-modify-write cycle (see
         ``_run_write_cycle``): a validation failure on any matched
-        document means nothing is written.
+        document means nothing is written. Like ``update()``, this
+        loose path does NOT enforce
+        [Unique][tinydantic.Unique] field markers.
 
         Pairs may use conditions on ``Model.id`` (bare or composed
         with field conditions) and mix freely with plain
