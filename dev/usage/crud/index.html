@@ -969,6 +969,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#patch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        patch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#choosing-a-write-verb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing a write verb
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2285,6 +2307,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#patch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        patch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#choosing-a-write-verb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing a write verb
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2667,13 +2711,86 @@
 <p class="admonition-title">Note</p>
 <p>Keys written via <code>extra_keys="allow"</code> are stored <strong>unvalidated</strong> (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the <code>validate_writes=False</code> class kwarg; per-field value validation (the <code>datetime</code> example above) always applies to mappings.</p>
 </div>
+<h3 id="patch"><code>patch</code><a class="headerlink" href="#patch" title="Permanent link">¤</a></h3>
+<p><a class="autorefs autorefs-internal" title="            patch" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.patch">patch()</a> is the instance-level partial update: it validates the given fields, writes <strong>only those fields</strong> to the stored document, and updates the instance to match — one call, no drift between object and storage.</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">neuromancer</span> <span class="o">=</span> <span class="n">Book</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">neuromancer</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="mi">1985</span><span class="p">)</span>
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="go">Book(id=2, title=&#39;Neuromancer&#39;, author=&#39;Gibson&#39;, year=1985, in_stock=True)</span>
+</span></code></pre></div>
+<p>Because only the named fields are written, <code>patch()</code> avoids the lost-update trap that whole-document <code>save()</code> leaves open: a stale copy patching one field cannot clobber another writer's change to a different field.</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">stale_copy</span> <span class="o">=</span> <span class="n">Book</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">stale_copy</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="n">in_stock</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># holds year=1985 already</span>
+</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="go">Book(id=2, title=&#39;Neuromancer&#39;, author=&#39;Gibson&#39;, year=1985, in_stock=False)</span>
+</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># both changes survived in storage</span>
+</span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="go">Book(id=2, title=&#39;Neuromancer&#39;, author=&#39;Gibson&#39;, year=1985, in_stock=False)</span>
+</span></code></pre></div>
+<p><code>patch()</code> is strict: it requires a persisted instance, the document must still exist, and only model fields are accepted (there is no <code>extra_keys=</code> escape at instance level — use <a class="autorefs autorefs-internal" title="            update
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.update">update</a> for non-model keys):</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Ghost&quot;</span><span class="p">,</span> <span class="n">author</span><span class="o">=</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="mi">2001</span><span class="p">)</span>
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="gr">tinydantic._errors.DocumentIDRequiredError</span>: <span class="n">Cannot patch() ...</span>
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">neuromancer</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="n">shelf</span><span class="o">=</span><span class="s2">&quot;B2&quot;</span><span class="p">)</span>
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="gr">tinydantic._errors.UnknownUpdateFieldError</span>: <span class="n">update() mapping ...</span>
+</span></code></pre></div>
+<p>An empty <code>patch()</code> writes nothing but still verifies the document exists, so its error behavior does not depend on the payload — handy for HTTP PATCH endpoints fed <code>model_dump(exclude_unset=True)</code>.</p>
+<h3 id="choosing-a-write-verb">Choosing a write verb<a class="headerlink" href="#choosing-a-write-verb" title="Permanent link">¤</a></h3>
+<p>Four verbs, four different contracts — in HTTP terms:</p>
+<table>
+<thead>
+<tr>
+<th>Verb</th>
+<th>HTTP analogy</th>
+<th>Writes</th>
+<th>If the document vanished</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="autorefs autorefs-internal" title="            save" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.save">save()</a></td>
+<td>PUT</td>
+<td>the whole instance</td>
+<td>re-inserts under the same id</td>
+</tr>
+<tr>
+<td><a class="autorefs autorefs-internal" title="            replace" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.replace">replace()</a></td>
+<td>PUT (strict)</td>
+<td>the whole instance</td>
+<td>raises <code>DocumentNotFoundError</code></td>
+</tr>
+<tr>
+<td><a class="autorefs autorefs-internal" title="            patch" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.patch">patch()</a></td>
+<td>PATCH</td>
+<td>only the named fields</td>
+<td>raises <code>DocumentNotFoundError</code></td>
+</tr>
+<tr>
+<td><a class="autorefs autorefs-internal" title="            update
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.update">update()</a></td>
+<td>bulk UPDATE-WHERE</td>
+<td>mapped fields of every match</td>
+<td>not applicable (matches nothing)</td>
+</tr>
+</tbody>
+</table>
+<p>Reach for <code>patch()</code> when you mean "change these fields of this document" — it is the one verb whose write scope matches that intent, so concurrent changes to unrelated fields survive.</p>
 <h2 id="delete">Delete<a class="headerlink" href="#delete" title="Permanent link">¤</a></h2>
 <h3 id="delete_1"><code>delete</code><a class="headerlink" href="#delete_1" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            delete" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.delete">delete()</a> removes the instance's document from the table. It returns nothing; querying afterwards finds nothing.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">snow</span> <span class="o">=</span> <span class="n">Book</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s2">&quot;Snow Crash&quot;</span><span class="p">)</span>
-</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">snow</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
-</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s2">&quot;Snow Crash&quot;</span><span class="p">))</span>
-</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="go">None</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">snow</span> <span class="o">=</span> <span class="n">Book</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s2">&quot;Snow Crash&quot;</span><span class="p">)</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">snow</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s2">&quot;Snow Crash&quot;</span><span class="p">))</span>
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="go">None</span>
 </span></code></pre></div>
 <h3 id="remove"><code>remove</code><a class="headerlink" href="#remove" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            remove
@@ -2682,8 +2799,8 @@
   
       classmethod
   " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.remove">remove()</a> deletes every document matching a condition (or a list of <code>doc_ids=</code>) and returns the removed ids.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">year</span> <span class="o">&lt;</span> <span class="mi">1970</span><span class="p">)</span>
-</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="go">[1]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Book</span><span class="o">.</span><span class="n">year</span> <span class="o">&lt;</span> <span class="mi">1970</span><span class="p">)</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="go">[1]</span>
 </span></code></pre></div>
 <h3 id="truncate"><code>truncate</code><a class="headerlink" href="#truncate" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            truncate
@@ -2692,34 +2809,34 @@
   
       classmethod
   " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.truncate">truncate()</a> empties the table entirely and resets its id counter.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">truncate</span><span class="p">()</span>
-</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="go">[]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">truncate</span><span class="p">()</span>
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="go">[]</span>
 </span></code></pre></div>
 <h2 id="sharp-edge-save-vs-replacedelete-on-a-vanished-document">Sharp edge: <code>save()</code> vs <code>replace()</code>/<code>delete()</code> on a vanished document<a class="headerlink" href="#sharp-edge-save-vs-replacedelete-on-a-vanished-document" title="Permanent link">¤</a></h2>
 <p>The last sharp edge is about what happens when an instance's document has disappeared from the table (for example, deleted by another process). <a class="autorefs autorefs-internal" title="            save" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.save">save()</a> and <a class="autorefs autorefs-internal" title="            replace" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.replace">replace()</a>/<a class="autorefs autorefs-internal" title="            delete" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.delete">delete()</a> behave differently.</p>
 <p><code>save()</code> is forgiving: if the document is gone, it re-inserts it under the same id.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Note</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;notes&quot;</span><span class="p">):</span>
-</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="gp">... </span>    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">note</span> <span class="o">=</span> <span class="n">Note</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;draft&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
-</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">note</span>
-</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="go">Note(id=1, text=&#39;draft&#39;)</span>
-</span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Note</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">doc_ids</span><span class="o">=</span><span class="p">[</span><span class="n">note</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>  <span class="c1"># the document vanishes out of band</span>
-</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="go">[1]</span>
-</span><span id="__span-30-8"><a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Note</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-</span><span id="__span-30-9"><a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="go">[]</span>
-</span><span id="__span-30-10"><a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">note</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>  <span class="c1"># save re-inserts it</span>
-</span><span id="__span-30-11"><a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a><span class="go">Note(id=1, text=&#39;draft&#39;)</span>
-</span><span id="__span-30-12"><a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Note</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-</span><span id="__span-30-13"><a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a><span class="go">[Note(id=1, text=&#39;draft&#39;)]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Note</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;notes&quot;</span><span class="p">):</span>
+</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="gp">... </span>    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-33-3"><a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">note</span> <span class="o">=</span> <span class="n">Note</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;draft&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
+</span><span id="__span-33-4"><a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">note</span>
+</span><span id="__span-33-5"><a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="go">Note(id=1, text=&#39;draft&#39;)</span>
+</span><span id="__span-33-6"><a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Note</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">doc_ids</span><span class="o">=</span><span class="p">[</span><span class="n">note</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>  <span class="c1"># the document vanishes out of band</span>
+</span><span id="__span-33-7"><a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a><span class="go">[1]</span>
+</span><span id="__span-33-8"><a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Note</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</span><span id="__span-33-9"><a id="__codelineno-33-9" name="__codelineno-33-9" href="#__codelineno-33-9"></a><span class="go">[]</span>
+</span><span id="__span-33-10"><a id="__codelineno-33-10" name="__codelineno-33-10" href="#__codelineno-33-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">note</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>  <span class="c1"># save re-inserts it</span>
+</span><span id="__span-33-11"><a id="__codelineno-33-11" name="__codelineno-33-11" href="#__codelineno-33-11"></a><span class="go">Note(id=1, text=&#39;draft&#39;)</span>
+</span><span id="__span-33-12"><a id="__codelineno-33-12" name="__codelineno-33-12" href="#__codelineno-33-12"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Note</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</span><span id="__span-33-13"><a id="__codelineno-33-13" name="__codelineno-33-13" href="#__codelineno-33-13"></a><span class="go">[Note(id=1, text=&#39;draft&#39;)]</span>
 </span></code></pre></div>
 <p><code>replace()</code> and <code>delete()</code> are strict: they require the document to still exist and raise when it does not.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Note</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">doc_ids</span><span class="o">=</span><span class="p">[</span><span class="n">note</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>  <span class="c1"># vanish it again</span>
-</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="go">[1]</span>
-</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">note</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
-</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="gr">tinydantic._errors.DocumentNotFoundError</span>: <span class="n">No document with id 1 in table &#39;notes&#39; (model &#39;Note&#39;)</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Note</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">doc_ids</span><span class="o">=</span><span class="p">[</span><span class="n">note</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>  <span class="c1"># vanish it again</span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="go">[1]</span>
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">note</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-34-6"><a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="gr">tinydantic._errors.DocumentNotFoundError</span>: <span class="n">No document with id 1 in table &#39;notes&#39; (model &#39;Note&#39;)</span>
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>

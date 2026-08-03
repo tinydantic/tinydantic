@@ -2310,6 +2310,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#tinydantic.TinydanticModel.patch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;patch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#tinydantic.TinydanticModel.remove" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5441,7 +5452,82 @@ for the design rationale (pydantic#9992).</p>
 <span class="normal"><a href="#__codelineno-0-1424">1424</a></span>
 <span class="normal"><a href="#__codelineno-0-1425">1425</a></span>
 <span class="normal"><a href="#__codelineno-0-1426">1426</a></span>
-<span class="normal"><a href="#__codelineno-0-1427">1427</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-169"><a id="__codelineno-0-169" name="__codelineno-0-169"></a><span class="k">class</span><span class="w"> </span><span class="nc">TinydanticModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">TinydanticModelMetaclass</span><span class="p">):</span>
+<span class="normal"><a href="#__codelineno-0-1427">1427</a></span>
+<span class="normal"><a href="#__codelineno-0-1428">1428</a></span>
+<span class="normal"><a href="#__codelineno-0-1429">1429</a></span>
+<span class="normal"><a href="#__codelineno-0-1430">1430</a></span>
+<span class="normal"><a href="#__codelineno-0-1431">1431</a></span>
+<span class="normal"><a href="#__codelineno-0-1432">1432</a></span>
+<span class="normal"><a href="#__codelineno-0-1433">1433</a></span>
+<span class="normal"><a href="#__codelineno-0-1434">1434</a></span>
+<span class="normal"><a href="#__codelineno-0-1435">1435</a></span>
+<span class="normal"><a href="#__codelineno-0-1436">1436</a></span>
+<span class="normal"><a href="#__codelineno-0-1437">1437</a></span>
+<span class="normal"><a href="#__codelineno-0-1438">1438</a></span>
+<span class="normal"><a href="#__codelineno-0-1439">1439</a></span>
+<span class="normal"><a href="#__codelineno-0-1440">1440</a></span>
+<span class="normal"><a href="#__codelineno-0-1441">1441</a></span>
+<span class="normal"><a href="#__codelineno-0-1442">1442</a></span>
+<span class="normal"><a href="#__codelineno-0-1443">1443</a></span>
+<span class="normal"><a href="#__codelineno-0-1444">1444</a></span>
+<span class="normal"><a href="#__codelineno-0-1445">1445</a></span>
+<span class="normal"><a href="#__codelineno-0-1446">1446</a></span>
+<span class="normal"><a href="#__codelineno-0-1447">1447</a></span>
+<span class="normal"><a href="#__codelineno-0-1448">1448</a></span>
+<span class="normal"><a href="#__codelineno-0-1449">1449</a></span>
+<span class="normal"><a href="#__codelineno-0-1450">1450</a></span>
+<span class="normal"><a href="#__codelineno-0-1451">1451</a></span>
+<span class="normal"><a href="#__codelineno-0-1452">1452</a></span>
+<span class="normal"><a href="#__codelineno-0-1453">1453</a></span>
+<span class="normal"><a href="#__codelineno-0-1454">1454</a></span>
+<span class="normal"><a href="#__codelineno-0-1455">1455</a></span>
+<span class="normal"><a href="#__codelineno-0-1456">1456</a></span>
+<span class="normal"><a href="#__codelineno-0-1457">1457</a></span>
+<span class="normal"><a href="#__codelineno-0-1458">1458</a></span>
+<span class="normal"><a href="#__codelineno-0-1459">1459</a></span>
+<span class="normal"><a href="#__codelineno-0-1460">1460</a></span>
+<span class="normal"><a href="#__codelineno-0-1461">1461</a></span>
+<span class="normal"><a href="#__codelineno-0-1462">1462</a></span>
+<span class="normal"><a href="#__codelineno-0-1463">1463</a></span>
+<span class="normal"><a href="#__codelineno-0-1464">1464</a></span>
+<span class="normal"><a href="#__codelineno-0-1465">1465</a></span>
+<span class="normal"><a href="#__codelineno-0-1466">1466</a></span>
+<span class="normal"><a href="#__codelineno-0-1467">1467</a></span>
+<span class="normal"><a href="#__codelineno-0-1468">1468</a></span>
+<span class="normal"><a href="#__codelineno-0-1469">1469</a></span>
+<span class="normal"><a href="#__codelineno-0-1470">1470</a></span>
+<span class="normal"><a href="#__codelineno-0-1471">1471</a></span>
+<span class="normal"><a href="#__codelineno-0-1472">1472</a></span>
+<span class="normal"><a href="#__codelineno-0-1473">1473</a></span>
+<span class="normal"><a href="#__codelineno-0-1474">1474</a></span>
+<span class="normal"><a href="#__codelineno-0-1475">1475</a></span>
+<span class="normal"><a href="#__codelineno-0-1476">1476</a></span>
+<span class="normal"><a href="#__codelineno-0-1477">1477</a></span>
+<span class="normal"><a href="#__codelineno-0-1478">1478</a></span>
+<span class="normal"><a href="#__codelineno-0-1479">1479</a></span>
+<span class="normal"><a href="#__codelineno-0-1480">1480</a></span>
+<span class="normal"><a href="#__codelineno-0-1481">1481</a></span>
+<span class="normal"><a href="#__codelineno-0-1482">1482</a></span>
+<span class="normal"><a href="#__codelineno-0-1483">1483</a></span>
+<span class="normal"><a href="#__codelineno-0-1484">1484</a></span>
+<span class="normal"><a href="#__codelineno-0-1485">1485</a></span>
+<span class="normal"><a href="#__codelineno-0-1486">1486</a></span>
+<span class="normal"><a href="#__codelineno-0-1487">1487</a></span>
+<span class="normal"><a href="#__codelineno-0-1488">1488</a></span>
+<span class="normal"><a href="#__codelineno-0-1489">1489</a></span>
+<span class="normal"><a href="#__codelineno-0-1490">1490</a></span>
+<span class="normal"><a href="#__codelineno-0-1491">1491</a></span>
+<span class="normal"><a href="#__codelineno-0-1492">1492</a></span>
+<span class="normal"><a href="#__codelineno-0-1493">1493</a></span>
+<span class="normal"><a href="#__codelineno-0-1494">1494</a></span>
+<span class="normal"><a href="#__codelineno-0-1495">1495</a></span>
+<span class="normal"><a href="#__codelineno-0-1496">1496</a></span>
+<span class="normal"><a href="#__codelineno-0-1497">1497</a></span>
+<span class="normal"><a href="#__codelineno-0-1498">1498</a></span>
+<span class="normal"><a href="#__codelineno-0-1499">1499</a></span>
+<span class="normal"><a href="#__codelineno-0-1500">1500</a></span>
+<span class="normal"><a href="#__codelineno-0-1501">1501</a></span>
+<span class="normal"><a href="#__codelineno-0-1502">1502</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-169"><a id="__codelineno-0-169" name="__codelineno-0-169"></a><span class="k">class</span><span class="w"> </span><span class="nc">TinydanticModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">TinydanticModelMetaclass</span><span class="p">):</span>
 </span><span id="__span-0-170"><a id="__codelineno-0-170" name="__codelineno-0-170"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for tinydantic models.</span>
 </span><span id="__span-0-171"><a id="__codelineno-0-171" name="__codelineno-0-171"></a>
 </span><span id="__span-0-172"><a id="__codelineno-0-172" name="__codelineno-0-172"></a><span class="sd">    Subclass to define a document model, passing tinydantic</span>
@@ -6685,21 +6771,96 @@ for the design rationale (pydantic#9992).</p>
 </span><span id="__span-0-1410"><a id="__codelineno-0-1410" name="__codelineno-0-1410"></a>                <span class="n">doc_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
 </span><span id="__span-0-1411"><a id="__codelineno-0-1411" name="__codelineno-0-1411"></a>            <span class="p">)</span>
 </span><span id="__span-0-1412"><a id="__codelineno-0-1412" name="__codelineno-0-1412"></a>
-</span><span id="__span-0-1413"><a id="__codelineno-0-1413" name="__codelineno-0-1413"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-</span><span id="__span-0-1414"><a id="__codelineno-0-1414" name="__codelineno-0-1414"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Insert this model if it is new, otherwise update it by id.</span>
+</span><span id="__span-0-1413"><a id="__codelineno-0-1413" name="__codelineno-0-1413"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">fields</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="__span-0-1414"><a id="__codelineno-0-1414" name="__codelineno-0-1414"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update only the given fields, in storage and on self.</span>
 </span><span id="__span-0-1415"><a id="__codelineno-0-1415" name="__codelineno-0-1415"></a>
-</span><span id="__span-0-1416"><a id="__codelineno-0-1416" name="__codelineno-0-1416"></a><span class="sd">        If ``id`` is set but the document no longer exists in the</span>
-</span><span id="__span-0-1417"><a id="__codelineno-0-1417" name="__codelineno-0-1417"></a><span class="sd">        table, it is re-inserted under the same id (TinyDB upsert</span>
-</span><span id="__span-0-1418"><a id="__codelineno-0-1418" name="__codelineno-0-1418"></a><span class="sd">        semantics) — unlike ``replace()``/``delete()``, which raise</span>
-</span><span id="__span-0-1419"><a id="__codelineno-0-1419" name="__codelineno-0-1419"></a><span class="sd">        [DocumentNotFoundError][tinydantic.DocumentNotFoundError].</span>
-</span><span id="__span-0-1420"><a id="__codelineno-0-1420" name="__codelineno-0-1420"></a>
-</span><span id="__span-0-1421"><a id="__codelineno-0-1421" name="__codelineno-0-1421"></a><span class="sd">        Returns:</span>
-</span><span id="__span-0-1422"><a id="__codelineno-0-1422" name="__codelineno-0-1422"></a><span class="sd">            This instance (with ``id`` set if it was newly inserted).</span>
-</span><span id="__span-0-1423"><a id="__codelineno-0-1423" name="__codelineno-0-1423"></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="__span-0-1424"><a id="__codelineno-0-1424" name="__codelineno-0-1424"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-1425"><a id="__codelineno-0-1425" name="__codelineno-0-1425"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
-</span><span id="__span-0-1426"><a id="__codelineno-0-1426" name="__codelineno-0-1426"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">upsert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_tinydb_document</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
-</span><span id="__span-0-1427"><a id="__codelineno-0-1427" name="__codelineno-0-1427"></a>        <span class="k">return</span> <span class="bp">self</span>
+</span><span id="__span-0-1416"><a id="__codelineno-0-1416" name="__codelineno-0-1416"></a><span class="sd">        The instance-level partial update: validates the new</span>
+</span><span id="__span-0-1417"><a id="__codelineno-0-1417" name="__codelineno-0-1417"></a><span class="sd">        values, merges exactly these fields into the stored</span>
+</span><span id="__span-0-1418"><a id="__codelineno-0-1418" name="__codelineno-0-1418"></a><span class="sd">        document by id (other stored fields are untouched — unlike</span>
+</span><span id="__span-0-1419"><a id="__codelineno-0-1419" name="__codelineno-0-1419"></a><span class="sd">        [save][tinydantic.TinydanticModel.save], which writes the</span>
+</span><span id="__span-0-1420"><a id="__codelineno-0-1420" name="__codelineno-0-1420"></a><span class="sd">        whole document from this instance), and then updates this</span>
+</span><span id="__span-0-1421"><a id="__codelineno-0-1421" name="__codelineno-0-1421"></a><span class="sd">        instance to match. The write is atomic and validated like</span>
+</span><span id="__span-0-1422"><a id="__codelineno-0-1422" name="__codelineno-0-1422"></a><span class="sd">        [update][tinydantic.TinydanticModel.update]; if anything</span>
+</span><span id="__span-0-1423"><a id="__codelineno-0-1423" name="__codelineno-0-1423"></a><span class="sd">        raises, storage and this instance are both left untouched.</span>
+</span><span id="__span-0-1424"><a id="__codelineno-0-1424" name="__codelineno-0-1424"></a>
+</span><span id="__span-0-1425"><a id="__codelineno-0-1425" name="__codelineno-0-1425"></a><span class="sd">        Unknown keys are always rejected — there is deliberately</span>
+</span><span id="__span-0-1426"><a id="__codelineno-0-1426" name="__codelineno-0-1426"></a><span class="sd">        no ``extra_keys`` escape here; use the table-level</span>
+</span><span id="__span-0-1427"><a id="__codelineno-0-1427" name="__codelineno-0-1427"></a><span class="sd">        [update][tinydantic.TinydanticModel.update] to write</span>
+</span><span id="__span-0-1428"><a id="__codelineno-0-1428" name="__codelineno-0-1428"></a><span class="sd">        non-model keys. With no fields at all, nothing is written</span>
+</span><span id="__span-0-1429"><a id="__codelineno-0-1429" name="__codelineno-0-1429"></a><span class="sd">        but the document&#39;s existence is still checked, so the</span>
+</span><span id="__span-0-1430"><a id="__codelineno-0-1430" name="__codelineno-0-1430"></a><span class="sd">        error contract does not depend on the payload.</span>
+</span><span id="__span-0-1431"><a id="__codelineno-0-1431" name="__codelineno-0-1431"></a>
+</span><span id="__span-0-1432"><a id="__codelineno-0-1432" name="__codelineno-0-1432"></a><span class="sd">        Like ``update()``, values land in storage as serialized</span>
+</span><span id="__span-0-1433"><a id="__codelineno-0-1433" name="__codelineno-0-1433"></a><span class="sd">        inputs: a ``model_validator`` that rewrites values applies</span>
+</span><span id="__span-0-1434"><a id="__codelineno-0-1434" name="__codelineno-0-1434"></a><span class="sd">        on the next read.</span>
+</span><span id="__span-0-1435"><a id="__codelineno-0-1435" name="__codelineno-0-1435"></a>
+</span><span id="__span-0-1436"><a id="__codelineno-0-1436" name="__codelineno-0-1436"></a><span class="sd">        Returns:</span>
+</span><span id="__span-0-1437"><a id="__codelineno-0-1437" name="__codelineno-0-1437"></a><span class="sd">            This instance, with the patched fields set to their</span>
+</span><span id="__span-0-1438"><a id="__codelineno-0-1438" name="__codelineno-0-1438"></a><span class="sd">            validated values.</span>
+</span><span id="__span-0-1439"><a id="__codelineno-0-1439" name="__codelineno-0-1439"></a>
+</span><span id="__span-0-1440"><a id="__codelineno-0-1440" name="__codelineno-0-1440"></a><span class="sd">        Raises:</span>
+</span><span id="__span-0-1441"><a id="__codelineno-0-1441" name="__codelineno-0-1441"></a><span class="sd">            DocumentIDRequiredError: If ``id`` is ``None`` (the</span>
+</span><span id="__span-0-1442"><a id="__codelineno-0-1442" name="__codelineno-0-1442"></a><span class="sd">                model was never inserted).</span>
+</span><span id="__span-0-1443"><a id="__codelineno-0-1443" name="__codelineno-0-1443"></a><span class="sd">            DocumentNotFoundError: If no document with this ``id``</span>
+</span><span id="__span-0-1444"><a id="__codelineno-0-1444" name="__codelineno-0-1444"></a><span class="sd">                exists in the table.</span>
+</span><span id="__span-0-1445"><a id="__codelineno-0-1445" name="__codelineno-0-1445"></a><span class="sd">            DocumentIDUpdateError: If ``fields`` contains ``id``.</span>
+</span><span id="__span-0-1446"><a id="__codelineno-0-1446" name="__codelineno-0-1446"></a><span class="sd">            UnknownUpdateFieldError: If a key is not a model</span>
+</span><span id="__span-0-1447"><a id="__codelineno-0-1447" name="__codelineno-0-1447"></a><span class="sd">                field.</span>
+</span><span id="__span-0-1448"><a id="__codelineno-0-1448" name="__codelineno-0-1448"></a><span class="sd">            pydantic.ValidationError: If a value fails validation</span>
+</span><span id="__span-0-1449"><a id="__codelineno-0-1449" name="__codelineno-0-1449"></a><span class="sd">                or the merged document violates a model invariant;</span>
+</span><span id="__span-0-1450"><a id="__codelineno-0-1450" name="__codelineno-0-1450"></a><span class="sd">                nothing is written.</span>
+</span><span id="__span-0-1451"><a id="__codelineno-0-1451" name="__codelineno-0-1451"></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="__span-0-1452"><a id="__codelineno-0-1452" name="__codelineno-0-1452"></a>        <span class="bp">cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</span><span id="__span-0-1453"><a id="__codelineno-0-1453" name="__codelineno-0-1453"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-1454"><a id="__codelineno-0-1454" name="__codelineno-0-1454"></a>            <span class="k">raise</span> <span class="n">DocumentIDRequiredError</span><span class="p">(</span>
+</span><span id="__span-0-1455"><a id="__codelineno-0-1455" name="__codelineno-0-1455"></a>                <span class="n">model_name</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+</span><span id="__span-0-1456"><a id="__codelineno-0-1456" name="__codelineno-0-1456"></a>                <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;patch&quot;</span><span class="p">,</span>
+</span><span id="__span-0-1457"><a id="__codelineno-0-1457" name="__codelineno-0-1457"></a>            <span class="p">)</span>
+</span><span id="__span-0-1458"><a id="__codelineno-0-1458" name="__codelineno-0-1458"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">fields</span><span class="p">:</span>
+</span><span id="__span-0-1459"><a id="__codelineno-0-1459" name="__codelineno-0-1459"></a>            <span class="bp">cls</span><span class="o">.</span><span class="n">_check_doc_ids_exist</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+</span><span id="__span-0-1460"><a id="__codelineno-0-1460" name="__codelineno-0-1460"></a>            <span class="k">return</span> <span class="bp">self</span>
+</span><span id="__span-0-1461"><a id="__codelineno-0-1461" name="__codelineno-0-1461"></a>        <span class="n">unknown</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-0-1462"><a id="__codelineno-0-1462" name="__codelineno-0-1462"></a>        <span class="n">validated</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="__span-0-1463"><a id="__codelineno-0-1463" name="__codelineno-0-1463"></a>        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="__span-0-1464"><a id="__codelineno-0-1464" name="__codelineno-0-1464"></a>            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span>
+</span><span id="__span-0-1465"><a id="__codelineno-0-1465" name="__codelineno-0-1465"></a>                <span class="k">raise</span> <span class="n">DocumentIDUpdateError</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="__span-0-1466"><a id="__codelineno-0-1466" name="__codelineno-0-1466"></a>            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">model_fields</span><span class="p">:</span>
+</span><span id="__span-0-1467"><a id="__codelineno-0-1467" name="__codelineno-0-1467"></a>                <span class="n">unknown</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</span><span id="__span-0-1468"><a id="__codelineno-0-1468" name="__codelineno-0-1468"></a>                <span class="k">continue</span>
+</span><span id="__span-0-1469"><a id="__codelineno-0-1469" name="__codelineno-0-1469"></a>            <span class="n">validated</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_field_adapter</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+</span><span id="__span-0-1470"><a id="__codelineno-0-1470" name="__codelineno-0-1470"></a>                <span class="n">value</span><span class="p">,</span>
+</span><span id="__span-0-1471"><a id="__codelineno-0-1471" name="__codelineno-0-1471"></a>            <span class="p">)</span>
+</span><span id="__span-0-1472"><a id="__codelineno-0-1472" name="__codelineno-0-1472"></a>        <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+</span><span id="__span-0-1473"><a id="__codelineno-0-1473" name="__codelineno-0-1473"></a>            <span class="k">raise</span> <span class="n">UnknownUpdateFieldError</span><span class="p">(</span>
+</span><span id="__span-0-1474"><a id="__codelineno-0-1474" name="__codelineno-0-1474"></a>                <span class="n">model_name</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+</span><span id="__span-0-1475"><a id="__codelineno-0-1475" name="__codelineno-0-1475"></a>                <span class="n">keys</span><span class="o">=</span><span class="n">unknown</span><span class="p">,</span>
+</span><span id="__span-0-1476"><a id="__codelineno-0-1476" name="__codelineno-0-1476"></a>            <span class="p">)</span>
+</span><span id="__span-0-1477"><a id="__codelineno-0-1477" name="__codelineno-0-1477"></a>        <span class="bp">cls</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">doc_ids</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+</span><span id="__span-0-1478"><a id="__codelineno-0-1478" name="__codelineno-0-1478"></a>        <span class="c1"># Sync only after the write succeeded. Direct __dict__</span>
+</span><span id="__span-0-1479"><a id="__codelineno-0-1479" name="__codelineno-0-1479"></a>        <span class="c1"># assignment, NOT setattr: with validate_assignment on,</span>
+</span><span id="__span-0-1480"><a id="__codelineno-0-1480" name="__codelineno-0-1480"></a>        <span class="c1"># per-field assignment can trip a cross-field invariant on</span>
+</span><span id="__span-0-1481"><a id="__codelineno-0-1481" name="__codelineno-0-1481"></a>        <span class="c1"># a transient state (start moved before end) even though</span>
+</span><span id="__span-0-1482"><a id="__codelineno-0-1482" name="__codelineno-0-1482"></a>        <span class="c1"># the final state — already checked by the merged-result</span>
+</span><span id="__span-0-1483"><a id="__codelineno-0-1483" name="__codelineno-0-1483"></a>        <span class="c1"># validation above — is valid.</span>
+</span><span id="__span-0-1484"><a id="__codelineno-0-1484" name="__codelineno-0-1484"></a>        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">validated</span><span class="p">)</span>
+</span><span id="__span-0-1485"><a id="__codelineno-0-1485" name="__codelineno-0-1485"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_fields_set__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">validated</span><span class="p">)</span>
+</span><span id="__span-0-1486"><a id="__codelineno-0-1486" name="__codelineno-0-1486"></a>        <span class="k">return</span> <span class="bp">self</span>
+</span><span id="__span-0-1487"><a id="__codelineno-0-1487" name="__codelineno-0-1487"></a>
+</span><span id="__span-0-1488"><a id="__codelineno-0-1488" name="__codelineno-0-1488"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="__span-0-1489"><a id="__codelineno-0-1489" name="__codelineno-0-1489"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Insert this model if it is new, otherwise update it by id.</span>
+</span><span id="__span-0-1490"><a id="__codelineno-0-1490" name="__codelineno-0-1490"></a>
+</span><span id="__span-0-1491"><a id="__codelineno-0-1491" name="__codelineno-0-1491"></a><span class="sd">        If ``id`` is set but the document no longer exists in the</span>
+</span><span id="__span-0-1492"><a id="__codelineno-0-1492" name="__codelineno-0-1492"></a><span class="sd">        table, it is re-inserted under the same id (TinyDB upsert</span>
+</span><span id="__span-0-1493"><a id="__codelineno-0-1493" name="__codelineno-0-1493"></a><span class="sd">        semantics) — unlike ``replace()``/``delete()``, which raise</span>
+</span><span id="__span-0-1494"><a id="__codelineno-0-1494" name="__codelineno-0-1494"></a><span class="sd">        [DocumentNotFoundError][tinydantic.DocumentNotFoundError].</span>
+</span><span id="__span-0-1495"><a id="__codelineno-0-1495" name="__codelineno-0-1495"></a>
+</span><span id="__span-0-1496"><a id="__codelineno-0-1496" name="__codelineno-0-1496"></a><span class="sd">        Returns:</span>
+</span><span id="__span-0-1497"><a id="__codelineno-0-1497" name="__codelineno-0-1497"></a><span class="sd">            This instance (with ``id`` set if it was newly inserted).</span>
+</span><span id="__span-0-1498"><a id="__codelineno-0-1498" name="__codelineno-0-1498"></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="__span-0-1499"><a id="__codelineno-0-1499" name="__codelineno-0-1499"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-1500"><a id="__codelineno-0-1500" name="__codelineno-0-1500"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
+</span><span id="__span-0-1501"><a id="__codelineno-0-1501" name="__codelineno-0-1501"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">upsert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_tinydb_document</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-0-1502"><a id="__codelineno-0-1502" name="__codelineno-0-1502"></a>        <span class="k">return</span> <span class="bp">self</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
 
@@ -8817,6 +8978,305 @@ nothing is inserted.</p>
 <div class="doc doc-object doc-function">
 
 
+<h3 id="tinydantic.TinydanticModel.patch" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">patch</span>
+
+
+<a href="#tinydantic.TinydanticModel.patch" class="headerlink" title="Permanent link">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">patch</span><span class="p">(</span><span class="o">**</span><span class="n">fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Self">Self</span></span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Update only the given fields, in storage and on self.</p>
+<p>The instance-level partial update: validates the new
+values, merges exactly these fields into the stored
+document by id (other stored fields are untouched — unlike
+<a class="autorefs autorefs-internal" title="            save" href="#tinydantic.TinydanticModel.save">save</a>, which writes the
+whole document from this instance), and then updates this
+instance to match. The write is atomic and validated like
+<a class="autorefs autorefs-internal" title="            update
+
+
+  
+      classmethod
+  " href="#tinydantic.TinydanticModel.update">update</a>; if anything
+raises, storage and this instance are both left untouched.</p>
+<p>Unknown keys are always rejected — there is deliberately
+no <code>extra_keys</code> escape here; use the table-level
+<a class="autorefs autorefs-internal" title="            update
+
+
+  
+      classmethod
+  " href="#tinydantic.TinydanticModel.update">update</a> to write
+non-model keys. With no fields at all, nothing is written
+but the document's existence is still checked, so the
+error contract does not depend on the payload.</p>
+<p>Like <code>update()</code>, values land in storage as serialized
+inputs: a <code>model_validator</code> that rewrites values applies
+on the next read.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing_extensions.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>This instance, with the patched fields set to their</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing_extensions.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>validated values.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            DocumentIDRequiredError (tinydantic._errors.DocumentIDRequiredError)" href="#tinydantic.DocumentIDRequiredError">DocumentIDRequiredError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>id</code> is <code>None</code> (the
+model was never inserted).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            DocumentNotFoundError (tinydantic._errors.DocumentNotFoundError)" href="#tinydantic.DocumentNotFoundError">DocumentNotFoundError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If no document with this <code>id</code>
+exists in the table.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            DocumentIDUpdateError (tinydantic._errors.DocumentIDUpdateError)" href="#tinydantic.DocumentIDUpdateError">DocumentIDUpdateError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>fields</code> contains <code>id</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            UnknownUpdateFieldError (tinydantic._errors.UnknownUpdateFieldError)" href="#tinydantic.UnknownUpdateFieldError">UnknownUpdateFieldError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If a key is not a model
+field.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pydantic.ValidationError">ValidationError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If a value fails validation
+or the merged document violates a model invariant;
+nothing is written.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/tinydantic/_model.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1413">1413</a></span>
+<span class="normal"><a href="#__codelineno-0-1414">1414</a></span>
+<span class="normal"><a href="#__codelineno-0-1415">1415</a></span>
+<span class="normal"><a href="#__codelineno-0-1416">1416</a></span>
+<span class="normal"><a href="#__codelineno-0-1417">1417</a></span>
+<span class="normal"><a href="#__codelineno-0-1418">1418</a></span>
+<span class="normal"><a href="#__codelineno-0-1419">1419</a></span>
+<span class="normal"><a href="#__codelineno-0-1420">1420</a></span>
+<span class="normal"><a href="#__codelineno-0-1421">1421</a></span>
+<span class="normal"><a href="#__codelineno-0-1422">1422</a></span>
+<span class="normal"><a href="#__codelineno-0-1423">1423</a></span>
+<span class="normal"><a href="#__codelineno-0-1424">1424</a></span>
+<span class="normal"><a href="#__codelineno-0-1425">1425</a></span>
+<span class="normal"><a href="#__codelineno-0-1426">1426</a></span>
+<span class="normal"><a href="#__codelineno-0-1427">1427</a></span>
+<span class="normal"><a href="#__codelineno-0-1428">1428</a></span>
+<span class="normal"><a href="#__codelineno-0-1429">1429</a></span>
+<span class="normal"><a href="#__codelineno-0-1430">1430</a></span>
+<span class="normal"><a href="#__codelineno-0-1431">1431</a></span>
+<span class="normal"><a href="#__codelineno-0-1432">1432</a></span>
+<span class="normal"><a href="#__codelineno-0-1433">1433</a></span>
+<span class="normal"><a href="#__codelineno-0-1434">1434</a></span>
+<span class="normal"><a href="#__codelineno-0-1435">1435</a></span>
+<span class="normal"><a href="#__codelineno-0-1436">1436</a></span>
+<span class="normal"><a href="#__codelineno-0-1437">1437</a></span>
+<span class="normal"><a href="#__codelineno-0-1438">1438</a></span>
+<span class="normal"><a href="#__codelineno-0-1439">1439</a></span>
+<span class="normal"><a href="#__codelineno-0-1440">1440</a></span>
+<span class="normal"><a href="#__codelineno-0-1441">1441</a></span>
+<span class="normal"><a href="#__codelineno-0-1442">1442</a></span>
+<span class="normal"><a href="#__codelineno-0-1443">1443</a></span>
+<span class="normal"><a href="#__codelineno-0-1444">1444</a></span>
+<span class="normal"><a href="#__codelineno-0-1445">1445</a></span>
+<span class="normal"><a href="#__codelineno-0-1446">1446</a></span>
+<span class="normal"><a href="#__codelineno-0-1447">1447</a></span>
+<span class="normal"><a href="#__codelineno-0-1448">1448</a></span>
+<span class="normal"><a href="#__codelineno-0-1449">1449</a></span>
+<span class="normal"><a href="#__codelineno-0-1450">1450</a></span>
+<span class="normal"><a href="#__codelineno-0-1451">1451</a></span>
+<span class="normal"><a href="#__codelineno-0-1452">1452</a></span>
+<span class="normal"><a href="#__codelineno-0-1453">1453</a></span>
+<span class="normal"><a href="#__codelineno-0-1454">1454</a></span>
+<span class="normal"><a href="#__codelineno-0-1455">1455</a></span>
+<span class="normal"><a href="#__codelineno-0-1456">1456</a></span>
+<span class="normal"><a href="#__codelineno-0-1457">1457</a></span>
+<span class="normal"><a href="#__codelineno-0-1458">1458</a></span>
+<span class="normal"><a href="#__codelineno-0-1459">1459</a></span>
+<span class="normal"><a href="#__codelineno-0-1460">1460</a></span>
+<span class="normal"><a href="#__codelineno-0-1461">1461</a></span>
+<span class="normal"><a href="#__codelineno-0-1462">1462</a></span>
+<span class="normal"><a href="#__codelineno-0-1463">1463</a></span>
+<span class="normal"><a href="#__codelineno-0-1464">1464</a></span>
+<span class="normal"><a href="#__codelineno-0-1465">1465</a></span>
+<span class="normal"><a href="#__codelineno-0-1466">1466</a></span>
+<span class="normal"><a href="#__codelineno-0-1467">1467</a></span>
+<span class="normal"><a href="#__codelineno-0-1468">1468</a></span>
+<span class="normal"><a href="#__codelineno-0-1469">1469</a></span>
+<span class="normal"><a href="#__codelineno-0-1470">1470</a></span>
+<span class="normal"><a href="#__codelineno-0-1471">1471</a></span>
+<span class="normal"><a href="#__codelineno-0-1472">1472</a></span>
+<span class="normal"><a href="#__codelineno-0-1473">1473</a></span>
+<span class="normal"><a href="#__codelineno-0-1474">1474</a></span>
+<span class="normal"><a href="#__codelineno-0-1475">1475</a></span>
+<span class="normal"><a href="#__codelineno-0-1476">1476</a></span>
+<span class="normal"><a href="#__codelineno-0-1477">1477</a></span>
+<span class="normal"><a href="#__codelineno-0-1478">1478</a></span>
+<span class="normal"><a href="#__codelineno-0-1479">1479</a></span>
+<span class="normal"><a href="#__codelineno-0-1480">1480</a></span>
+<span class="normal"><a href="#__codelineno-0-1481">1481</a></span>
+<span class="normal"><a href="#__codelineno-0-1482">1482</a></span>
+<span class="normal"><a href="#__codelineno-0-1483">1483</a></span>
+<span class="normal"><a href="#__codelineno-0-1484">1484</a></span>
+<span class="normal"><a href="#__codelineno-0-1485">1485</a></span>
+<span class="normal"><a href="#__codelineno-0-1486">1486</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-1413"><a id="__codelineno-0-1413" name="__codelineno-0-1413"></a><span class="k">def</span><span class="w"> </span><span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">fields</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="__span-0-1414"><a id="__codelineno-0-1414" name="__codelineno-0-1414"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Update only the given fields, in storage and on self.</span>
+</span><span id="__span-0-1415"><a id="__codelineno-0-1415" name="__codelineno-0-1415"></a>
+</span><span id="__span-0-1416"><a id="__codelineno-0-1416" name="__codelineno-0-1416"></a><span class="sd">    The instance-level partial update: validates the new</span>
+</span><span id="__span-0-1417"><a id="__codelineno-0-1417" name="__codelineno-0-1417"></a><span class="sd">    values, merges exactly these fields into the stored</span>
+</span><span id="__span-0-1418"><a id="__codelineno-0-1418" name="__codelineno-0-1418"></a><span class="sd">    document by id (other stored fields are untouched — unlike</span>
+</span><span id="__span-0-1419"><a id="__codelineno-0-1419" name="__codelineno-0-1419"></a><span class="sd">    [save][tinydantic.TinydanticModel.save], which writes the</span>
+</span><span id="__span-0-1420"><a id="__codelineno-0-1420" name="__codelineno-0-1420"></a><span class="sd">    whole document from this instance), and then updates this</span>
+</span><span id="__span-0-1421"><a id="__codelineno-0-1421" name="__codelineno-0-1421"></a><span class="sd">    instance to match. The write is atomic and validated like</span>
+</span><span id="__span-0-1422"><a id="__codelineno-0-1422" name="__codelineno-0-1422"></a><span class="sd">    [update][tinydantic.TinydanticModel.update]; if anything</span>
+</span><span id="__span-0-1423"><a id="__codelineno-0-1423" name="__codelineno-0-1423"></a><span class="sd">    raises, storage and this instance are both left untouched.</span>
+</span><span id="__span-0-1424"><a id="__codelineno-0-1424" name="__codelineno-0-1424"></a>
+</span><span id="__span-0-1425"><a id="__codelineno-0-1425" name="__codelineno-0-1425"></a><span class="sd">    Unknown keys are always rejected — there is deliberately</span>
+</span><span id="__span-0-1426"><a id="__codelineno-0-1426" name="__codelineno-0-1426"></a><span class="sd">    no ``extra_keys`` escape here; use the table-level</span>
+</span><span id="__span-0-1427"><a id="__codelineno-0-1427" name="__codelineno-0-1427"></a><span class="sd">    [update][tinydantic.TinydanticModel.update] to write</span>
+</span><span id="__span-0-1428"><a id="__codelineno-0-1428" name="__codelineno-0-1428"></a><span class="sd">    non-model keys. With no fields at all, nothing is written</span>
+</span><span id="__span-0-1429"><a id="__codelineno-0-1429" name="__codelineno-0-1429"></a><span class="sd">    but the document&#39;s existence is still checked, so the</span>
+</span><span id="__span-0-1430"><a id="__codelineno-0-1430" name="__codelineno-0-1430"></a><span class="sd">    error contract does not depend on the payload.</span>
+</span><span id="__span-0-1431"><a id="__codelineno-0-1431" name="__codelineno-0-1431"></a>
+</span><span id="__span-0-1432"><a id="__codelineno-0-1432" name="__codelineno-0-1432"></a><span class="sd">    Like ``update()``, values land in storage as serialized</span>
+</span><span id="__span-0-1433"><a id="__codelineno-0-1433" name="__codelineno-0-1433"></a><span class="sd">    inputs: a ``model_validator`` that rewrites values applies</span>
+</span><span id="__span-0-1434"><a id="__codelineno-0-1434" name="__codelineno-0-1434"></a><span class="sd">    on the next read.</span>
+</span><span id="__span-0-1435"><a id="__codelineno-0-1435" name="__codelineno-0-1435"></a>
+</span><span id="__span-0-1436"><a id="__codelineno-0-1436" name="__codelineno-0-1436"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-1437"><a id="__codelineno-0-1437" name="__codelineno-0-1437"></a><span class="sd">        This instance, with the patched fields set to their</span>
+</span><span id="__span-0-1438"><a id="__codelineno-0-1438" name="__codelineno-0-1438"></a><span class="sd">        validated values.</span>
+</span><span id="__span-0-1439"><a id="__codelineno-0-1439" name="__codelineno-0-1439"></a>
+</span><span id="__span-0-1440"><a id="__codelineno-0-1440" name="__codelineno-0-1440"></a><span class="sd">    Raises:</span>
+</span><span id="__span-0-1441"><a id="__codelineno-0-1441" name="__codelineno-0-1441"></a><span class="sd">        DocumentIDRequiredError: If ``id`` is ``None`` (the</span>
+</span><span id="__span-0-1442"><a id="__codelineno-0-1442" name="__codelineno-0-1442"></a><span class="sd">            model was never inserted).</span>
+</span><span id="__span-0-1443"><a id="__codelineno-0-1443" name="__codelineno-0-1443"></a><span class="sd">        DocumentNotFoundError: If no document with this ``id``</span>
+</span><span id="__span-0-1444"><a id="__codelineno-0-1444" name="__codelineno-0-1444"></a><span class="sd">            exists in the table.</span>
+</span><span id="__span-0-1445"><a id="__codelineno-0-1445" name="__codelineno-0-1445"></a><span class="sd">        DocumentIDUpdateError: If ``fields`` contains ``id``.</span>
+</span><span id="__span-0-1446"><a id="__codelineno-0-1446" name="__codelineno-0-1446"></a><span class="sd">        UnknownUpdateFieldError: If a key is not a model</span>
+</span><span id="__span-0-1447"><a id="__codelineno-0-1447" name="__codelineno-0-1447"></a><span class="sd">            field.</span>
+</span><span id="__span-0-1448"><a id="__codelineno-0-1448" name="__codelineno-0-1448"></a><span class="sd">        pydantic.ValidationError: If a value fails validation</span>
+</span><span id="__span-0-1449"><a id="__codelineno-0-1449" name="__codelineno-0-1449"></a><span class="sd">            or the merged document violates a model invariant;</span>
+</span><span id="__span-0-1450"><a id="__codelineno-0-1450" name="__codelineno-0-1450"></a><span class="sd">            nothing is written.</span>
+</span><span id="__span-0-1451"><a id="__codelineno-0-1451" name="__codelineno-0-1451"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-1452"><a id="__codelineno-0-1452" name="__codelineno-0-1452"></a>    <span class="bp">cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</span><span id="__span-0-1453"><a id="__codelineno-0-1453" name="__codelineno-0-1453"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-1454"><a id="__codelineno-0-1454" name="__codelineno-0-1454"></a>        <span class="k">raise</span> <span class="n">DocumentIDRequiredError</span><span class="p">(</span>
+</span><span id="__span-0-1455"><a id="__codelineno-0-1455" name="__codelineno-0-1455"></a>            <span class="n">model_name</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+</span><span id="__span-0-1456"><a id="__codelineno-0-1456" name="__codelineno-0-1456"></a>            <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;patch&quot;</span><span class="p">,</span>
+</span><span id="__span-0-1457"><a id="__codelineno-0-1457" name="__codelineno-0-1457"></a>        <span class="p">)</span>
+</span><span id="__span-0-1458"><a id="__codelineno-0-1458" name="__codelineno-0-1458"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">fields</span><span class="p">:</span>
+</span><span id="__span-0-1459"><a id="__codelineno-0-1459" name="__codelineno-0-1459"></a>        <span class="bp">cls</span><span class="o">.</span><span class="n">_check_doc_ids_exist</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+</span><span id="__span-0-1460"><a id="__codelineno-0-1460" name="__codelineno-0-1460"></a>        <span class="k">return</span> <span class="bp">self</span>
+</span><span id="__span-0-1461"><a id="__codelineno-0-1461" name="__codelineno-0-1461"></a>    <span class="n">unknown</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-0-1462"><a id="__codelineno-0-1462" name="__codelineno-0-1462"></a>    <span class="n">validated</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="__span-0-1463"><a id="__codelineno-0-1463" name="__codelineno-0-1463"></a>    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="__span-0-1464"><a id="__codelineno-0-1464" name="__codelineno-0-1464"></a>        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span>
+</span><span id="__span-0-1465"><a id="__codelineno-0-1465" name="__codelineno-0-1465"></a>            <span class="k">raise</span> <span class="n">DocumentIDUpdateError</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="__span-0-1466"><a id="__codelineno-0-1466" name="__codelineno-0-1466"></a>        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">model_fields</span><span class="p">:</span>
+</span><span id="__span-0-1467"><a id="__codelineno-0-1467" name="__codelineno-0-1467"></a>            <span class="n">unknown</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</span><span id="__span-0-1468"><a id="__codelineno-0-1468" name="__codelineno-0-1468"></a>            <span class="k">continue</span>
+</span><span id="__span-0-1469"><a id="__codelineno-0-1469" name="__codelineno-0-1469"></a>        <span class="n">validated</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_field_adapter</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+</span><span id="__span-0-1470"><a id="__codelineno-0-1470" name="__codelineno-0-1470"></a>            <span class="n">value</span><span class="p">,</span>
+</span><span id="__span-0-1471"><a id="__codelineno-0-1471" name="__codelineno-0-1471"></a>        <span class="p">)</span>
+</span><span id="__span-0-1472"><a id="__codelineno-0-1472" name="__codelineno-0-1472"></a>    <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+</span><span id="__span-0-1473"><a id="__codelineno-0-1473" name="__codelineno-0-1473"></a>        <span class="k">raise</span> <span class="n">UnknownUpdateFieldError</span><span class="p">(</span>
+</span><span id="__span-0-1474"><a id="__codelineno-0-1474" name="__codelineno-0-1474"></a>            <span class="n">model_name</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+</span><span id="__span-0-1475"><a id="__codelineno-0-1475" name="__codelineno-0-1475"></a>            <span class="n">keys</span><span class="o">=</span><span class="n">unknown</span><span class="p">,</span>
+</span><span id="__span-0-1476"><a id="__codelineno-0-1476" name="__codelineno-0-1476"></a>        <span class="p">)</span>
+</span><span id="__span-0-1477"><a id="__codelineno-0-1477" name="__codelineno-0-1477"></a>    <span class="bp">cls</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">doc_ids</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+</span><span id="__span-0-1478"><a id="__codelineno-0-1478" name="__codelineno-0-1478"></a>    <span class="c1"># Sync only after the write succeeded. Direct __dict__</span>
+</span><span id="__span-0-1479"><a id="__codelineno-0-1479" name="__codelineno-0-1479"></a>    <span class="c1"># assignment, NOT setattr: with validate_assignment on,</span>
+</span><span id="__span-0-1480"><a id="__codelineno-0-1480" name="__codelineno-0-1480"></a>    <span class="c1"># per-field assignment can trip a cross-field invariant on</span>
+</span><span id="__span-0-1481"><a id="__codelineno-0-1481" name="__codelineno-0-1481"></a>    <span class="c1"># a transient state (start moved before end) even though</span>
+</span><span id="__span-0-1482"><a id="__codelineno-0-1482" name="__codelineno-0-1482"></a>    <span class="c1"># the final state — already checked by the merged-result</span>
+</span><span id="__span-0-1483"><a id="__codelineno-0-1483" name="__codelineno-0-1483"></a>    <span class="c1"># validation above — is valid.</span>
+</span><span id="__span-0-1484"><a id="__codelineno-0-1484" name="__codelineno-0-1484"></a>    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">validated</span><span class="p">)</span>
+</span><span id="__span-0-1485"><a id="__codelineno-0-1485" name="__codelineno-0-1485"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_fields_set__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">validated</span><span class="p">)</span>
+</span><span id="__span-0-1486"><a id="__codelineno-0-1486" name="__codelineno-0-1486"></a>    <span class="k">return</span> <span class="bp">self</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="tinydantic.TinydanticModel.remove" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">remove</span>
 
@@ -9260,35 +9720,35 @@ semantics) — unlike <code>replace()</code>/<code>delete()</code>, which raise
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/tinydantic/_model.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1413">1413</a></span>
-<span class="normal"><a href="#__codelineno-0-1414">1414</a></span>
-<span class="normal"><a href="#__codelineno-0-1415">1415</a></span>
-<span class="normal"><a href="#__codelineno-0-1416">1416</a></span>
-<span class="normal"><a href="#__codelineno-0-1417">1417</a></span>
-<span class="normal"><a href="#__codelineno-0-1418">1418</a></span>
-<span class="normal"><a href="#__codelineno-0-1419">1419</a></span>
-<span class="normal"><a href="#__codelineno-0-1420">1420</a></span>
-<span class="normal"><a href="#__codelineno-0-1421">1421</a></span>
-<span class="normal"><a href="#__codelineno-0-1422">1422</a></span>
-<span class="normal"><a href="#__codelineno-0-1423">1423</a></span>
-<span class="normal"><a href="#__codelineno-0-1424">1424</a></span>
-<span class="normal"><a href="#__codelineno-0-1425">1425</a></span>
-<span class="normal"><a href="#__codelineno-0-1426">1426</a></span>
-<span class="normal"><a href="#__codelineno-0-1427">1427</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-1413"><a id="__codelineno-0-1413" name="__codelineno-0-1413"></a><span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-</span><span id="__span-0-1414"><a id="__codelineno-0-1414" name="__codelineno-0-1414"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Insert this model if it is new, otherwise update it by id.</span>
-</span><span id="__span-0-1415"><a id="__codelineno-0-1415" name="__codelineno-0-1415"></a>
-</span><span id="__span-0-1416"><a id="__codelineno-0-1416" name="__codelineno-0-1416"></a><span class="sd">    If ``id`` is set but the document no longer exists in the</span>
-</span><span id="__span-0-1417"><a id="__codelineno-0-1417" name="__codelineno-0-1417"></a><span class="sd">    table, it is re-inserted under the same id (TinyDB upsert</span>
-</span><span id="__span-0-1418"><a id="__codelineno-0-1418" name="__codelineno-0-1418"></a><span class="sd">    semantics) — unlike ``replace()``/``delete()``, which raise</span>
-</span><span id="__span-0-1419"><a id="__codelineno-0-1419" name="__codelineno-0-1419"></a><span class="sd">    [DocumentNotFoundError][tinydantic.DocumentNotFoundError].</span>
-</span><span id="__span-0-1420"><a id="__codelineno-0-1420" name="__codelineno-0-1420"></a>
-</span><span id="__span-0-1421"><a id="__codelineno-0-1421" name="__codelineno-0-1421"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-1422"><a id="__codelineno-0-1422" name="__codelineno-0-1422"></a><span class="sd">        This instance (with ``id`` set if it was newly inserted).</span>
-</span><span id="__span-0-1423"><a id="__codelineno-0-1423" name="__codelineno-0-1423"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-1424"><a id="__codelineno-0-1424" name="__codelineno-0-1424"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-1425"><a id="__codelineno-0-1425" name="__codelineno-0-1425"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
-</span><span id="__span-0-1426"><a id="__codelineno-0-1426" name="__codelineno-0-1426"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">upsert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_tinydb_document</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
-</span><span id="__span-0-1427"><a id="__codelineno-0-1427" name="__codelineno-0-1427"></a>    <span class="k">return</span> <span class="bp">self</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1488">1488</a></span>
+<span class="normal"><a href="#__codelineno-0-1489">1489</a></span>
+<span class="normal"><a href="#__codelineno-0-1490">1490</a></span>
+<span class="normal"><a href="#__codelineno-0-1491">1491</a></span>
+<span class="normal"><a href="#__codelineno-0-1492">1492</a></span>
+<span class="normal"><a href="#__codelineno-0-1493">1493</a></span>
+<span class="normal"><a href="#__codelineno-0-1494">1494</a></span>
+<span class="normal"><a href="#__codelineno-0-1495">1495</a></span>
+<span class="normal"><a href="#__codelineno-0-1496">1496</a></span>
+<span class="normal"><a href="#__codelineno-0-1497">1497</a></span>
+<span class="normal"><a href="#__codelineno-0-1498">1498</a></span>
+<span class="normal"><a href="#__codelineno-0-1499">1499</a></span>
+<span class="normal"><a href="#__codelineno-0-1500">1500</a></span>
+<span class="normal"><a href="#__codelineno-0-1501">1501</a></span>
+<span class="normal"><a href="#__codelineno-0-1502">1502</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-1488"><a id="__codelineno-0-1488" name="__codelineno-0-1488"></a><span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="__span-0-1489"><a id="__codelineno-0-1489" name="__codelineno-0-1489"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Insert this model if it is new, otherwise update it by id.</span>
+</span><span id="__span-0-1490"><a id="__codelineno-0-1490" name="__codelineno-0-1490"></a>
+</span><span id="__span-0-1491"><a id="__codelineno-0-1491" name="__codelineno-0-1491"></a><span class="sd">    If ``id`` is set but the document no longer exists in the</span>
+</span><span id="__span-0-1492"><a id="__codelineno-0-1492" name="__codelineno-0-1492"></a><span class="sd">    table, it is re-inserted under the same id (TinyDB upsert</span>
+</span><span id="__span-0-1493"><a id="__codelineno-0-1493" name="__codelineno-0-1493"></a><span class="sd">    semantics) — unlike ``replace()``/``delete()``, which raise</span>
+</span><span id="__span-0-1494"><a id="__codelineno-0-1494" name="__codelineno-0-1494"></a><span class="sd">    [DocumentNotFoundError][tinydantic.DocumentNotFoundError].</span>
+</span><span id="__span-0-1495"><a id="__codelineno-0-1495" name="__codelineno-0-1495"></a>
+</span><span id="__span-0-1496"><a id="__codelineno-0-1496" name="__codelineno-0-1496"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-1497"><a id="__codelineno-0-1497" name="__codelineno-0-1497"></a><span class="sd">        This instance (with ``id`` set if it was newly inserted).</span>
+</span><span id="__span-0-1498"><a id="__codelineno-0-1498" name="__codelineno-0-1498"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-1499"><a id="__codelineno-0-1499" name="__codelineno-0-1499"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-1500"><a id="__codelineno-0-1500" name="__codelineno-0-1500"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
+</span><span id="__span-0-1501"><a id="__codelineno-0-1501" name="__codelineno-0-1501"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">upsert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_tinydb_document</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-0-1502"><a id="__codelineno-0-1502" name="__codelineno-0-1502"></a>    <span class="k">return</span> <span class="bp">self</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>

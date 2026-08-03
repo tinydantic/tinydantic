@@ -2110,6 +2110,7 @@
 <ul>
 <li><strong>Run a single process.</strong> Do not put a TinyDB file behind multiple worker processes (for example <code>uvicorn --workers 4</code> or several Gunicorn workers). Each process holds its own view of the file and they will clobber one another. Use one process — scale with the threadpool, not with processes.</li>
 <li><strong>Serialize writes.</strong> Route writes through one place. FastAPI's threadpool can run several <code>def</code> handlers at once, so guard write paths with a lock (or funnel them through a single worker) if concurrent writes are possible.</li>
+<li><strong>Prefer <a class="autorefs autorefs-internal" title="            patch" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.patch">patch()</a> for partial updates.</strong> A lock serializes the writes themselves, but not the stale reads handlers hold between load and save — a whole-document <code>save()</code> from a stale copy silently overwrites other fields. <code>book.patch(**payload.model_dump(exclude_unset=True))</code> writes only the named fields, so concurrent changes to unrelated fields survive.</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
