@@ -199,6 +199,36 @@ Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=False)
 
 ```
 
+Mutate-then-save is guarded at both ends. Assignment itself is validated (`validate_assignment` is on for every tinydantic model), so the mutate step refuses an invalid value at the offending line:
+
+```pycon
+>>> dune.year = "not a year"
+Traceback (most recent call last):
+  ...
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Book
+  ...
+
+```
+
+And `save()` re-validates the full serialized document before writing — the same check the next read performs — so corruption that assignment validation cannot see (appending a bad value into a list field, mutating a nested model in place) is refused at the write boundary instead of poisoning the table:
+
+```pycon
+>>> object.__setattr__(
+...     dune, "year", "still not a year"
+... )  # bypasses assignment validation
+>>> dune.save()
+Traceback (most recent call last):
+  ...
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Book
+  ...
+>>> dune.year = 1965  # repair the instance; storage was never touched
+>>> Book.get_by_id(1).year
+1965
+
+```
+
+Every whole-model write path (`insert()`, `save()`, `replace()`, `upsert()`) shares this boundary check. Models can opt out with the `validate_writes=False` class kwarg — the escape hatch for performance-critical bulk writes; see [Configuration](configuration.md).
+
 ### `replace`
 
 [replace()][tinydantic.TinydanticModel.replace] overwrites the entire stored document with the instance's current state — fields absent from the model are removed. It returns nothing and requires an existing document.
@@ -302,9 +332,34 @@ pydantic_core._pydantic_core.ValidationError: 1 validation error for datetime
 
 ```
 
+Validation goes further than single values: each matched document's _merged result_ — the stored body plus your new fields, or a transform callable's output — is validated as a whole document (with the real document id visible to `model_validator(mode="after")` hooks) before anything is written. A batch is all-or-nothing: if any matched document's merge fails validation, nothing is written. So cross-field invariants hold through partial updates, and a transform that writes junk is refused too:
+
+```pycon
+>>> def corrupt(doc):
+...     doc["year"] = "junk"
+>>> Book.update(corrupt, Book.title == "Dune")
+Traceback (most recent call last):
+  ...
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Book
+  ...
+
+```
+
+Mapping keys that are not model fields are rejected — they would bypass validation entirely — with a per-call escape hatch for databases shared with other tools or schema-evolution keys this model does not know yet:
+
+```pycon
+>>> Book.update({"shelf": "A3"}, Book.title == "Dune")
+Traceback (most recent call last):
+  ...
+tinydantic._errors.UnknownUpdateFieldError: update() mapping for 'Book' ...
+>>> Book.update({"shelf": "A3"}, Book.title == "Dune", extra_keys="allow")
+[1]
+
+```
+
 > [!NOTE]
 >
-> Only keys that name model fields are validated and serialized; other keys pass through to storage unchanged, as do transform callables (like the `bump_year` example above) — what a transform writes is up to you.
+> Keys written via `extra_keys="allow"` are stored **unvalidated** (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the `validate_writes=False` class kwarg; per-field value validation (the `datetime` example above) always applies to mappings.
 
 ## Delete
 

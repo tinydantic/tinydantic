@@ -8,8 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **BREAKING:** Attribute assignment is now validated (`validate_assignment` in the base `model_config`): assigning a value that fails validation raises `pydantic.ValidationError` immediately, and `model_validator(mode="after")` invariants re-run on every assignment. Subclasses can opt out with `model_config = ConfigDict(validate_assignment=False)`.
+- **BREAKING:** Whole-model writes (`insert()`, `insert_multiple()`, `save()`, `replace()`, `upsert()`) validate their serialized payload before it reaches storage and raise `pydantic.ValidationError` for documents that would fail on their next read — closing the paths assignment validation cannot see (in-place container mutation, nested-model mutation, `object.__setattr__`). Opt out per model with the new `validate_writes=False` class kwarg.
+- **BREAKING:** `update()` and `update_multiple()` validate each matched document's merged result (stored body plus new fields, or a transform callable's output) with the real document id visible to validators, before anything is written; a validation failure anywhere aborts the whole batch with nothing written. Transform callables can no longer write schema-invalid data by default; `validate_writes=False` restores the previous behavior. All mapping/transform updates now run through the atomic write cycle previously reserved for id-condition writes.
+- **BREAKING:** Update mappings containing keys that are not model fields raise the new `UnknownUpdateFieldError` instead of writing them to storage unvalidated. Pass `extra_keys="allow"` to `update()`/`update_multiple()` to write them anyway (for databases shared with other tools or schema-evolution keys the model does not know yet).
 - **BREAKING:** `YAMLStorage.write` now serializes with `yaml.safe_dump` (matching the `yaml.safe_load` used by reads) and raises `yaml.representer.RepresenterError` for values the safe dumper cannot represent — before the file is touched. Previously, full-Dumper `yaml.dump` wrote arbitrary Python objects as `!!python/object` tags that the storage's own read then refused to load, leaving the database file unreadable until hand-edited.
+- `model_validator(mode="after")` hooks now observe the document's real `id` during reads (previously always `None`), and a stray legacy `id` key inside a stored document body is always masked by the actual `doc_id`.
 - The code license is now MIT only (previously dual-licensed under Apache-2.0 OR MIT). The relicense is not retroactive: released versions up to and including 0.4.0 remain available under Apache-2.0 OR MIT. Documentation and images remain CC-BY-4.0.
+
+### Added
+
+- `validate_writes` configuration key (class kwarg, inherited like `database=`/`table_name=`): controls write-boundary re-validation; defaults to `True`.
+- `UnknownUpdateFieldError` — raised for unknown keys in update mappings; a `TinydanticUserError` naming the offending keys and the escape hatch.
 
 ## [0.4.0] - 2026-07-10
 
