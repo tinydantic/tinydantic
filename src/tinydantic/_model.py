@@ -22,6 +22,7 @@ from tinydb.queries import Query, where
 from tinydb.table import Document, Table
 
 from tinydantic._config import (
+    _CONFIG_KEYS,
     CONFIG_ATTR,
     TinydanticConfig,
     check_config_ambiguity,
@@ -284,6 +285,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         *,
         database: TinyDB | None = None,
         table_name: str | None = None,
+        validate_writes: bool | None = None,
+        shadowed_fields: tuple[str, ...] | None = None,
     ) -> None:
         """Bind or rebind tinydantic config after class definition.
 
@@ -298,9 +301,11 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         User.bind(database=TinyDB("db.json"))
         ```
 
-        Only the keys passed are updated; other keys keep their
-        current (possibly inherited) values. Binding a subclass never
-        affects its parents.
+        Every [TinydanticConfig][tinydantic.TinydanticConfig] key
+        can be bound late. Only the keys passed are updated; other
+        keys keep their current (possibly inherited) values.
+        Binding a subclass never affects its parents. The inverse
+        is [unbind][tinydantic.TinydanticModel.unbind].
         """
         config = cast(
             "TinydanticConfig",
@@ -310,6 +315,49 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             config["database"] = database
         if table_name is not None:
             config["table_name"] = table_name
+        if validate_writes is not None:
+            config["validate_writes"] = validate_writes
+        if shadowed_fields is not None:
+            config["shadowed_fields"] = shadowed_fields
+        setattr(cls, CONFIG_ATTR, config)
+
+    @classmethod
+    def unbind(cls, *keys: str) -> None:
+        """Remove late-bound tinydantic config from this class.
+
+        The inverse of [bind][tinydantic.TinydanticModel.bind],
+        for test fixtures that attach a database in setup and must
+        detach it in teardown. With no arguments, every config key
+        this class set is removed; with key names, only those.
+        Only this class's own settings are removed — values
+        inherited from base classes resurface, mirroring bind()'s
+        rule that binding a subclass never affects its parents.
+        Unbinding a key this class never set is a no-op.
+
+        Args:
+            keys: Config key names to remove (see
+                [TinydanticConfig][tinydantic.TinydanticConfig]).
+                Empty means all of them.
+
+        Raises:
+            ValueError: If a key name is not a tinydantic config
+                key.
+        """
+        unknown = [key for key in keys if key not in _CONFIG_KEYS]
+        if unknown:
+            names = ", ".join(repr(key) for key in sorted(unknown))
+            valid = ", ".join(repr(key) for key in _CONFIG_KEYS)
+            msg = (
+                f"unbind() got unknown config key(s) {names}; "
+                f"valid keys are {valid}"
+            )
+            raise ValueError(msg)
+        config = cast(
+            "TinydanticConfig",
+            dict(cls.__dict__.get(CONFIG_ATTR, {})),
+        )
+        for key in keys or _CONFIG_KEYS:
+            config.pop(key, None)  # type: ignore[misc]
         setattr(cls, CONFIG_ATTR, config)
 
     @classmethod

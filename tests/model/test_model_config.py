@@ -259,3 +259,134 @@ class TestValidateWrites:
             """Test child model."""
 
         assert get_config_value(Child, "validate_writes", default=True) is True
+
+
+class TestUnbind:
+    """Late unbinding via Model.unbind()."""
+
+    def test_unbind_database_detaches(self, memory_db: TinyDB):
+        """unbind('database') detaches; get_database() raises."""
+
+        class Late(TinydanticModel):
+            """Test model bound and unbound."""
+
+            name: str
+
+        Late.bind(database=memory_db)
+        assert Late.get_database() is memory_db
+        Late.unbind("database")
+        with pytest.raises(DatabaseNotBoundError):
+            Late.get_database()
+
+    def test_unbind_table_name_restores_derived(self, memory_db: TinyDB):
+        """unbind('table_name') falls back to the snake_case name."""
+
+        class AdminUser(
+            TinydanticModel,
+            database=memory_db,
+            table_name="custom",
+        ):
+            """Test model with a custom table name."""
+
+            name: str
+
+        assert AdminUser.get_table().name == "custom"
+        AdminUser.unbind("table_name")
+        assert AdminUser.get_table().name == "admin_user"
+
+    def test_unbind_all_keys(self, memory_db: TinyDB):
+        """unbind() with no arguments clears every own key."""
+
+        class Late(TinydanticModel):
+            """Test model fully reset."""
+
+            name: str
+
+        Late.bind(database=memory_db, table_name="late_docs")
+        Late.unbind()
+        with pytest.raises(DatabaseNotBoundError):
+            Late.get_database()
+        assert get_config_value(Late, "table_name") is None
+
+    def test_inherited_config_resurfaces(self, memory_db: TinyDB):
+        """Unbinding an override re-exposes the inherited value."""
+
+        class Base(TinydanticModel, database=memory_db):
+            """Bound base model."""
+
+            name: str
+
+        other_db = TinyDB(storage=MemoryStorage)
+
+        class Child(Base):
+            """Subclass overriding then unbinding the database."""
+
+        Child.bind(database=other_db)
+        assert Child.get_database() is other_db
+        Child.unbind("database")
+        assert Child.get_database() is memory_db
+
+    def test_unbind_subclass_leaves_parent_bound(self, memory_db: TinyDB):
+        """unbind() on a subclass never affects the parent."""
+
+        class Parent(TinydanticModel, database=memory_db):
+            """Bound parent."""
+
+            name: str
+
+        class Sub(Parent):
+            """Subclass that unbinds everything."""
+
+        Sub.unbind()
+        assert Parent.get_database() is memory_db
+
+    def test_unknown_key_raises(self, memory_db: TinyDB):
+        """An unknown key name raises ValueError naming valid keys."""
+
+        class Late(TinydanticModel, database=memory_db):
+            """Test model."""
+
+            name: str
+
+        with pytest.raises(
+            ValueError,
+            match=r"'not_a_config_key'.*'database'",
+        ):
+            Late.unbind("not_a_config_key")
+
+    def test_unbind_never_set_key_is_noop(self, memory_db: TinyDB):
+        """Unbinding a key the class never set changes nothing."""
+
+        class Late(TinydanticModel, database=memory_db):
+            """Test model."""
+
+            name: str
+
+        Late.unbind("table_name")
+        assert Late.get_database() is memory_db
+
+
+class TestBindFullCoverage:
+    """bind() covers every config key."""
+
+    def test_bind_validate_writes(self, memory_db: TinyDB):
+        """bind(validate_writes=False) is stored and resolved."""
+
+        class Late(TinydanticModel, database=memory_db):
+            """Test model."""
+
+            name: str
+
+        Late.bind(validate_writes=False)
+        assert get_config_value(Late, "validate_writes", default=True) is False
+
+    def test_bind_shadowed_fields(self, memory_db: TinyDB):
+        """bind(shadowed_fields=...) is stored and resolved."""
+
+        class Late(TinydanticModel, database=memory_db):
+            """Test model."""
+
+            name: str
+
+        Late.bind(shadowed_fields=("search",))
+        assert get_config_value(Late, "shadowed_fields") == ("search",)
