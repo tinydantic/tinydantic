@@ -100,12 +100,28 @@ class YAMLStorage(Storage):
         return yaml.safe_load(self._handle)
 
     def write(self, data: dict[str, dict[str, Any]]) -> None:
-        """Write data to storage."""
+        """Write data to storage.
+
+        Serializes with ``yaml.safe_dump`` to mirror the
+        ``yaml.safe_load`` used by ``read``: anything this method
+        writes, ``read`` can load back. The full-Dumper
+        ``yaml.dump`` would instead serialize arbitrary Python
+        objects as ``!!python/object`` tags that ``read`` refuses
+        to load — bricking the database file until hand-edited.
+
+        Raises:
+            yaml.representer.RepresenterError: If ``data`` contains
+                a value the safe dumper cannot represent. Raised
+                before the file is touched, so the stored data
+                stays intact and readable.
+        """
         # Move the cursor to the beginning of the file just in case
         self._handle.seek(0)
 
-        # Serialize the database state using the user-provided arguments
-        serialized = yaml.dump(data, **self.kwargs)
+        # Serialize the database state using the user-provided
+        # arguments, refusing values that would not survive the
+        # safe_load read (see the docstring).
+        serialized = yaml.safe_dump(data, **self.kwargs)
 
         # Write the serialized data to the file
         try:
