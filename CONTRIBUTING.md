@@ -2,8 +2,6 @@
 
 Thanks for your interest in contributing to `tinydantic`!
 
-If you want to see how this project compares to [recommended community standards](https://opensource.guide/), you can check out the `tinydantic` [Community Standards](https://github.com/tinydantic/tinydantic/community) page.
-
 <!-- toc-start -->
 
 ## Table of Contents
