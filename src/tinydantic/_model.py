@@ -303,13 +303,15 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     def from_tinydb_document(cls, document: Mapping) -> Self:
         """Validate a TinyDB document into a model instance.
 
-        Runs ``document`` through pydantic validation, then maps
-        TinyDB's ``doc_id`` onto the model's ``id`` field: when
+        Maps TinyDB's ``doc_id`` onto the model's ``id`` field: when
         ``document`` is a [Document][tinydb.table.Document] (as
         returned by TinyDB reads), its
-        [doc_id][tinydb.table.Document.doc_id] becomes the instance
-        ``id``. A plain mapping carries no ``doc_id``, so ``id`` keeps
-        its default of ``None``. This is the inverse of
+        [doc_id][tinydb.table.Document.doc_id] joins the validation
+        payload as ``id``, so ``model_validator(mode="after")``
+        hooks observe the real id, and a stray ``id`` key in a
+        stored body is always masked by the document's actual
+        ``doc_id``. A plain mapping carries no ``doc_id``, so ``id``
+        keeps its default of ``None``. This is the inverse of
         [to_tinydb_document][tinydantic.TinydanticModel.to_tinydb_document],
         which maps ``id`` back to ``doc_id`` and never stores it in the
         document body.
@@ -321,10 +323,11 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             A validated model instance, with ``id`` set from ``doc_id``
             when ``document`` carries one.
         """
-        instance = cls.model_validate(document)
         if isinstance(document, Document):
-            instance.id = document.doc_id
-        return instance
+            return cls.model_validate(
+                {**document, "id": document.doc_id},
+            )
+        return cls.model_validate(document)
 
     @classmethod
     def insert_multiple(cls, documents: Iterable[Self]) -> list[Self]:
