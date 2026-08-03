@@ -18,6 +18,7 @@ from tinydantic import (
     DatabaseNotBoundError,
     TinydanticModel,
 )
+from tinydantic._config import get_config_value
 
 
 @pytest.fixture
@@ -194,3 +195,67 @@ def test_top_level_error_exports():
     assert issubclass(td.AmbiguousConfigError, td.TinydanticUserError)
     assert issubclass(td.DocumentNotFoundError, td.TinydanticError)
     assert issubclass(td.DocumentIDRequiredError, td.TinydanticError)
+
+
+class TestValidateWrites:
+    """The validate_writes configuration key."""
+
+    def test_defaults_to_true(self, memory_db: TinyDB):
+        """validate_writes resolves True when never set."""
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model."""
+
+            name: str
+
+        assert get_config_value(User, "validate_writes", default=True) is True
+
+    def test_class_kwarg_false(self, memory_db: TinyDB):
+        """validate_writes=False is captured from class kwargs."""
+
+        class User(
+            TinydanticModel,
+            database=memory_db,
+            validate_writes=False,
+        ):
+            """Test model."""
+
+            name: str
+
+        assert get_config_value(User, "validate_writes", default=True) is False
+
+    def test_inherited_via_mro(self, memory_db: TinyDB):
+        """Subclasses inherit validate_writes via the MRO walk."""
+
+        class Base(
+            TinydanticModel,
+            database=memory_db,
+            validate_writes=False,
+        ):
+            """Test base model."""
+
+            name: str
+
+        class Child(Base):
+            """Test child model."""
+
+        assert (
+            get_config_value(Child, "validate_writes", default=True) is False
+        )
+
+    def test_subclass_can_reenable(self, memory_db: TinyDB):
+        """A subclass can turn validation back on."""
+
+        class Base(
+            TinydanticModel,
+            database=memory_db,
+            validate_writes=False,
+        ):
+            """Test base model."""
+
+            name: str
+
+        class Child(Base, validate_writes=True):
+            """Test child model."""
+
+        assert get_config_value(Child, "validate_writes", default=True) is True

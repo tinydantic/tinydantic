@@ -198,8 +198,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
     def __init_subclass__(
         cls,
+        *,
         database: TinyDB | None = None,
         table_name: str | None = None,
+        validate_writes: bool | None = None,
         **kwargs: Any,
     ) -> None:
         """Capture tinydantic class keywords.
@@ -218,6 +220,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             config["database"] = database
         if table_name is not None:
             config["table_name"] = table_name
+        if validate_writes is not None:
+            config["validate_writes"] = validate_writes
         setattr(cls, CONFIG_ATTR, config)
 
     @classmethod

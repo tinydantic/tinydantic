@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 # Name of the per-class attribute holding explicitly-set config.
 CONFIG_ATTR = "__tinydantic_config__"
 
-_CONFIG_KEYS = ("database", "table_name")
+_CONFIG_KEYS = ("database", "table_name", "validate_writes")
 
 
 class TinydanticConfig(TypedDict, total=False):
@@ -63,6 +63,19 @@ class TinydanticConfig(TypedDict, total=False):
     When unset (or falsy), the table name is derived from the model
     class name converted to snake_case — for example, a model class
     named ``AdminUser`` uses the table ``admin_user``.
+    """
+
+    validate_writes: bool
+    """Whether write paths re-validate full documents (default True).
+
+    When True (the default), every write refuses to persist a
+    document body that would fail validation on its next read:
+    whole-model writes validate their serialized payload, and
+    ``update()``/``update_multiple()`` validate each matched
+    document's merged result before anything is written. Set False
+    to skip this re-validation — the escape hatch for
+    performance-critical bulk writes, where per-document
+    validation cost matters more than the guarantee.
     """
 
 
