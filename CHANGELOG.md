@@ -26,7 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - `patch()` — instance-level partial update: validates the given fields, writes only those fields to the stored document by id (atomic, merged-result-validated like `update()`), and syncs the instance after the write succeeds. Closes the lost-update trap of whole-document mutate-then-`save()` and the instance/storage drift of table-level `update(doc_ids=...)`.
-
+- `unbind()` — the inverse of `bind()`: detach a late-bound database, reset `table_name` to its derived default, or clear any other config key this class set (no arguments clears them all). Values inherited from base classes resurface. Built for the test-fixture setup/teardown pattern.
+- `bind()` now covers every configuration key: `validate_writes=` and `shadowed_fields=` join `database=` and `table_name=`.
 - `shadowed_fields` configuration key and `ShadowedFieldError` — loud, definition-time detection of fields that would break the `Model.field` query shorthand, with an explicit per-class opt-out.
 
 - `SelectorError` and `DocumentAlreadyExistsError` — completing the curated exception surface: no raw TinyDB or bare built-in exception leaks through tinydantic's public API.
