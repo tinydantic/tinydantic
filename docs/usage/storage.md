@@ -67,7 +67,7 @@ A file-backed TinyDB holds an open file handle. Call [close()][tinydb.database.T
 
 ## YAML files
 
-`tinydantic` ships a [YAMLStorage][tinydantic.tinydb.storages.YAMLStorage] for human-editable, diff-friendly data. Import it from `tinydantic.tinydb.storages` and pass the class as `storage=`:
+`tinydantic` ships a [YAMLStorage][tinydantic.tinydb.storages.YAMLStorage] for human-editable, diff-friendly data. It needs the `yaml` extra — `pip install tinydantic[yaml]` — which pulls in [PyYAML](https://pyyaml.org/) (plain `tinydantic` installs stay YAML-free; constructing `YAMLStorage` without the extra raises an `ImportError` naming this install command). Import it from `tinydantic.tinydb.storages` and pass the class as `storage=`:
 
 ```pycon
 >>> from tinydantic.tinydb.storages import YAMLStorage

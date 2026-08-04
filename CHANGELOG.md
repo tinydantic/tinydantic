@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **BREAKING:** `PyYAML` is no longer a default dependency — `YAMLStorage` now lives behind the `yaml` extra. Existing YAMLStorage users: `pip install tinydantic[yaml]` after upgrading (constructing `YAMLStorage` without it raises an `ImportError` naming that exact command; plain `import tinydantic` never needs PyYAML).
+- **BREAKING:** the `pydantic[email]` extra was dropped from the dependencies — nothing in tinydantic uses it. To use `EmailStr` fields in your models, install `pydantic[email]` yourself. The quickstart example now demonstrates an `age: int` field instead.
+
 - **BREAKING:** `before_save` and `after_load` are now reserved attribute names on tinydantic models (reserved words #27 and #28 under the flat-namespace policy). A model with a field of either name raises `ShadowedFieldError` at class definition; opt out with `shadowed_fields=` or rename the field.
 
 - **BREAKING:** `patch` is now a reserved attribute name on tinydantic models — the first method added under the flat-namespace policy. A model with a field named `patch` raises `ShadowedFieldError` at class definition; opt out with `shadowed_fields=("patch",)` or rename the field.

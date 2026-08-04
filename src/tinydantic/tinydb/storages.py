@@ -14,9 +14,15 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from tinydb.storages import Storage, touch
+
+try:
+    import yaml
+except ImportError:  # pragma: no cover - exercised via attribute patch
+    # PyYAML ships in the optional `yaml` extra; YAMLStorage's
+    # __init__ raises a helpful ImportError when it is missing so
+    # `import tinydantic.tinydb.storages` itself never fails.
+    yaml = None  # type: ignore[assignment]
 
 
 # This YAMLStorage class is adapted from TinyDB's JSONStorage class:
@@ -49,7 +55,18 @@ class YAMLStorage(Storage):
             access_mode: Mode in which the file is opened (`r`, `r+`).
             **kwargs: Additional keyword arguments passed to
                 `yaml.dump()` when writing data.
+
+        Raises:
+            ImportError: If PyYAML is not installed — it ships in
+                the optional extra: ``pip install tinydantic[yaml]``.
         """
+        if yaml is None:
+            msg = (
+                "YAMLStorage requires PyYAML, which is not "
+                "installed. Install the extra: "
+                "pip install tinydantic[yaml]"
+            )
+            raise ImportError(msg)
         super().__init__()
 
         self._mode = access_mode
