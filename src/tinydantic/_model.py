@@ -1106,11 +1106,21 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         a validation failure on any matched document means nothing
         is written.
 
+        Exactly one selector is required: a query condition or
+        explicit ``doc_ids``. TinyDB's own ``update()`` treats a
+        bare call as "update every document" and silently prefers
+        ``doc_ids`` when both are given; tinydantic raises
+        [SelectorError][tinydantic.SelectorError] in both cases —
+        updating the whole table must be spelled
+        [update_all][tinydantic.TinydanticModel.update_all],
+        mirroring the
+        [remove][tinydantic.TinydanticModel.remove]/
+        [truncate][tinydantic.TinydanticModel.truncate] split.
+
         Conditions on ``Model.id`` are supported (bare or composed
         with field conditions), evaluated against
         [Document][tinydb.table.Document] wrappers so they can
-        read ``doc_id``. When ``doc_ids`` is passed explicitly,
-        TinyDB's precedence applies and ``cond`` is not evaluated.
+        read ``doc_id``.
 
         As the deliberate table-level loose path, ``update()``
         does NOT enforce [Unique][tinydantic.Unique] field
@@ -1133,6 +1143,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             The ids of all updated documents.
 
         Raises:
+            SelectorError: If neither ``cond`` nor ``doc_ids`` is
+                provided (use
+                [update_all][tinydantic.TinydanticModel.update_all]
+                to update every document), or both are.
             DocumentIDUpdateError: If a mapping contains an ``id``
                 key.
             DocumentNotFoundError: If an explicit ``doc_ids`` id
@@ -1144,6 +1158,16 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 validation against its field's type, or a matched
                 document's merged result fails model validation.
         """
+        if cond is not None and doc_ids is not None:
+            msg = "Provide at most one of cond or doc_ids"
+            raise SelectorError(msg)
+        if cond is None and doc_ids is None:
+            msg = (
+                "update() needs a selector: pass a query condition "
+                "or doc_ids=. To update every document, use "
+                "update_all()."
+            )
+            raise SelectorError(msg)
         if not callable(fields):
             fields = cls._serialize_update_fields(
                 fields,
@@ -1176,19 +1200,20 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 # _apply_and_validate preserves that contract,
                 # aborting before the storage write.
                 targets = list(_doc_ids)
-            elif _cond is not None:
+            else:
+                # The selector checks above guarantee cond is set
+                # when doc_ids is not.
+                matches = cast("QueryLike", _cond)
                 targets = [
                     target_id
                     for target_id in list(data)
-                    if _cond(
+                    if matches(
                         table.document_class(
                             data[target_id],
                             target_id,
                         ),
                     )
                 ]
-            else:
-                targets = list(data)
             for target_id in targets:
                 cls._apply_and_validate(
                     data,
@@ -1199,6 +1224,80 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             return targets
 
         return cls._run_write_cycle(apply_update)
+
+    @classmethod
+    def update_all(
+        cls,
+        fields: Mapping | Callable[[Mapping], None],
+        *,
+        extra_keys: Literal["reject", "allow"] = "reject",
+    ) -> list[int]:
+        """Update every document in the table.
+
+        The explicit whole-table counterpart to
+        [update][tinydantic.TinydanticModel.update], which requires
+        a selector — the same split
+        [remove][tinydantic.TinydanticModel.remove] and
+        [truncate][tinydantic.TinydanticModel.truncate] make for
+        deletion. A distinct verb keeps mass writes greppable and
+        impossible to reach by accidentally dropping a condition.
+
+        Fields mappings and transform callables get exactly the
+        treatment [update][tinydantic.TinydanticModel.update] gives
+        them, including merged-result validation (unless the model
+        opts out via ``validate_writes=False``) as one atomic
+        cycle: a validation failure on any document means nothing
+        is written. Like ``update()``, this loose path does NOT
+        enforce [Unique][tinydantic.Unique] field markers.
+
+        Args:
+            fields: A mapping of new field values, or a transform
+                callable applied to each document body.
+            extra_keys: ``"reject"`` (default) raises for mapping
+                keys that are not model fields; ``"allow"`` writes
+                them through unchanged — see
+                [update][tinydantic.TinydanticModel.update].
+
+        Returns:
+            The ids of all documents in the table.
+
+        Raises:
+            DocumentIDUpdateError: If a mapping contains an ``id``
+                key.
+            UnknownUpdateFieldError: If a mapping contains keys
+                that are not model fields and ``extra_keys`` is
+                ``"reject"`` (the default).
+            pydantic.ValidationError: If a mapping value fails
+                validation against its field's type, or any
+                document's merged result fails model validation.
+        """
+        if not callable(fields):
+            fields = cls._serialize_update_fields(
+                fields,
+                extra_keys=extra_keys,
+            )
+        validate = get_config_value(cls, "validate_writes", default=True)
+        if not validate:
+            return cls.get_table().update(
+                # See replace() for why this cast is needed.
+                # TODO @cdwilson: remove this cast once the
+                # annotation is fixed in TinyDB.
+                cast("Callable[[Mapping], None]", fields),
+            )
+        _fields = fields
+
+        def apply_update_all(data: dict[int, Any]) -> list[int]:
+            """Apply the fields to every document."""
+            for target_id in list(data):
+                cls._apply_and_validate(
+                    data,
+                    target_id,
+                    _fields,
+                    validate=validate,
+                )
+            return list(data)
+
+        return cls._run_write_cycle(apply_update_all)
 
     @classmethod
     def update_multiple(

@@ -19,6 +19,7 @@ from tests.model.models import UserBase
 from tinydantic import (
     DocumentIDConditionError,
     DocumentIDUpdateError,
+    SelectorError,
     TinydanticError,
     q,
 )
@@ -334,17 +335,18 @@ class TestIdConditionWrites:
         assert updated == []
         assert users.count() == 3
 
-    def test_update_doc_ids_wins_over_cond(
+    def test_update_id_cond_with_doc_ids_raises(
         self,
         users: type[UserBase],
     ) -> None:
-        """Explicit doc_ids= keeps TinyDB precedence (cond unused)."""
-        result = users.update(
-            {"age": 1},
-            q(users.id) == 2,
-            doc_ids=[3],
-        )
-        assert result == [3]
+        """Id conditions and doc_ids= are conflicting selectors."""
+        with pytest.raises(SelectorError, match="one of"):
+            users.update(
+                {"age": 1},
+                q(users.id) == 2,
+                doc_ids=[3],
+            )
+        assert [user.age for user in users.all()] != [1, 1, 1]
 
     def test_remove_by_id_condition(self, users: type[UserBase]) -> None:
         """remove() resolves id conditions to doc_ids."""
