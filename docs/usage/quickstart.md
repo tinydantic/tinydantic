@@ -18,28 +18,27 @@ Every `tinydantic` model stores its documents in a [TinyDB](https://tinydb.readt
 A document model is a subclass of [TinydanticModel][tinydantic.TinydanticModel]. Pass the `database` and `table_name` as class keyword arguments, then declare fields with ordinary type annotations.
 
 ```pycon
->>> from pydantic import EmailStr
 >>> from tinydantic import TinydanticModel
 >>> class User(TinydanticModel, database=db, table_name="users"):
 ...     name: str
-...     email: EmailStr
+...     age: int
 
 ```
 
 > [!TIP]
 >
-> Because `User` is a subclass of [TinydanticModel][tinydantic.TinydanticModel] (itself a subclass of [pydantic.BaseModel][]), it is a full Pydantic model. Everything you know about Pydantic — validators, computed fields, JSON schema — works here.
+> Because `User` is a subclass of [TinydanticModel][tinydantic.TinydanticModel] (itself a subclass of [pydantic.BaseModel][]), it is a full Pydantic model. Everything you know about Pydantic — validators, computed fields, JSON schema, rich types — works here. In a real app an e-mail field, for example, should be [`EmailStr`](https://docs.pydantic.dev/latest/api/networks/#pydantic.networks.EmailStr) (install `pydantic[email]` to use it).
 
 ## Insert a document
 
 Create an instance and call [insert()][tinydantic.TinydanticModel.insert]. Before insertion the model's `id` is `None`; afterwards it carries the document id TinyDB assigned.
 
 ```pycon
->>> alice = User(name="Alice", email="alice@example.com")
+>>> alice = User(name="Alice", age=37)
 >>> alice
-User(id=None, name='Alice', email='alice@example.com')
+User(id=None, name='Alice', age=37)
 >>> alice.insert()
-User(id=1, name='Alice', email='alice@example.com')
+User(id=1, name='Alice', age=37)
 
 ```
 
@@ -49,7 +48,7 @@ Query the table by building a condition from a model field. [get()][tinydantic.T
 
 ```pycon
 >>> User.get(User.name == "Alice")
-User(id=1, name='Alice', email='alice@example.com')
+User(id=1, name='Alice', age=37)
 
 ```
 
@@ -58,11 +57,11 @@ User(id=1, name='Alice', email='alice@example.com')
 Mutate the instance and call [save()][tinydantic.TinydanticModel.save]. Because the model already has an `id`, `save()` updates the stored document in place.
 
 ```pycon
->>> alice.email = "alice@work.example.com"
+>>> alice.age = 38
 >>> alice.save()
-User(id=1, name='Alice', email='alice@work.example.com')
+User(id=1, name='Alice', age=38)
 >>> User.get(User.name == "Alice")
-User(id=1, name='Alice', email='alice@work.example.com')
+User(id=1, name='Alice', age=38)
 
 ```
 
@@ -83,11 +82,11 @@ Because `tinydantic` is built on top of TinyDB, you can always drop down to Tiny
 
 ```pycon
 >>> users_table = db.table("users")
->>> users_table.insert({"name": "Bob", "email": "bob@example.com"})
+>>> users_table.insert({"name": "Bob", "age": 25})
 2
 >>> from tinydb import where
 >>> users_table.get(where("name") == "Bob")
-{'name': 'Bob', 'email': 'bob@example.com'}
+{'name': 'Bob', 'age': 25}
 
 ```
 
@@ -95,7 +94,7 @@ Notice that TinyDB does not restrict what you insert, and the raw document comes
 
 ## Pydantic validation in action
 
-So what happens if an invalid document somehow ends up in the database? Let's insert one directly with TinyDB — bypassing the model — that is missing the `email` field the `User` model requires:
+So what happens if an invalid document somehow ends up in the database? Let's insert one directly with TinyDB — bypassing the model — that is missing the `age` field the `User` model requires:
 
 ```pycon
 >>> users_table.insert({"name": "Carol"})
@@ -104,7 +103,7 @@ So what happens if an invalid document somehow ends up in the database? Let's in
 Traceback (most recent call last):
   ...
 pydantic_core._pydantic_core.ValidationError: 1 validation error for User
-email
+age
   Field required [type=missing, input_value={'name': 'Carol'}, input_type=Document]
 
 ```
