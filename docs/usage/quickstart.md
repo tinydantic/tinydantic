@@ -27,7 +27,7 @@ A document model is a subclass of [TinydanticModel][tinydantic.TinydanticModel].
 
 > [!TIP]
 >
-> Because `User` is a subclass of [TinydanticModel][tinydantic.TinydanticModel] (itself a subclass of [pydantic.BaseModel][]), it is a full Pydantic model. Everything you know about Pydantic — validators, computed fields, JSON schema, rich types — works here. In a real app an e-mail field, for example, should be [`EmailStr`](https://docs.pydantic.dev/latest/api/networks/#pydantic.networks.EmailStr) (install `pydantic[email]` to use it).
+> Because `User` is a subclass of [TinydanticModel][tinydantic.TinydanticModel] (itself a subclass of [pydantic.BaseModel][]), it is a full Pydantic model. Everything you know about Pydantic — validators, computed fields, JSON schema, rich types — works here.
 
 ## Insert a document
 
