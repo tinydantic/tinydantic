@@ -163,6 +163,41 @@ This is the design that makes round-tripping work with _any_ TinyDB storage back
 >
 > Because storage only ever sees JSON primitives, any model that is JSON-serializable round-trips through `tinydantic` faithfully. A type Pydantic cannot serialize to JSON will raise when you try to insert it — surface it as a JSON-safe representation (or a custom serializer) instead.
 
+## Field aliases
+
+Pydantic [aliases](https://docs.pydantic.dev/latest/concepts/alias/) give a field a different external name — the classic case is a camelCase wire format for a snake_case model, often model-wide via an `alias_generator`. Aliased models work with tinydantic out of the box, under one policy: **storage keys are always Python field names; aliases exist only at your external boundary.**
+
+```pycon
+>>> from pydantic import ConfigDict
+>>> from pydantic.alias_generators import to_camel
+>>> class Profile(TinydanticModel, database=db, table_name="profiles"):
+...     model_config = ConfigDict(alias_generator=to_camel)
+...     first_name: str
+...     home_city: str
+>>> profile = Profile(firstName="Ada", homeCity="London").insert()
+>>> Profile.get_table().get(doc_id=profile.id)
+{'first_name': 'Ada', 'home_city': 'London'}
+
+```
+
+Field-name keys are what keep the [query sugar](queries.md) coherent — `Profile.first_name` builds a query on the `"first_name"` key, which is exactly what storage holds:
+
+```pycon
+>>> Profile.search(Profile.first_name == "Ada")
+[Profile(id=1, first_name='Ada', home_city='London')]
+
+```
+
+Meanwhile your wire format is untouched — serialize with `by_alias=True` as usual:
+
+```pycon
+>>> profile.model_dump(by_alias=True)
+{'id': 1, 'firstName': 'Ada', 'homeCity': 'London'}
+
+```
+
+Under the hood, tinydantic validates with `by_name=True` at its own storage boundaries (reads, write checks, and merged update results), so stored field-name keys always validate — no `validate_by_name` needed in your model config. Aliases still apply everywhere _you_ talk to the model: construction and `model_validate` follow your model's own alias rules, exactly as in plain pydantic.
+
 ## Lifecycle hooks
 
 Two overridable no-op methods mark the storage boundary. [before_save()][tinydantic.TinydanticModel.before_save] runs once at the start of every whole-model write (`insert()`, each document of `insert_multiple()`, `save()`, `replace()`, `upsert()`) — before serialization, so anything it sets is validated and persisted with the write. The classic use is audit timestamps:
