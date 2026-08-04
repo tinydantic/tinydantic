@@ -51,6 +51,7 @@ footgun
 frozensets
 getattr
 gitter
+greppable
 gunicorn
 hasattr
 hashval

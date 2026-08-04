@@ -275,6 +275,28 @@ tinydantic._errors.DocumentIDUpdateError: update() cannot set 'id'
 
 ```
 
+`update()` requires exactly one selector — a condition or explicit `doc_ids=`. TinyDB's own `update()` treats a bare call as "update every document" and silently prefers `doc_ids` when both are given; tinydantic raises [SelectorError][tinydantic.SelectorError] in both cases, so a dropped condition can never quietly rewrite the whole table:
+
+```pycon
+>>> Book.update({"in_stock": False})
+Traceback (most recent call last):
+  ...
+tinydantic._errors.SelectorError: update() needs a selector ...
+
+```
+
+### `update_all`
+
+Updating every document is spelled [update_all()][tinydantic.TinydanticModel.update_all] — the same split `remove()` and `truncate()` make for deletion. A distinct verb keeps mass writes greppable and impossible to reach by accident:
+
+```pycon
+>>> Book.update_all({"in_stock": True})
+[1, 2, 3, 4]
+
+```
+
+Mappings and transform callables get exactly the treatment `update()` gives them — per-value validation, merged-result validation, atomic all-or-nothing writes, and the same `extra_keys=` escape (all described below).
+
 ### `update_multiple`
 
 [update_multiple()][tinydantic.TinydanticModel.update_multiple] applies several `(fields, cond)` updates in one call and returns all updated ids.
@@ -359,7 +381,7 @@ tinydantic._errors.UnknownUpdateFieldError: update() mapping for 'Book' ...
 
 > [!NOTE]
 >
-> Keys written via `extra_keys="allow"` are stored **unvalidated** (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the `validate_writes=False` class kwarg; per-field value validation (the `datetime` example above) always applies to mappings. `update()` and `update_multiple()` also do **not** enforce [unique fields](models.md#unique-fields) — they are the deliberate loose path; every other write verb checks uniqueness.
+> Keys written via `extra_keys="allow"` are stored **unvalidated** (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the `validate_writes=False` class kwarg; per-field value validation (the `datetime` example above) always applies to mappings. `update()`, `update_all()`, and `update_multiple()` also do **not** enforce [unique fields](models.md#unique-fields) — they are the deliberate loose path; every other write verb checks uniqueness.
 
 ### `patch`
 
@@ -401,7 +423,7 @@ An empty `patch()` writes nothing but still verifies the document exists, so its
 
 ### Choosing a write verb
 
-Four verbs, four different contracts — in HTTP terms:
+Five verbs, five different contracts — in HTTP terms:
 
 | Verb | HTTP analogy | Writes | If the document vanished |
 | --- | --- | --- | --- |
@@ -409,6 +431,7 @@ Four verbs, four different contracts — in HTTP terms:
 | [replace()][tinydantic.TinydanticModel.replace] | PUT (strict) | the whole instance | raises `DocumentNotFoundError` |
 | [patch()][tinydantic.TinydanticModel.patch] | PATCH | only the named fields | raises `DocumentNotFoundError` |
 | [update()][tinydantic.TinydanticModel.update] | bulk UPDATE-WHERE | mapped fields of every match | not applicable (matches nothing) |
+| [update_all()][tinydantic.TinydanticModel.update_all] | bulk UPDATE, no WHERE | mapped fields of every document | not applicable |
 
 Reach for `patch()` when you mean "change these fields of this document" — it is the one verb whose write scope matches that intent, so concurrent changes to unrelated fields survive.
 

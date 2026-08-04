@@ -225,7 +225,7 @@ The contract, in full:
 
 - Enforced on create-style and instance-level writes: `insert()`, `insert_multiple()` (including duplicates inside one batch), `save()`, `replace()`, `upsert()`, and `patch()`. A write that would clash raises [UniqueConstraintError][tinydantic.UniqueConstraintError] before anything reaches storage; rewriting a document's own value is never a clash.
 - `None` values are exempt — several documents may all leave a unique field unset, mirroring SQL's `NULL` under `UNIQUE`.
-- The table-level bulk path (`update()`/`update_multiple()`) deliberately does **not** enforce uniqueness — it is the documented loose escape, like `extra_keys="allow"`.
+- The table-level bulk path (`update()`/`update_all()`/`update_multiple()`) deliberately does **not** enforce uniqueness — it is the documented loose escape, like `extra_keys="allow"`.
 - The check is check-then-write within one process. That is sound under tinydantic's documented single-process, serialized-writes scope, but it is not a database constraint: another process writing the same file concurrently can still create duplicates.
 
 ## Where next

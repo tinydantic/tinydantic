@@ -13,6 +13,7 @@ import pytest
 from pydantic import ValidationError, model_validator
 
 from tinydantic import (
+    SelectorError,
     TinydanticModel,
     UnknownUpdateFieldError,
     q,
@@ -93,6 +94,34 @@ class TestUpdate:
         assert fetched is not None
         assert fetched.age == 40
 
+    def test_update_without_selector_raises(
+        self,
+        user_class: type[UserBase],
+    ):
+        """No selector raises and points at update_all()."""
+        user = user_class(name="Alice", age=37).insert()
+        with pytest.raises(SelectorError, match="update_all"):
+            user_class.update({"age": 1})
+        fetched = user_class.get_by_id(cast("int", user.id))
+        assert fetched is not None
+        assert fetched.age == 37
+
+    def test_update_both_selectors_raises(
+        self,
+        user_class: type[UserBase],
+    ):
+        """Both selectors raise instead of doc_ids silently winning."""
+        user = user_class(name="Alice", age=37).insert()
+        with pytest.raises(SelectorError, match="one of"):
+            user_class.update(
+                {"age": 1},
+                user_class.name == "Bob",  # type: ignore[arg-type]
+                doc_ids=[cast("int", user.id)],
+            )
+        fetched = user_class.get_by_id(cast("int", user.id))
+        assert fetched is not None
+        assert fetched.age == 37
+
     def test_update_multiple(self, user_class: type[UserBase]):
         """Batched per-condition updates."""
         u1 = user_class(name="Alice", age=37).insert()
@@ -112,6 +141,85 @@ class TestUpdate:
         assert alice.age == 1
         assert bob is not None
         assert bob.age == 2
+
+
+class TestUpdateAll:
+    """update_all() is the explicit whole-table update."""
+
+    def test_update_all_updates_every_document(
+        self,
+        user_class: type[UserBase],
+    ):
+        """Every document is updated; all ids come back."""
+        u1 = user_class(name="Alice", age=37).insert()
+        u2 = user_class(name="Bob", age=24).insert()
+        assert u1.id is not None
+        assert u2.id is not None
+        updated = user_class.update_all({"age": 99})
+        assert sorted(updated) == sorted([u1.id, u2.id])
+        assert all(u.age == 99 for u in user_class.all())
+
+    def test_update_all_empty_table(self, user_class: type[UserBase]):
+        """An empty table updates nothing and returns no ids."""
+        assert user_class.update_all({"age": 99}) == []
+
+    def test_update_all_with_transform(self, user_class: type[UserBase]):
+        """Transform callables apply to every document."""
+        user_class(name="Alice", age=37).insert()
+        user_class(name="Bob", age=24).insert()
+
+        def bump(doc: MutableMapping) -> None:
+            """Increment the stored age in place."""
+            doc["age"] += 1
+
+        user_class.update_all(cast("Callable[[Mapping], None]", bump))
+        assert {u.age for u in user_class.all()} == {25, 38}
+
+    def test_update_all_rejects_unknown_keys(
+        self,
+        user_class: type[UserBase],
+    ):
+        """Mappings get the same unknown-key default as update()."""
+        user_class(name="Alice", age=37).insert()
+        with pytest.raises(UnknownUpdateFieldError):
+            user_class.update_all({"gadget": 1})
+
+    def test_update_all_validates_merged_results(
+        self,
+        db: TinyDB,
+    ):
+        """A failing merge on any document aborts the whole write."""
+
+        class Person(TinydanticModel, database=db, table_name="people"):
+            """Test model."""
+
+            name: str
+            age: int
+
+        Person(name="Alice", age=37).insert()
+        with pytest.raises(ValidationError):
+            Person.update_all({"age": None})  # type: ignore[dict-item]
+        assert [p.age for p in Person.all()] == [37]
+
+    def test_update_all_validate_writes_false(self, db: TinyDB):
+        """The opt-out path still updates every document."""
+
+        class Person(
+            TinydanticModel,
+            database=db,
+            table_name="people",
+            validate_writes=False,
+        ):
+            """Test model without write validation."""
+
+            name: str
+            age: int
+
+        Person(name="Alice", age=37).insert()
+        Person(name="Bob", age=24).insert()
+        updated = Person.update_all({"age": 99})
+        assert len(updated) == 2
+        assert all(p.age == 99 for p in Person.all())
 
 
 class TestUpsert:
@@ -384,7 +492,7 @@ class TestUpdateMergedValidation:
             body["qty"] = "junk" if body["name"] == "b" else 99
 
         with pytest.raises(ValidationError):
-            Item.update(
+            Item.update_all(
                 # TinyDB annotates transforms with Mapping though it
                 # passes a mutable dict; same cast as replace().
                 cast("Callable[[Mapping], None]", poison_b),
