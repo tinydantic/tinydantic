@@ -463,6 +463,14 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         which maps ``id`` back to ``doc_id`` and never stores it in the
         document body.
 
+        Validation runs with ``by_name=True``: stored bodies are
+        keyed by python field names, never aliases (see
+        [to_tinydb_document][tinydantic.TinydanticModel.to_tinydb_document]),
+        so aliased models read back without needing
+        ``validate_by_name`` in their own config. Alias keys in a
+        plain mapping are still accepted — ``by_name`` widens the
+        accepted keys, never narrows them.
+
         Args:
             document: A TinyDB document (or plain mapping) to validate.
 
@@ -473,9 +481,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         if isinstance(document, Document):
             instance = cls.model_validate(
                 {**document, "id": document.doc_id},
+                by_name=True,
             )
         else:
-            instance = cls.model_validate(document)
+            instance = cls.model_validate(document, by_name=True)
         instance.after_load()
         return instance
 
@@ -715,8 +724,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         that share body dicts by reference (MemoryStorage). When
         ``validate`` is true the merged body is validated with the
         real document id in the payload — the same check the next
-        read performs — so a failing merge aborts the whole cycle
-        before its storage write.
+        read performs (``by_name=True``: stored keys are python
+        field names, not aliases) — so a failing merge aborts the
+        whole cycle before its storage write.
 
         Raises:
             pydantic.ValidationError: If the merged body fails
@@ -728,7 +738,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         else:
             body.update(fields)
         if validate:
-            cls.model_validate({**body, "id": target_id})
+            cls.model_validate({**body, "id": target_id}, by_name=True)
         data[target_id] = body
 
     @classmethod
@@ -1591,7 +1601,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         UUID, enums, nested models, ...) become JSON-safe primitives
         that round-trip through any TinyDB storage. The ``id`` field is
         never embedded in the document — it maps to TinyDB's
-        ``doc_id``.
+        ``doc_id``. Keys are python field names, never aliases —
+        the invariant that keeps ``Model.field`` queries aligned
+        with stored keys — so the write check below (and every
+        other internal validation) runs with ``by_name=True``.
 
         Unless the model opts out via ``validate_writes=False``, the
         serialized payload is validated before it is returned — the
@@ -1615,7 +1628,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         doc = self.model_dump(mode="json", exclude={"id"})
 
         if get_config_value(type(self), "validate_writes", default=True):
-            type(self).model_validate({**doc, "id": self.id})
+            type(self).model_validate({**doc, "id": self.id}, by_name=True)
 
         if (force_dict is False) and (self.id is not None):
             doc = Document(doc, self.id)
