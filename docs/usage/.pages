@@ -16,4 +16,5 @@ nav:
   - configuration.md
   - testing.md
   - fastapi.md
+  - concurrency.md
   - security.md
