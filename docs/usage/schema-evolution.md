@@ -101,6 +101,10 @@ pydantic_core._pydantic_core.ValidationError: 1 validation error for StrictFilm
 
 This is the right setting when the model is the only writer and any unknown key means a bug — but it makes every migration mandatory before the data can even be read.
 
+> [!NOTE]
+>
+> One key is reserved by opt-in machinery: on models with `use_revision=True` (see [Concurrency](concurrency.md)), `revision_id` is `tinydantic`'s optimistic-concurrency token. Documents written _before_ the opt-in have no such key and are adopted conflict-free on their first revisioned write — but if your documents already use a `revision_id` key of their own, rename it (a one-line `update_all()` transform, below) _before_ enabling `use_revision`, or reads will try to parse your data as tokens.
+
 ## Migration patterns
 
 TinyDB has no migration framework, and `tinydantic` does not add one — the verbs you already have are enough for the migrations a document store of this size needs. Each recipe below is doctested end-to-end.

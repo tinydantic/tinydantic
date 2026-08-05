@@ -74,7 +74,7 @@ On the write side the storage is guarded: it serializes with `yaml.safe_dump`, w
 
 ## Concurrency
 
-Neither TinyDB nor `tinydantic` locks the database file, and concurrent writers will corrupt it. The FastAPI page covers this honestly, with mitigations: see [Async, FastAPI, and TinyDB](fastapi.md#async-fastapi-and-tinydb).
+Neither TinyDB nor `tinydantic` locks the database file, and concurrent writers will corrupt it. The [Concurrency page](concurrency.md) covers the single-process contract, `use_revision` optimistic concurrency for stale writes, and `ProcessLockMiddleware` for making a second process fail at startup instead of corrupting slowly; the [FastAPI page](fastapi.md#async-fastapi-and-tinydb) shows the two serving patterns that satisfy the contract by construction.
 
 ## Where next
 

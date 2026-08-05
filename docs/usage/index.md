@@ -13,4 +13,5 @@ This section is a practical, task-oriented tour of `tinydantic` — from install
 - [Configuration](configuration.md) — binding models to databases and tables.
 - [Testing](testing.md) — patterns for testing code that uses `tinydantic`.
 - [FastAPI](fastapi.md) — using `tinydantic` models in a FastAPI application.
+- [Concurrency](concurrency.md) — the single-process contract, optimistic concurrency with `use_revision`, detecting a second process, and what backups and restores change.
 - [Security considerations](security.md) — file permissions, untrusted input in queries and updates, and why YAML database files must be trusted.
