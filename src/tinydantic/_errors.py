@@ -221,6 +221,29 @@ class SelectorError(TinydanticUserError, ValueError):
         super().__init__(message)
 
 
+class FindQueryError(TinydanticUserError, ValueError):
+    """A fluent query chain is misused.
+
+    Raised eagerly at the offending modifier call — never deferred
+    to the terminal — for: repeating a modifier on a chain
+    (orderings and windows are stated once, in one call), mixing
+    the field-name and ``key=`` sort forms, passing an invalid
+    ``skip``/``limit`` operand, or using a
+    [FindQuery][tinydantic.FindQuery] in boolean context.
+    Subclasses ``ValueError`` following the numpy/pandas precedent
+    for ambiguous-truth-value errors.
+    """
+
+
+class SortFieldError(FindQueryError):
+    """A sort key does not name a model field.
+
+    Sort keys are Python field (attribute) names — not storage
+    aliases — because sorting runs on validated model instances.
+    Raised eagerly at the ``.sort()`` call.
+    """
+
+
 class ShadowedFieldError(TinydanticUserError):
     """A model field shadows an existing class attribute.
 
