@@ -11,7 +11,9 @@ nav:
   - crud.md
   - queries.md
   - models.md
+  - schema-evolution.md
   - storage.md
   - configuration.md
   - testing.md
   - fastapi.md
+  - security.md

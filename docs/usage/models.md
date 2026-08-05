@@ -266,5 +266,6 @@ The contract, in full:
 ## Where next
 
 - [Queries](queries.md) — build query conditions from model fields, including nested ones.
+- [Schema evolution](schema-evolution.md) — what happens when stored documents predate the current model, and how to migrate.
 - [Storage](storage.md) — choose a backend and persist your documents to disk.
 - [Configuration](configuration.md) — bind models to a database and table, and how config resolves across a class hierarchy.

@@ -32,6 +32,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Docs: a "Schema evolution" usage page — the unknown-key semantics of every write verb (`replace()` deletes keys the model does not declare; `save()`/`update()` preserve them), the `extra='allow'` round-trip recipe for adopting existing TinyDB files, and doctested migration patterns (add/rename/remove fields, type changes, versioned migrations).
+- Docs: a "Security considerations" usage page — database-file permissions, untrusted input in queries (regex conditions are a ReDoS vector) and updates (mass assignment via `extra_keys="allow"`), and the trusted-input requirement for YAML database files.
 - Lifecycle hooks: `before_save()` (runs before every whole-model write, before serialization — mutations are validated and persisted; raising aborts the write) and `after_load()` (runs after every read that materializes an instance, with the real `id` set). Overridable no-op methods, `super()`-chainable; field-level writes (`update()`, `patch()`) fire neither.
 - `Unique` field marker (`email: Annotated[str, Unique()]`) and `UniqueConstraintError` — duplicate values are refused on `insert()`/`insert_multiple()`/`save()`/`replace()`/`upsert()`/`patch()` with a check-then-write scan (in-process; `None` exempt; the bulk `update()` path is the documented bypass).
 
