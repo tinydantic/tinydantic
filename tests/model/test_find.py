@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from pydantic import Field
+
 from tinydantic import (
     FindQuery,
     FindQueryError,
@@ -87,6 +89,86 @@ class TestFindConstruction:
         assert "BoundUser" in text
         assert "cond=" in text
         assert "skip=" in text
+
+
+class TestModifiers:
+    """Modifier validation, immutability, and the once-rule."""
+
+    def test_modifiers_return_new_chains(self, user_class: type[User]) -> None:
+        """Each modifier leaves the receiver untouched."""
+        base = user_class.find()
+        sorted_chain = base.sort("name")
+        assert sorted_chain is not base
+        # The base can still accept its own sort: it was never
+        # mutated by the first call.
+        assert base.sort("age") is not sorted_chain
+
+    def test_repeated_sort_raises(self, user_class: type[User]) -> None:
+        """A second sort() raises; message teaches one-call form."""
+        chain = user_class.find().sort("name")
+        with pytest.raises(FindQueryError, match="once"):
+            chain.sort("age")
+
+    def test_repeated_skip_and_limit_raise(
+        self, user_class: type[User]
+    ) -> None:
+        """skip()/limit() follow the same once-rule as sort()."""
+        with pytest.raises(FindQueryError, match="once"):
+            user_class.find().skip(1).skip(2)
+        with pytest.raises(FindQueryError, match="once"):
+            user_class.find().limit(1).limit(2)
+
+    def test_unknown_sort_field_raises_eagerly(
+        self, user_class: type[User]
+    ) -> None:
+        """A wrong field name fails at sort(), not at all()."""
+        with pytest.raises(SortFieldError, match="shoe_size"):
+            user_class.find().sort("shoe_size")
+
+    def test_alias_is_not_a_sort_key(self, db: TinyDB) -> None:
+        """Sort keys are attribute names, not storage aliases."""
+
+        class Aliased(TinydanticModel, database=db, table_name="aliased"):
+            """Model with an aliased field."""
+
+            full_name: str = Field(alias="fullName")
+
+        Aliased.find().sort("full_name")  # attribute name: fine
+        with pytest.raises(SortFieldError, match="fullName"):
+            Aliased.find().sort("fullName")
+
+    def test_descending_prefix_parses(self, user_class: type[User]) -> None:
+        """A - prefix is accepted; a bare - is refused."""
+        user_class.find().sort("-age", "name")
+        with pytest.raises(SortFieldError):
+            user_class.find().sort("-")
+
+    def test_mixed_sort_forms_raise(self, user_class: type[User]) -> None:
+        """Field names cannot combine with key= or reverse=."""
+        with pytest.raises(FindQueryError, match="key="):
+            user_class.find().sort("name", key=lambda u: u.age)
+        with pytest.raises(FindQueryError, match="key="):
+            user_class.find().sort("name", reverse=True)
+
+    def test_sort_without_arguments_raises_type_error(
+        self, user_class: type[User]
+    ) -> None:
+        """sort() with nothing to sort by is a TypeError."""
+        with pytest.raises(TypeError, match="sort"):
+            user_class.find().sort()
+
+    def test_skip_limit_operand_validation(
+        self, user_class: type[User]
+    ) -> None:
+        """skip/limit require a non-negative non-bool int."""
+        find = user_class.find()
+        for bad in (-1, True, 1.5, "3", None):
+            with pytest.raises(FindQueryError):
+                find.skip(bad)  # type: ignore[arg-type]
+            with pytest.raises(FindQueryError):
+                find.limit(bad)  # type: ignore[arg-type]
+        find.skip(0)  # legal no-op
+        find.limit(0)  # legal empty window
 
 
 class TestFindReservedWord:

@@ -39,6 +39,11 @@ from typing import (
     TypeVar,
 )
 
+from tinydantic._errors import (
+    FindQueryError,
+    SortFieldError,
+)
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -47,6 +52,25 @@ if TYPE_CHECKING:
     from tinydantic._model import TinydanticModel
 
 ModelT = TypeVar("ModelT", bound="TinydanticModel")
+
+_REPEAT_MSG = (
+    "{name}() was already called on this query. Clauses do not "
+    "accumulate; state each clause once{hint}."
+)
+
+
+def _validated_window(name: str, n: object) -> int:
+    """Check that a skip/limit operand is a non-negative int.
+
+    Bools are rejected like the id-condition operand rule.
+
+    Raises:
+        FindQueryError: If ``n`` is not an int or is negative.
+    """
+    if isinstance(n, bool) or not isinstance(n, int) or n < 0:
+        msg = f"{name}() requires a non-negative int, got {n!r}"
+        raise FindQueryError(msg)
+    return n
 
 
 class FindQuery(Generic[ModelT]):
@@ -109,6 +133,127 @@ class FindQuery(Generic[ModelT]):
         }
         state.update(changes)
         return FindQuery(self._model, **state)
+
+    def sort(
+        self,
+        *fields: str,
+        key: Callable[[ModelT], Any] | None = None,
+        reverse: bool = False,
+    ) -> FindQuery[ModelT]:
+        """Set the ordering clause (once per chain).
+
+        Two mutually exclusive forms:
+
+        -   Field names: ``.sort("dept", "-salary")`` — Python
+            attribute names, ``-`` prefix for descending, left-
+            to-right from most to least significant.
+        -   Escape hatch: ``.sort(key=..., reverse=...)`` — any
+            callable over a model instance (nested paths, None
+            handling).
+
+        A second ``sort()`` raises instead of accumulating or
+        replacing: the ecosystem disagrees on what it should
+        mean (Beanie appends a tiebreaker; Python's stable-sort
+        idiom and pandas make the last sort primary; Django and
+        MongoEngine replace), so tinydantic refuses to guess.
+
+        Args:
+            fields: Field names, optionally ``-``-prefixed.
+            key: Sort-key callable; excludes ``fields``.
+            reverse: Descending order; only legal with ``key=``.
+
+        Returns:
+            A new chain with the ordering set.
+
+        Raises:
+            FindQueryError: If sort was already set, or the
+                forms are mixed.
+            SortFieldError: If a name is not a model field.
+            TypeError: If called with neither fields nor
+                ``key=``.
+        """
+        if self._sort_fields is not None or self._sort_key is not None:
+            msg = _REPEAT_MSG.format(
+                name="sort",
+                hint=(", combining keys in one call: .sort('name', '-age')"),
+            )
+            raise FindQueryError(msg)
+        if key is not None:
+            if fields:
+                msg = "sort() takes field names or key=, not both"
+                raise FindQueryError(msg)
+            return self._replace(
+                sort_key=key,
+                sort_reverse=bool(reverse),
+            )
+        if reverse:
+            msg = (
+                "reverse= is only valid with key=; with field "
+                "names, mark descending per field with a '-' "
+                "prefix: .sort('-age')"
+            )
+            raise FindQueryError(msg)
+        if not fields:
+            msg = "sort() requires field names or key="
+            raise TypeError(msg)
+        parsed: list[tuple[str, bool]] = []
+        for spec in fields:
+            descending = spec.startswith("-")
+            name = spec.removeprefix("-")
+            if not name or name not in self._model.model_fields:
+                msg = (
+                    f"{spec!r} is not a sortable field of "
+                    f"{self._model.__name__!r}. Sort keys are "
+                    "Python field names (not storage aliases); "
+                    "known fields: "
+                    f"{sorted(self._model.model_fields)}"
+                )
+                raise SortFieldError(msg)
+            parsed.append((name, descending))
+        return self._replace(sort_fields=tuple(parsed))
+
+    def skip(self, n: int) -> FindQuery[ModelT]:
+        """Set the number of documents to skip (once per chain).
+
+        Applied after sorting, before ``limit``. ``skip(0)`` is
+        a legal no-op.
+
+        Args:
+            n: A non-negative int.
+
+        Returns:
+            A new chain with the skip set.
+
+        Raises:
+            FindQueryError: If skip was already set or ``n`` is
+                not a non-negative int (bools rejected).
+        """
+        if self._skip is not None:
+            msg = _REPEAT_MSG.format(name="skip", hint="")
+            raise FindQueryError(msg)
+        return self._replace(skip=_validated_window("skip", n))
+
+    def limit(self, n: int) -> FindQuery[ModelT]:
+        """Set the maximum result-window size (once per chain).
+
+        Applied last in the fixed pipeline. ``limit(0)`` is
+        legal and describes an empty window (it can arise from
+        arithmetic).
+
+        Args:
+            n: A non-negative int.
+
+        Returns:
+            A new chain with the limit set.
+
+        Raises:
+            FindQueryError: If limit was already set or ``n``
+                is not a non-negative int (bools rejected).
+        """
+        if self._limit is not None:
+            msg = _REPEAT_MSG.format(name="limit", hint="")
+            raise FindQueryError(msg)
+        return self._replace(limit=_validated_window("limit", n))
 
     def __repr__(self) -> str:
         """Show the model and full clause set for debugging."""
