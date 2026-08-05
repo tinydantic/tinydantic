@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+import sys
+
 from importlib import metadata
 from typing import (
     TYPE_CHECKING,
@@ -84,6 +86,81 @@ _FIELD_ADAPTERS_ATTR = "__tinydantic_field_adapters__"
 # Name of the per-class attribute caching unique field names
 # (computed once in __pydantic_init_subclass__).
 _UNIQUE_FIELDS_ATTR = "__tinydantic_unique_fields__"
+
+if sys.version_info >= (3, 14):
+    from annotationlib import Format, call_annotate_function
+
+# Class-namespace keys that may hold a PEP 649 deferred-annotations
+# function on Python 3.14+. CPython's compiler emits
+# ``__annotate_func__`` (``type.__new__`` renames it to the class's
+# ``__annotate__`` afterwards); the PEP-spelled ``__annotate__`` is
+# kept as a fallback in case that implementation detail changes.
+_ANNOTATE_KEYS = ("__annotate_func__", "__annotate__")
+
+
+def _deferred_annotate_key(namespace: dict[str, Any]) -> str | None:
+    """Return the deferred-annotations key present, if any."""
+    for key in _ANNOTATE_KEYS:
+        if key in namespace:
+            return key
+    return None
+
+
+def _declared_annotations(namespace: dict[str, Any]) -> dict[str, Any]:
+    """Return a class body's own annotations, eager or deferred.
+
+    Class bodies produce an eager ``__annotations__`` dict on
+    Python 3.13 and earlier — and on any version in modules using
+    ``from __future__ import annotations`` — but under PEP 649
+    (3.14+ default semantics) they instead emit a deferred
+    annotate function. Both shapes are read here; the deferred
+    form is materialized with ``Format.FORWARDREF`` so
+    unresolvable names cannot raise during class creation.
+    """
+    if "__annotations__" in namespace:
+        return dict(namespace["__annotations__"])
+    if sys.version_info >= (3, 14):
+        key = _deferred_annotate_key(namespace)
+        if key is not None:
+            return dict(
+                call_annotate_function(namespace[key], Format.FORWARDREF),
+            )
+    return {}
+
+
+def _inject_revision_annotation(namespace: dict[str, Any]) -> None:
+    """Add the ``revision_id`` annotation to a class-body namespace.
+
+    On eager-annotation class bodies this extends the
+    ``__annotations__`` dict. Under PEP 649 deferred annotations
+    (3.14+) it wraps the compiler-emitted annotate function
+    in place instead — assigning an eager ``__annotations__`` dict
+    there would *shadow* the deferred annotations and silently
+    erase the user's own field annotations (pydantic would then
+    reject their defaulted, "non-annotated" attributes).
+    """
+    key = (
+        _deferred_annotate_key(namespace)
+        if sys.version_info >= (3, 14)
+        else None
+    )
+    if sys.version_info >= (3, 14) and key is not None:
+        prior = namespace[key]
+
+        def annotate(format_value: int, /) -> dict[str, Any]:
+            """Merge ``revision_id`` into the deferred annotations."""
+            fmt = Format(format_value)
+            merged = dict(call_annotate_function(prior, fmt))
+            merged["revision_id"] = (
+                "UUID | None" if fmt is Format.STRING else UUID | None
+            )
+            return merged
+
+        namespace[key] = annotate
+        return
+    annotations = dict(namespace.get("__annotations__", {}))
+    annotations["revision_id"] = UUID | None
+    namespace["__annotations__"] = annotations
 
 
 class _NothingMatchedError(Exception):
@@ -194,7 +271,7 @@ class TinydanticModelMetaclass(ModelMetaclass):
             for base in bases
         )
         resolved = inherited if explicit is None else explicit
-        declared = "revision_id" in namespace.get("__annotations__", {})
+        declared = "revision_id" in _declared_annotations(namespace)
         if resolved and declared:
             raise RevisionFieldError(model_name=cls_name)
         already_a_field = any(
@@ -202,9 +279,7 @@ class TinydanticModelMetaclass(ModelMetaclass):
             for base in bases
         )
         if explicit and not already_a_field:
-            annotations = dict(namespace.get("__annotations__", {}))
-            annotations["revision_id"] = UUID | None
-            namespace["__annotations__"] = annotations
+            _inject_revision_annotation(namespace)
             namespace["revision_id"] = Field(
                 default=None,
                 description="Optimistic-concurrency token",
