@@ -268,3 +268,105 @@ class DocumentIDRequiredError(TinydanticError):
             f"Cannot {operation}() a {model_name!r} instance whose id "
             "is None — insert() or save() it first",
         )
+
+
+class StaleDocumentError(TinydanticError):
+    """A revision check failed: the document changed since it was read.
+
+    Raised by ``save()``, ``replace()``, and ``delete()`` on models
+    with ``use_revision=True`` when the stored document's
+    ``revision_id`` no longer matches the token this instance holds —
+    another writer modified (or deleted) the document after this
+    instance read it. Nothing is written.
+
+    Recover by reloading the document, re-deciding with fresh state,
+    and retrying — or pass ``ignore_revision=True`` for deliberate
+    last-write-wins. In HTTP terms this error maps to a
+    ``412 Precondition Failed``.
+
+    Attributes:
+        doc_id: The contested document id.
+        deleted: ``True`` when the document was deleted since it
+            was read (so there is nothing to merge with — decide
+            whether re-creating it is appropriate and do so
+            explicitly with ``insert()``); ``False`` when it was
+            modified.
+    """
+
+    def __init__(
+        self,
+        *,
+        model_name: str,
+        table_name: str,
+        doc_id: int,
+        deleted: bool,
+    ) -> None:
+        """Initialize with the model, table, id, and conflict kind."""
+        self.doc_id = doc_id
+        self.deleted = deleted
+        happened = "deleted" if deleted else "modified"
+        super().__init__(
+            f"{model_name!r} document {doc_id} in table "
+            f"{table_name!r} was {happened} since this instance "
+            "read it. Reload and retry, or pass "
+            "ignore_revision=True for deliberate last-write-wins.",
+        )
+
+
+class RevisionFieldError(TinydanticUserError):
+    """A ``use_revision=True`` model declares its own ``revision_id``.
+
+    ``use_revision=True`` injects a ``revision_id`` field managed by
+    tinydantic's write paths, so a user-declared field of the same
+    name would corrupt the revision protocol. Rename the field, or
+    drop ``use_revision``.
+    """
+
+    def __init__(self, *, model_name: str) -> None:
+        """Initialize with the model name."""
+        super().__init__(
+            f"{model_name!r} sets use_revision=True but declares its "
+            "own 'revision_id' field. revision_id is managed by "
+            "tinydantic on revisioned models — rename the field, or "
+            "drop use_revision.",
+        )
+
+
+class RevisionUpdateError(TinydanticUserError):
+    """An update mapping tried to write ``revision_id`` directly.
+
+    On models with ``use_revision=True``, ``revision_id`` is rotated
+    by tinydantic on every write; writing it directly would corrupt
+    the revision protocol (a forged token could mask concurrent
+    writes). Drop the key — every write path already rotates it.
+    """
+
+    def __init__(self, *, model_name: str) -> None:
+        """Initialize with the model name."""
+        super().__init__(
+            f"Cannot write 'revision_id' directly on {model_name!r} — "
+            "use_revision=True models rotate it automatically on "
+            "every write. Drop the key from the update.",
+        )
+
+
+class DatabaseLockedError(TinydanticError):
+    """Another process already holds this database's lock.
+
+    Raised by ``ProcessLockMiddleware`` when the sidecar lock file
+    is already exclusively locked — a second process (or a second
+    TinyDB instance in this process) has the database open. TinyDB
+    is single-process software: concurrent access corrupts data.
+    Close the other handle, or point this process at its own
+    database file.
+    """
+
+    def __init__(self, *, path: str) -> None:
+        """Initialize with the database path."""
+        self.path = path
+        super().__init__(
+            f"The database {path!r} is already open in another "
+            "process (its lock file is held). TinyDB has no "
+            "multi-process safety — close the other process, or "
+            "use a separate database file.",
+        )

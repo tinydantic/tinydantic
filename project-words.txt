@@ -22,6 +22,7 @@ commitizen
 conds
 conftest
 connor
+CREAT
 crossref
 crossrefs
 cython
@@ -49,6 +50,8 @@ Firestore
 fontawesome
 footgun
 frozensets
+fspath
+functools
 getattr
 gitter
 greppable
@@ -80,6 +83,8 @@ linenums
 linkcheck
 linkchecker
 linkcheckerrc
+lockfiles
+lseek
 makefiles
 markdownlint
 markus
@@ -92,7 +97,9 @@ mkdocstrings
 mkdostrings
 monkeypatched
 msiemens
+msvcrt
 mypy
+NBLCK
 Neuromancer
 njpwerner
 noqa
@@ -132,10 +139,12 @@ pythonunbuffered
 pytype
 pyupgrade
 Quickstart
+RDWR
 Repr
 Representer
 reprs
 rerunfailures
+revisioned
 ropeproject
 rtype
 ruleset
@@ -152,6 +161,7 @@ spyder
 spyderproject
 spyproject
 squeezy
+stdlib
 stkb
 styleguides
 subclassing
@@ -177,9 +187,12 @@ trond
 twemoji
 typechecks
 typora
+unflushed
 uninspected
+UNLCK
 unmigrated
 unshadowed
+unshareable
 unvalidated
 upsert
 upserts
