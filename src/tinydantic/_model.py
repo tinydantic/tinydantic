@@ -908,7 +908,14 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         if isinstance(result, list):
             return [cls.from_tinydb_document(doc) for doc in result]
 
-        raise TypeError
+        # Unreachable per TinyDB's Table.get() contract (None, a
+        # Document, or a list) — but a contract violation should
+        # diagnose itself rather than raise bare.
+        msg = (
+            "unexpected return type from TinyDB Table.get(): "
+            f"{type(result).__name__!r}"
+        )
+        raise TypeError(msg)
 
     @classmethod
     def get_by_cond(cls, cond: QueryLike) -> Self | None:
