@@ -74,6 +74,10 @@ The query object also exposes TinyDB's own methods. `.matches` tests the _whole_
 
 ```
 
+> [!WARNING]
+>
+> `.matches()` and `.search()` compile their pattern with Python's `re` module. Never compile untrusted input as a pattern — attacker-chosen regexes can trigger catastrophic backtracking (ReDoS). See [Security considerations](security.md#untrusted-input-in-queries).
+
 ## Logical composition
 
 Combine conditions with `&` (and), `|` (or), and `~` (not). Parenthesize each operand — Python's bitwise operators bind more loosely than comparisons.

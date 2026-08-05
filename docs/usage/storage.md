@@ -89,6 +89,10 @@ items:
 
 ```
 
+> [!WARNING]
+>
+> YAML database files must be trusted input: `yaml.safe_load` prevents code execution, but anchors and aliases still expand, so a hostile hand-edited file can exhaust memory. See [Security considerations](security.md#yaml-files).
+
 ## Composing with middleware
 
 A [Middleware][tinydb.middlewares.Middleware] wraps a storage class to change _how_ reads and writes happen without changing the model API. TinyDB's [CachingMiddleware][tinydb.middlewares.CachingMiddleware] buffers writes in memory and flushes them in batches, which greatly reduces disk I/O for write-heavy workloads. Wrap the storage _class_ (not an instance) and pass the result as `storage=`:

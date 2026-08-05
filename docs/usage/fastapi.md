@@ -157,6 +157,7 @@ None of this is a compromise for `tinydantic`'s intended audience.
 
 ## Where next
 
+- [Security considerations](security.md) — file permissions and untrusted input, before anything network-facing goes live.
 - [Testing](testing.md) — the `bind()` and application-factory patterns used to point these models at an in-memory database in tests.
 - [CRUD tour](crud.md) — the `insert()`, `get_by_id()`, and `all()` methods these endpoints are built on.
 - [Configuration](configuration.md) — binding models to a database, including late binding in an app factory.
