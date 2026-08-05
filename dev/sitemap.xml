@@ -116,6 +116,16 @@
         <changefreq>daily</changefreq>
     </url>
     <url>
+        <loc>https://tinydantic.dev/latest/usage/schema-evolution/</loc>
+        <lastmod>2020-02-02</lastmod>
+        <changefreq>daily</changefreq>
+    </url>
+    <url>
+        <loc>https://tinydantic.dev/latest/usage/security/</loc>
+        <lastmod>2020-02-02</lastmod>
+        <changefreq>daily</changefreq>
+    </url>
+    <url>
         <loc>https://tinydantic.dev/latest/usage/storage/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>

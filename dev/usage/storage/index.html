@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tinydantic.dev/latest/usage/storage/">
       
       
-        <link rel="prev" href="../models/">
+        <link rel="prev" href="../schema-evolution/">
       
       
         <link rel="next" href="../configuration/">
@@ -562,6 +562,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -774,6 +778,34 @@
     
   
     Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../schema-evolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema evolution
   
 
     
@@ -1016,6 +1048,34 @@
     
   
     FastAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security considerations
   
 
     
@@ -2087,6 +2147,10 @@
 </span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="go">&lt;BLANKLINE&gt;</span>
 </span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">tmpdir</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
 </span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>YAML database files must be trusted input: <code>yaml.safe_load</code> prevents code execution, but anchors and aliases still expand, so a hostile hand-edited file can exhaust memory. See <a href="../security/#yaml-files">Security considerations</a>.</p>
+</div>
 <h2 id="composing-with-middleware">Composing with middleware<a class="headerlink" href="#composing-with-middleware" title="Permanent link">¤</a></h2>
 <p>A <a class="autorefs autorefs-external" href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.middlewares.Middleware">Middleware</a> wraps a storage class to change <em>how</em> reads and writes happen without changing the model API. TinyDB's <a class="autorefs autorefs-external" href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.middlewares.CachingMiddleware">CachingMiddleware</a> buffers writes in memory and flushes them in batches, which greatly reduces disk I/O for write-heavy workloads. Wrap the storage <em>class</em> (not an instance) and pass the result as <code>storage=</code>:</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb.storages</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONStorage</span>
@@ -2173,7 +2237,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../models/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Models">
+          <a href="../schema-evolution/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Schema evolution">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2183,7 +2247,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Models
+                Schema evolution
               </div>
             </div>
           </a>

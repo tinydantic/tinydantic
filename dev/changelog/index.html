@@ -560,6 +560,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -791,6 +795,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../usage/schema-evolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema evolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../usage/storage/" class="md-nav__link">
         
   
@@ -883,6 +915,34 @@
     
   
     FastAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security considerations
   
 
     
@@ -2023,6 +2083,8 @@
 </ul>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">¤</a></h3>
 <ul>
+<li>Docs: a "Schema evolution" usage page — the unknown-key semantics of every write verb (<code>replace()</code> deletes keys the model does not declare; <code>save()</code>/<code>update()</code> preserve them), the <code>extra='allow'</code> round-trip recipe for adopting existing TinyDB files, and doctested migration patterns (add/rename/remove fields, type changes, versioned migrations).</li>
+<li>Docs: a "Security considerations" usage page — database-file permissions, untrusted input in queries (regex conditions are a ReDoS vector) and updates (mass assignment via <code>extra_keys="allow"</code>), and the trusted-input requirement for YAML database files.</li>
 <li>Lifecycle hooks: <code>before_save()</code> (runs before every whole-model write, before serialization — mutations are validated and persisted; raising aborts the write) and <code>after_load()</code> (runs after every read that materializes an instance, with the real <code>id</code> set). Overridable no-op methods, <code>super()</code>-chainable; field-level writes (<code>update()</code>, <code>patch()</code>) fire neither.</li>
 <li><code>Unique</code> field marker (<code>email: Annotated[str, Unique()]</code>) and <code>UniqueConstraintError</code> — duplicate values are refused on <code>insert()</code>/<code>insert_multiple()</code>/<code>save()</code>/<code>replace()</code>/<code>upsert()</code>/<code>patch()</code> with a check-then-write scan (in-process; <code>None</code> exempt; the bulk <code>update()</code> path is the documented bypass).</li>
 </ul>

@@ -562,6 +562,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1140,6 +1144,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../schema-evolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema evolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../storage/" class="md-nav__link">
         
   
@@ -1232,6 +1264,34 @@
     
   
     FastAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security considerations
   
 
     
@@ -2748,7 +2808,7 @@
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Keys written via <code>extra_keys="allow"</code> are stored <strong>unvalidated</strong> (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the <code>validate_writes=False</code> class kwarg; per-field value validation (the <code>datetime</code> example above) always applies to mappings. <code>update()</code>, <code>update_all()</code>, and <code>update_multiple()</code> also do <strong>not</strong> enforce <a href="../models/#unique-fields">unique fields</a> — they are the deliberate loose path; every other write verb checks uniqueness.</p>
+<p>Keys written via <code>extra_keys="allow"</code> are stored <strong>unvalidated</strong> (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the <code>validate_writes=False</code> class kwarg; per-field value validation (the <code>datetime</code> example above) always applies to mappings. <code>update()</code>, <code>update_all()</code>, and <code>update_multiple()</code> also do <strong>not</strong> enforce <a href="../models/#unique-fields">unique fields</a> — they are the deliberate loose path; every other write verb checks uniqueness. Never pass a raw request payload through <code>extra_keys="allow"</code> — see <a href="../security/#untrusted-input-in-updates">Security considerations</a>.</p>
 </div>
 <h3 id="patch"><code>patch</code><a class="headerlink" href="#patch" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            patch" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.patch">patch()</a> is the instance-level partial update: it validates the given fields, writes <strong>only those fields</strong> to the stored document, and updates the instance to match — one call, no drift between object and storage.</p>

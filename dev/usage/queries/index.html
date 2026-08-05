@@ -562,6 +562,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -918,6 +922,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../schema-evolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema evolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../storage/" class="md-nav__link">
         
   
@@ -1010,6 +1042,34 @@
     
   
     FastAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security considerations
   
 
     
@@ -2067,6 +2127,10 @@
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="go">[User(id=1, name=&#39;Alice&#39;, age=30, email=&#39;alice@example.com&#39;, address=Address(city=&#39;Portland&#39;, country=&#39;US&#39;)),</span>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="go">  User(id=3, name=&#39;Carol&#39;, age=35, email=&#39;carol@example.com&#39;, address=Address(city=&#39;Berlin&#39;, country=&#39;DE&#39;))]</span>
 </span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code>.matches()</code> and <code>.search()</code> compile their pattern with Python's <code>re</code> module. Never compile untrusted input as a pattern — attacker-chosen regexes can trigger catastrophic backtracking (ReDoS). See <a href="../security/#untrusted-input-in-queries">Security considerations</a>.</p>
+</div>
 <h2 id="logical-composition">Logical composition<a class="headerlink" href="#logical-composition" title="Permanent link">¤</a></h2>
 <p>Combine conditions with <code>&amp;</code> (and), <code>|</code> (or), and <code>~</code> (not). Parenthesize each operand — Python's bitwise operators bind more loosely than comparisons.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">((</span><span class="n">User</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span> <span class="o">==</span> <span class="s2">&quot;US&quot;</span><span class="p">))</span>
