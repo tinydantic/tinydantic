@@ -48,6 +48,21 @@ class TestGet:
                 doc_id=user.id,
             )
 
+    def test_get_unexpected_tinydb_return_raises(
+        self,
+        user_class: type[UserBase],
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """A contract-violating Table.get() raises a messaged error.
+
+        TinyDB's Table.get() contract only allows None, a Document,
+        or a list. The defensive fallthrough for anything else
+        should name the offending type rather than raise bare.
+        """
+        monkeypatch.setattr(user_class.get_table(), "get", lambda **_: 42)
+        with pytest.raises(TypeError, match="unexpected return type"):
+            user_class.get(doc_id=1)
+
     def test_get_by_doc_ids(self, user_class: type[UserBase]):
         """get(doc_ids=[...]) returns a list."""
         u1 = user_class(name="Alice", age=37).insert()
