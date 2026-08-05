@@ -15,6 +15,7 @@ from typing import (
     cast,
     overload,
 )
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from pydantic.alias_generators import to_snake
@@ -34,8 +35,11 @@ from tinydantic._errors import (
     DocumentIDRequiredError,
     DocumentIDUpdateError,
     DocumentNotFoundError,
+    RevisionFieldError,
+    RevisionUpdateError,
     SelectorError,
     ShadowedFieldError,
+    StaleDocumentError,
     TinydanticError,
     UniqueConstraintError,
     UnknownUpdateFieldError,
@@ -159,9 +163,55 @@ class TinydanticModelMetaclass(ModelMetaclass):
     ``Model.id`` returns a ``DocIdQuery`` (translated by the model's
     query methods to document-id operations) instead of a
     ``where("id")`` body query that would silently match nothing.
+
+    Classes created with ``use_revision=True`` additionally get a
+    ``revision_id: UUID | None`` field injected before pydantic
+    collects fields — the optimistic-concurrency token rotated by
+    every write path. Injection must happen here (not in
+    ``__init_subclass__``): pydantic builds the field set from the
+    class namespace, so the field has to exist in the namespace
+    before class creation, which is also why ``use_revision``
+    cannot be late-bound with ``bind()``.
     """
 
-    def __getattr__(cls, attr: str) -> Any:  # noqa: N805
+    def __new__(
+        mcs,
+        cls_name: str,
+        bases: tuple[type[Any], ...],
+        namespace: dict[str, Any],
+        **kwargs: Any,
+    ) -> type:
+        """Create the class, injecting ``revision_id`` if opted in.
+
+        Raises:
+            RevisionFieldError: If the class resolves
+                ``use_revision=True`` (its own kwarg or inherited)
+                but declares its own ``revision_id`` field.
+        """
+        explicit = kwargs.get("use_revision")
+        inherited = any(
+            get_config_value(base, "use_revision", default=False)
+            for base in bases
+        )
+        resolved = inherited if explicit is None else explicit
+        declared = "revision_id" in namespace.get("__annotations__", {})
+        if resolved and declared:
+            raise RevisionFieldError(model_name=cls_name)
+        already_a_field = any(
+            "revision_id" in getattr(base, "model_fields", {})
+            for base in bases
+        )
+        if explicit and not already_a_field:
+            annotations = dict(namespace.get("__annotations__", {}))
+            annotations["revision_id"] = UUID | None
+            namespace["__annotations__"] = annotations
+            namespace["revision_id"] = Field(
+                default=None,
+                description="Optimistic-concurrency token",
+            )
+        return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+
+    def __getattr__(cls, attr: str) -> Any:
         """Return a field Query, falling back to normal lookup.
 
         Pydantic calls ``__getattr__`` for each field while the model
@@ -223,6 +273,14 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         description="Document ID",
     )
 
+    if TYPE_CHECKING:
+        # Static-only declaration of the field the metaclass
+        # injects on use_revision=True models, so user code like
+        # ``book.revision_id`` (ETag flows) type-checks. The block
+        # never runs, so pydantic sees no field here and models
+        # without use_revision raise AttributeError at runtime.
+        revision_id: UUID | None = None
+
     # --- lifecycle hooks ---
 
     def before_save(self) -> None:
@@ -259,6 +317,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         *,
         database: TinyDB | None = None,
         table_name: str | None = None,
+        use_revision: bool | None = None,
         validate_writes: bool | None = None,
         shadowed_fields: tuple[str, ...] | None = None,
         **kwargs: Any,
@@ -279,6 +338,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             config["database"] = database
         if table_name is not None:
             config["table_name"] = table_name
+        if use_revision is not None:
+            config["use_revision"] = use_revision
         if validate_writes is not None:
             config["validate_writes"] = validate_writes
         if shadowed_fields is not None:
@@ -514,6 +575,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         docs = list(documents)
         for doc in docs:
             doc.before_save()
+            if cls._uses_revision():
+                doc._set_revision_token(uuid4())  # noqa: SLF001
         # Serialize before the try: pydantic.ValidationError is a
         # ValueError and must never be mistaken for a duplicate id.
         serialized = [doc.to_tinydb_document() for doc in docs]
@@ -737,6 +800,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             fields(body)
         else:
             body.update(fields)
+        if cls._uses_revision():
+            # Rotate after the merge so a transform callable can
+            # never forge a token; one fresh token per document.
+            body["revision_id"] = str(uuid4())
         if validate:
             cls.model_validate({**body, "id": target_id}, by_name=True)
         data[target_id] = body
@@ -1064,6 +1131,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             DocumentIDUpdateError: If the mapping contains an ``id``
                 key — ``id`` maps to TinyDB's ``doc_id``, which an
                 update cannot change.
+            RevisionUpdateError: If the mapping contains a
+                ``revision_id`` key on a ``use_revision=True``
+                model — the token is rotated automatically and
+                direct writes would corrupt the protocol.
             UnknownUpdateFieldError: If the mapping contains keys
                 that are not model fields and ``extra_keys`` is
                 ``"reject"`` (the default).
@@ -1075,6 +1146,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         for key, value in fields.items():
             if key == "id":
                 raise DocumentIDUpdateError(model_name=cls.__name__)
+            if key == "revision_id" and cls._uses_revision():
+                raise RevisionUpdateError(model_name=cls.__name__)
             if key in cls.model_fields:
                 adapter = cls._field_adapter(key)
                 serialized[key] = adapter.dump_python(
@@ -1202,7 +1275,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 # See replace() for why this cast is needed.
                 # TODO @cdwilson: remove this cast once the
                 # annotation is fixed in TinyDB.
-                cast("Callable[[Mapping], None]", fields),
+                cast("Callable[[Mapping], None]", cls._rotated(fields)),
                 cond=cond,
                 doc_ids=doc_ids,
             )
@@ -1299,7 +1372,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 # See replace() for why this cast is needed.
                 # TODO @cdwilson: remove this cast once the
                 # annotation is fixed in TinyDB.
-                cast("Callable[[Mapping], None]", fields),
+                cast("Callable[[Mapping], None]", cls._rotated(fields)),
             )
         _fields = fields
 
@@ -1413,7 +1486,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             # See replace() for why this cast is needed.
             cast(
                 "Iterable[tuple[Callable[[Mapping], None], QueryLike]]",
-                prepared,
+                [(cls._rotated(fields), cond) for fields, cond in prepared],
             ),
         )
 
@@ -1455,37 +1528,63 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             raise SelectorError(msg)
         document.before_save()
         cls._check_upsert_unique(document, cond)
+        # upsert() cannot check revisions (its contract is
+        # "regardless of current state") but must still rotate, so
+        # held tokens elsewhere correctly go stale. One token for
+        # the batch: equality is the only comparison tokens face.
+        token = uuid4() if cls._uses_revision() else None
         if cond is not None and has_id_condition(cond):
             document_dict = document.to_tinydb_document(force_dict=True)
-            table = cls.get_table()
-            _cond = cond
-
-            def apply_upsert(data: dict[int, Any]) -> list[int]:
-                """Merge the document body into matching documents."""
-                matched: list[int] = []
-                for target_id in list(data):
-                    doc = table.document_class(
-                        data[target_id],
-                        target_id,
-                    )
-                    if _cond(doc):
-                        matched.append(target_id)
-                        # Copy-on-write: see update().
-                        body = dict(data[target_id])
-                        body.update(document_dict)
-                        data[target_id] = body
-                return matched
-
-            ids = cls._run_write_cycle(apply_upsert)
-            if not ids:
-                ids = [table.insert(document_dict)]
+            if token is not None:
+                document_dict["revision_id"] = str(token)
+            ids = cls._upsert_id_condition(document_dict, cond)
         else:
-            ids = cls.get_table().upsert(
-                document.to_tinydb_document(force_dict=cond is not None),
-                cond,
+            serialized = document.to_tinydb_document(
+                force_dict=cond is not None,
             )
+            if token is not None:
+                serialized["revision_id"] = str(token)
+            ids = cls.get_table().upsert(serialized, cond)
         if len(ids) == 1:
             document.id = ids[0]
+            if token is not None:
+                document._set_revision_token(token)
+        return ids
+
+    @classmethod
+    def _upsert_id_condition(
+        cls,
+        document_dict: dict[str, Any],
+        cond: QueryLike,
+    ) -> list[int]:
+        """Run upsert()'s id-condition branch atomically.
+
+        Merges ``document_dict`` into every document matching
+        ``cond`` in one read-modify-write cycle, inserting it as a
+        new document when nothing matched (TinyDB upsert
+        semantics — the insert does not adopt the condition's id).
+        """
+        table = cls.get_table()
+
+        def apply_upsert(data: dict[int, Any]) -> list[int]:
+            """Merge the document body into matching documents."""
+            matched: list[int] = []
+            for target_id in list(data):
+                doc = table.document_class(
+                    data[target_id],
+                    target_id,
+                )
+                if cond(doc):
+                    matched.append(target_id)
+                    # Copy-on-write: see update().
+                    body = dict(data[target_id])
+                    body.update(document_dict)
+                    data[target_id] = body
+            return matched
+
+        ids = cls._run_write_cycle(apply_upsert)
+        if not ids:
+            ids = [table.insert(document_dict)]
         return ids
 
     @classmethod
@@ -1642,6 +1741,109 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         return doc
 
+    @classmethod
+    def _uses_revision(cls) -> bool:
+        """Resolve whether this model opted into revision tracking."""
+        return bool(get_config_value(cls, "use_revision", default=False))
+
+    @classmethod
+    def _rotated(
+        cls,
+        fields: Mapping | Callable[[Mapping], None],
+    ) -> Mapping | Callable[[Mapping], None]:
+        """Wrap ``fields`` to also rotate ``revision_id``.
+
+        Used by the unvalidated fast paths, which hand ``fields``
+        straight to TinyDB — the validated paths rotate inside
+        ``_apply_and_validate`` instead. Returns ``fields``
+        unchanged for models without ``use_revision``.
+        """
+        if not cls._uses_revision():
+            return fields
+
+        def rotate(body: Mapping) -> None:
+            """Apply ``fields``, then mint a fresh revision token."""
+            mutable = cast("dict[str, Any]", body)
+            if callable(fields):
+                fields(mutable)
+            else:
+                mutable.update(fields)
+            mutable["revision_id"] = str(uuid4())
+
+        return rotate
+
+    def _set_revision_token(self, token: UUID) -> None:
+        """Sync a freshly written token onto this instance.
+
+        Direct ``__dict__`` assignment, NOT setattr: with
+        ``validate_assignment`` on, assignment re-runs model
+        validators, and the written state was already validated —
+        the same reasoning as ``patch()``'s instance sync.
+        """
+        self.__dict__["revision_id"] = token
+        self.__pydantic_fields_set__.add("revision_id")
+
+    def _check_revision(
+        self,
+        *,
+        operation: str,
+        on_missing: Literal["insert", "not_found"],
+    ) -> None:
+        """Compare this instance's held token against storage.
+
+        ``on_missing`` selects the missing-document contract:
+        ``save()`` may insert a never-read instance (``"insert"``),
+        while ``replace()``/``delete()`` require the document to
+        exist (``"not_found"``). A *held* token with a missing
+        document is always a stale write — the document was
+        deleted since this instance read it.
+
+        Tokens compare as strings: the stored value is the
+        JSON-serialized form, and a legacy document written before
+        ``use_revision`` was enabled has no token at all, which
+        matches a held ``None`` (first revisioned write adopts it).
+
+        Raises:
+            StaleDocumentError: If the stored token differs from
+                the held one (``deleted=False``), or the document
+                vanished after this instance read it
+                (``deleted=True``).
+            DocumentNotFoundError: If the document is missing, was
+                never read by this instance, and ``on_missing`` is
+                ``"not_found"``.
+        """
+        cls = type(self)
+        doc_id = cast("int", self.id)
+        stored = self.get_table().get(doc_id=doc_id)
+        held = None if self.revision_id is None else str(self.revision_id)
+        if stored is None:
+            if held is None:
+                if on_missing == "insert":
+                    return
+                raise DocumentNotFoundError(
+                    model_name=cls.__name__,
+                    table_name=self.get_table().name,
+                    doc_id=doc_id,
+                )
+            raise StaleDocumentError(
+                model_name=cls.__name__,
+                table_name=self.get_table().name,
+                doc_id=doc_id,
+                deleted=True,
+            )
+        stored_doc = cast("Document", stored)
+        if stored_doc.get("revision_id") != held:
+            raise StaleDocumentError(
+                model_name=cls.__name__,
+                table_name=self.get_table().name,
+                doc_id=doc_id,
+                deleted=False,
+            )
+        # operation is part of the guard's contract for callers
+        # and error messages may grow to use it; keep the
+        # parameter honest even while unused in messages.
+        del operation
+
     def insert(self) -> Self:
         """Insert this model as a new document.
 
@@ -1659,10 +1861,12 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 that already exists in the table.
         """
         self.before_save()
+        cls = type(self)
+        if cls._uses_revision():
+            self._set_revision_token(uuid4())
         # Serialize before the try: pydantic.ValidationError is a
         # ValueError and must never be mistaken for a duplicate id.
         doc = self.to_tinydb_document()
-        cls = type(self)
         cls._check_unique(
             doc,
             exclude_doc_ids=(frozenset() if self.id is None else {self.id}),
@@ -1678,7 +1882,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         return self
 
-    def replace(self) -> None:
+    def replace(self, *, ignore_revision: bool = False) -> None:
         """Overwrite this model's stored document in place.
 
         Requires ``id`` to be set. Unlike
@@ -1690,11 +1894,26 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         missing document, ``replace`` requires the document to already
         exist.
 
+        On models with ``use_revision=True``, the stored document's
+        ``revision_id`` must still match the token this instance
+        read (see [save][tinydantic.TinydanticModel.save] for the
+        full protocol); a successful replace rotates the token in
+        storage and on this instance.
+
+        Args:
+            ignore_revision: Skip the revision check — deliberate
+                last-write-wins (the token still rotates). Inert
+                on models without ``use_revision``.
+
         Raises:
             DocumentIDRequiredError: If ``id`` is not set (the model
                 was never inserted).
             DocumentNotFoundError: If no document with this ``id``
                 exists in the table.
+            StaleDocumentError: If ``use_revision=True`` and the
+                document was modified since this instance read it
+                (``deleted=True`` when it was deleted and this
+                instance had read it); nothing is written.
         """
         if self.id is None:
             raise DocumentIDRequiredError(
@@ -1709,6 +1928,15 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             replacement,
             exclude_doc_ids={self.id},
         )
+        token: UUID | None = None
+        if cls._uses_revision():
+            if not ignore_revision:
+                self._check_revision(
+                    operation="replace",
+                    on_missing="not_found",
+                )
+            token = uuid4()
+            replacement["revision_id"] = str(token)
         try:
             updated_doc_ids = self.get_table().update(
                 # In TinyDB, the Table.update/update_multiple methods
@@ -1743,20 +1971,43 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 table_name=self.get_table().name,
                 doc_id=self.id,
             )
+        if token is not None:
+            self._set_revision_token(token)
 
-    def delete(self) -> None:
+    def delete(self, *, ignore_revision: bool = False) -> None:
         """Remove this model's document from its table.
+
+        On models with ``use_revision=True``, the stored document's
+        ``revision_id`` must still match the token this instance
+        read — a stale delete is the most destructive stale write
+        there is (the HTTP analog is ``DELETE`` + ``If-Match``
+        answering ``412``). Nothing is removed on a mismatch.
+
+        Args:
+            ignore_revision: Skip the revision check — deliberate
+                delete-regardless. Inert on models without
+                ``use_revision``.
 
         Raises:
             DocumentIDRequiredError: If ``id`` is not set (the model
                 was never inserted).
             DocumentNotFoundError: If no document with this ``id``
                 exists in the table.
+            StaleDocumentError: If ``use_revision=True`` and the
+                document was modified since this instance read it
+                (``deleted=True`` when it was already deleted by
+                another writer); nothing is removed.
         """
+        cls = type(self)
         if self.id is None:
             raise DocumentIDRequiredError(
-                model_name=type(self).__name__,
+                model_name=cls.__name__,
                 operation="delete",
+            )
+        if cls._uses_revision() and not ignore_revision:
+            self._check_revision(
+                operation="delete",
+                on_missing="not_found",
             )
         try:
             removed = self.get_table().remove(doc_ids=[self.id])
@@ -1796,6 +2047,15 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         inputs: a ``model_validator`` that rewrites values applies
         on the next read.
 
+        On models with ``use_revision=True``, ``patch()`` rotates
+        the token but does NOT check it — it is the deliberate
+        field-merge tool, and a check would make it conflict on
+        concurrent changes to *unrelated* fields. Patch values you
+        *decided*; values *derived* from a read (counters computed
+        from stock, and the like) belong in the load-mutate-
+        [save][tinydantic.TinydanticModel.save] loop, where the
+        check lives. The fresh token is absorbed by this instance.
+
         Returns:
             This instance, with the patched fields set to their
             validated values.
@@ -1806,6 +2066,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             DocumentNotFoundError: If no document with this ``id``
                 exists in the table.
             DocumentIDUpdateError: If ``fields`` contains ``id``.
+            RevisionUpdateError: If ``fields`` contains
+                ``revision_id`` on a ``use_revision=True`` model —
+                the token rotates automatically.
             UnknownUpdateFieldError: If a key is not a model
                 field.
             pydantic.ValidationError: If a value fails validation
@@ -1826,6 +2089,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         for key, value in fields.items():
             if key == "id":
                 raise DocumentIDUpdateError(model_name=cls.__name__)
+            if key == "revision_id" and cls._uses_revision():
+                raise RevisionUpdateError(model_name=cls.__name__)
             if key not in cls.model_fields:
                 unknown.append(key)
                 continue
@@ -1856,9 +2121,20 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         # validation above — is valid.
         self.__dict__.update(validated)
         self.__pydantic_fields_set__.update(validated)
+        if cls._uses_revision():
+            # patch() rotates without checking (it is the
+            # field-merge tool — see the Concurrency docs), so the
+            # fresh token comes from the write above; absorb it so
+            # a later save() on this instance does not spuriously
+            # conflict.
+            stored = cast(
+                "Document",
+                self.get_table().get(doc_id=self.id),
+            )
+            self._set_revision_token(UUID(stored["revision_id"]))
         return self
 
-    def save(self) -> Self:
+    def save(self, *, ignore_revision: bool = False) -> Self:
         """Insert this model if it is new, otherwise update it by id.
 
         If ``id`` is set but the document no longer exists in the
@@ -1866,8 +2142,31 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         semantics) — unlike ``replace()``/``delete()``, which raise
         [DocumentNotFoundError][tinydantic.DocumentNotFoundError].
 
+        On models with ``use_revision=True``, the stored document's
+        ``revision_id`` must still match the token this instance
+        read, or nothing is written and
+        [StaleDocumentError][tinydantic.StaleDocumentError] is
+        raised — including when the document was deleted in the
+        meantime (``deleted=True``; a revisioned ``save()`` never
+        silently resurrects a concurrently deleted document). A
+        successful save rotates the token in storage and on this
+        instance. An instance that never read its document (a held
+        token of ``None``) conflicts with any stored token, but
+        matches a legacy document written before ``use_revision``
+        was enabled — the first revisioned write adopts it.
+
+        Args:
+            ignore_revision: Skip the revision check — deliberate
+                last-write-wins (the token still rotates). Inert
+                on models without ``use_revision``.
+
         Returns:
             This instance (with ``id`` set if it was newly inserted).
+
+        Raises:
+            StaleDocumentError: If ``use_revision=True`` and the
+                document was modified or deleted since this
+                instance read it; nothing is written.
         """
         if self.id is None:
             return self.insert()
@@ -1875,5 +2174,16 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         doc = self.to_tinydb_document()
         cls = type(self)
         cls._check_unique(doc, exclude_doc_ids={self.id})
+        if cls._uses_revision():
+            if not ignore_revision:
+                self._check_revision(
+                    operation="save",
+                    on_missing="insert",
+                )
+            token = uuid4()
+            doc["revision_id"] = str(token)
+            self.id = self.get_table().upsert(doc)[0]
+            self._set_revision_token(token)
+            return self
         self.id = self.get_table().upsert(doc)[0]
         return self

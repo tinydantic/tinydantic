@@ -42,6 +42,7 @@ _CONFIG_KEYS = (
     "database",
     "shadowed_fields",
     "table_name",
+    "use_revision",
     "validate_writes",
 )
 
@@ -81,6 +82,24 @@ class TinydanticConfig(TypedDict, total=False):
     shadowed fields raise
     [ShadowedFieldError][tinydantic.ShadowedFieldError] at class
     definition.
+    """
+
+    use_revision: bool
+    """Whether this model uses optimistic concurrency (default False).
+
+    When True, the model gains a ``revision_id: UUID | None``
+    field, rotated (assigned a fresh ``uuid4``) by every write
+    path. ``save()``, ``replace()``, and ``delete()`` compare the
+    instance's held token against the stored one first and raise
+    [StaleDocumentError][tinydantic.StaleDocumentError] when
+    another writer got there in between (pass
+    ``ignore_revision=True`` for deliberate last-write-wins);
+    ``patch()`` and the table-level write verbs rotate without
+    checking. See the Concurrency page for the full protocol.
+
+    Unlike the other config keys, ``use_revision`` cannot be
+    late-bound with ``bind()`` — the injected field must exist
+    before pydantic builds the class.
     """
 
     validate_writes: bool
