@@ -2,6 +2,7 @@ addopts
 agentic
 aiotinydb
 alikes
+annotationlib
 anson
 asyncio
 autodocstring
