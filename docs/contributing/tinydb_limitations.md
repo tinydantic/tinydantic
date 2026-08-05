@@ -48,7 +48,7 @@ Existing queries and third-party `QueryLike` objects pay nothing (the `getattr` 
 
 **Limitation.** Before table data is handed to the storage layer, document ids are converted to strings (`{str(doc_id): doc}` in `Table._update_table()`), because the reference JSON storage requires string keys. Storages and middlewares therefore never see the native int ids, and serialized output sorts ids lexicographically (`"10"` before `"2"`). See the upstream discussion [msiemens/tinydb#466](https://github.com/msiemens/tinydb/discussions/466).
 
-**Why it matters.** Human-readable storage output (a design goal of `tinydantic`'s YAML storage) lists documents in confusing lexicographic order. `tinydantic` ships `SortIntDocIDsMiddleware` (`src/tinydantic/tinydb/middlewares.py`) purely to undo the stringification — it converts keys back to ints and forces `sort_keys=True` — and that middleware has to reach into the wrapped storage's `kwargs` and pass ints where the `Storage` protocol declares strings, both acknowledged hacks.
+**Why it matters.** Human-readable storage output (a design goal of `tinydantic`'s YAML storage) lists documents in confusing lexicographic order. `tinydantic` ships `SortIntDocIDsMiddleware` (`src/tinydantic/tinydb/middlewares.py`) purely to undo the stringification — it converts keys back to ints, pre-sorted numerically — and that middleware has to pass ints where the `Storage` protocol declares strings, an acknowledged hack.
 
 **Suggested improvement.** Let storages opt into native id keys (for example, a class attribute on `Storage` declaring whether keys must be strings), or perform the stringification inside `JSONStorage` rather than in `Table`, so key formatting becomes a storage concern.
 
