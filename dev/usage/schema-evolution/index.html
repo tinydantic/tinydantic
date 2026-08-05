@@ -566,6 +566,8 @@
       
         
       
+        
+      
     
     
     
@@ -1087,6 +1089,34 @@
     
   
     FastAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concurrency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concurrency
   
 
     
@@ -2254,6 +2284,10 @@
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="x">  ...</span>
 </span></code></pre></div>
 <p>This is the right setting when the model is the only writer and any unknown key means a bug — but it makes every migration mandatory before the data can even be read.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>One key is reserved by opt-in machinery: on models with <code>use_revision=True</code> (see <a href="../concurrency/">Concurrency</a>), <code>revision_id</code> is <code>tinydantic</code>'s optimistic-concurrency token. Documents written <em>before</em> the opt-in have no such key and are adopted conflict-free on their first revisioned write — but if your documents already use a <code>revision_id</code> key of their own, rename it (a one-line <code>update_all()</code> transform, below) <em>before</em> enabling <code>use_revision</code>, or reads will try to parse your data as tokens.</p>
+</div>
 <h2 id="migration-patterns">Migration patterns<a class="headerlink" href="#migration-patterns" title="Permanent link">¤</a></h2>
 <p>TinyDB has no migration framework, and <code>tinydantic</code> does not add one — the verbs you already have are enough for the migrations a document store of this size needs. Each recipe below is doctested end-to-end.</p>
 <p>The workhorse is <a class="autorefs autorefs-internal" title="            update_all

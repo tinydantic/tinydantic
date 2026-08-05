@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tinydantic.dev/latest/usage/security/">
       
       
-        <link rel="prev" href="../fastapi/">
+        <link rel="prev" href="../concurrency/">
       
       
         <link rel="next" href="../../reference/">
@@ -566,6 +566,8 @@
       
         
       
+        
+      
     
     
     
@@ -918,6 +920,34 @@
     
   
     FastAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concurrency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concurrency
   
 
     
@@ -2091,7 +2121,7 @@
 <p><code>YAMLStorage</code> reads with <code>yaml.safe_load</code>, so a hostile database file cannot execute code. It can still take the process down: YAML anchors and aliases expand recursively, and a hand-crafted file a few hundred bytes long can expand to gigabytes in memory (the "billion laughs" attack). <code>safe_load</code> does not prevent that — so <strong>YAML database files must be trusted input</strong>. Human-edited by people you trust is the use case; uploaded or user-supplied files are not.</p>
 <p>On the write side the storage is guarded: it serializes with <code>yaml.safe_dump</code>, which fails fast — before the file is touched — on any value the safe loader could not read back, so a write can never brick the database file with unreadable tags.</p>
 <h2 id="concurrency">Concurrency<a class="headerlink" href="#concurrency" title="Permanent link">¤</a></h2>
-<p>Neither TinyDB nor <code>tinydantic</code> locks the database file, and concurrent writers will corrupt it. The FastAPI page covers this honestly, with mitigations: see <a href="../fastapi/#async-fastapi-and-tinydb">Async, FastAPI, and TinyDB</a>.</p>
+<p>Neither TinyDB nor <code>tinydantic</code> locks the database file, and concurrent writers will corrupt it. The <a href="../concurrency/">Concurrency page</a> covers the single-process contract, <code>use_revision</code> optimistic concurrency for stale writes, and <code>ProcessLockMiddleware</code> for making a second process fail at startup instead of corrupting slowly; the <a href="../fastapi/#async-fastapi-and-tinydb">FastAPI page</a> shows the two serving patterns that satisfy the contract by construction.</p>
 <h2 id="where-next">Where next<a class="headerlink" href="#where-next" title="Permanent link">¤</a></h2>
 <ul>
 <li><a href="../storage/">Storage</a> — choosing a backend, including <code>YAMLStorage</code> and middleware.</li>
@@ -2151,7 +2181,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../fastapi/" class="md-footer__link md-footer__link--prev" aria-label="Previous: FastAPI">
+          <a href="../concurrency/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Concurrency">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2161,7 +2191,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                FastAPI
+                Concurrency
               </div>
             </div>
           </a>

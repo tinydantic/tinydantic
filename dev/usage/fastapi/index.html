@@ -16,7 +16,7 @@
         <link rel="prev" href="../testing/">
       
       
-        <link rel="next" href="../security/">
+        <link rel="next" href="../concurrency/">
       
       
         
@@ -566,6 +566,8 @@
       
         
       
+        
+      
     
     
     
@@ -1028,6 +1030,56 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Async, FastAPI, and TinyDB">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-a-async-def-handlers-inline-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern A: async def handlers, inline calls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-b-one-dedicated-database-thread" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern B: one dedicated database thread
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-move-from-a-to-b" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to move from A to B
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concurrent-requests-still-interleave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrent requests still interleave
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1045,6 +1097,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concurrency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2010,6 +2090,56 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Async, FastAPI, and TinyDB">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-a-async-def-handlers-inline-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern A: async def handlers, inline calls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-b-one-dedicated-database-thread" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern B: one dedicated database thread
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-move-from-a-to-b" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to move from A to B
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concurrent-requests-still-interleave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrent requests still interleave
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2080,18 +2210,18 @@
 </span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
 </span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="gp">&gt;&gt;&gt;</span>
 </span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="gp">&gt;&gt;&gt; </span><span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/users&quot;</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_201_CREATED</span><span class="p">)</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="gp">... </span><span class="k">def</span><span class="w"> </span><span class="nf">create_user</span><span class="p">(</span><span class="n">payload</span><span class="p">:</span> <span class="n">UserCreate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">User</span><span class="p">:</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="gp">... </span><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">create_user</span><span class="p">(</span><span class="n">payload</span><span class="p">:</span> <span class="n">UserCreate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">User</span><span class="p">:</span>
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="gp">... </span>    <span class="k">return</span> <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="n">payload</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
 </span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="gp">&gt;&gt;&gt;</span>
 </span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="gp">&gt;&gt;&gt; </span><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users/</span><span class="si">{user_id}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="gp">... </span><span class="k">def</span><span class="w"> </span><span class="nf">read_user</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">User</span><span class="p">:</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="gp">... </span><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_user</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">User</span><span class="p">:</span>
 </span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="gp">... </span>    <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
 </span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="gp">... </span>    <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="gp">... </span>        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">404</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
 </span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="gp">... </span>    <span class="k">return</span> <span class="n">user</span>
 </span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="gp">&gt;&gt;&gt;</span>
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="gp">&gt;&gt;&gt; </span><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users&quot;</span><span class="p">)</span>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="gp">... </span><span class="k">def</span><span class="w"> </span><span class="nf">list_users</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">User</span><span class="p">]:</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="gp">... </span><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_users</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">User</span><span class="p">]:</span>
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="gp">... </span>    <span class="k">return</span> <span class="n">User</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="gp">&gt;&gt;&gt;</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">TestClient</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
@@ -2100,7 +2230,7 @@
 <ul>
 <li><strong>The request body is a separate schema.</strong> <code>UserCreate</code> has no <code>id</code>, so clients cannot set one — the server assigns it. Returning a <code>User</code> (which <em>does</em> expose <code>id</code>) means the response echoes the created resource, id included.</li>
 <li><strong><code>get_by_id</code> returns <code>None</code> when nothing matches</strong>, which the handler turns into a <code>404</code>. This is the precisely-typed read variant from the <a href="../crud/">CRUD tour</a>; it returns <code>User | None</code>, so the <code>is None</code> check is exactly what a type checker expects.</li>
-<li><strong>The endpoints are plain <code>def</code>, not <code>async def</code></strong> — the deliberate choice explained in the last section.</li>
+<li><strong>The endpoints are <code>async def</code>, calling <code>tinydantic</code> inline</strong> — Pattern A from the last section, which keeps every database operation on a single thread by construction.</li>
 </ul>
 <h3 id="post-users-create"><code>POST /users</code> — create<a class="headerlink" href="#post-users-create" title="Permanent link">¤</a></h3>
 <p>Posting a body creates the document and returns it with <code>id</code> populated and a <code>201 Created</code> status:</p>
@@ -2148,33 +2278,62 @@
 </span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="go">  {&#39;id&#39;: 2, &#39;name&#39;: &#39;Grace&#39;, &#39;email&#39;: &#39;grace@example.com&#39;}]</span>
 </span></code></pre></div>
 <h2 id="async-fastapi-and-tinydb">Async, FastAPI, and TinyDB<a class="headerlink" href="#async-fastapi-and-tinydb" title="Permanent link">¤</a></h2>
-<p>TinyDB is a synchronous library, and <code>tinydantic</code> is a thin synchronous layer over it. That is not a limitation to work around in FastAPI — it is the grain to work with.</p>
-<p><strong>Prefer plain <code>def</code> endpoints.</strong> When you declare a path operation with <code>def</code> (not <code>async def</code>), FastAPI runs it in an external threadpool so its blocking I/O never stalls the event loop. This is the correct default for TinyDB-backed handlers: your <code>def create_user</code> above is already doing the right thing, with no extra code. The endpoints in this page are all plain <code>def</code> for exactly this reason.</p>
-<p><strong>In <code>async def</code> contexts, offload the blocking call.</strong> If you are inside an <code>async def</code> handler (perhaps because it also awaits other async work), do not call <code>tinydantic</code> methods directly — a blocking call on the event-loop thread stalls every other request. Push it to a worker thread with <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread">asyncio.to_thread</a>:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users/</span><span class="si">{user_id}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_user</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    <span class="c1"># Runs the blocking TinyDB read off the event loop.</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="n">user</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">,</span> <span class="n">user_id</span><span class="p">)</span>
-</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">404</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
-</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    <span class="k">return</span> <span class="n">user</span>
-</span></code></pre></div>
-<p><strong>TinyDB has no concurrency safety.</strong> TinyDB does no locking and is not safe for concurrent access — neither across processes nor across threads writing at the same time. Two practical rules follow:</p>
+<p>TinyDB is a synchronous library with <strong>no concurrency safety of any kind</strong> — no locking, and in-memory caches that assume a single user (the full story is on the <a href="../concurrency/">Concurrency page</a>). The contract that follows is: one process, and all database access on one thread. In FastAPI that contract is not a burden — you can get it <em>by construction</em>, in two patterns. Start with Pattern A; move to Pattern B when you hit its limits.</p>
+<h3 id="pattern-a-async-def-handlers-inline-calls">Pattern A: <code>async def</code> handlers, inline calls<a class="headerlink" href="#pattern-a-async-def-handlers-inline-calls" title="Permanent link">¤</a></h3>
+<p>Declare every endpoint <code>async def</code> and call <code>tinydantic</code> directly, exactly as the CRUD API above does. FastAPI runs <code>async def</code> handlers on the event loop — <strong>one thread</strong> — and a <code>tinydantic</code> call contains no <code>await</code>, so each database operation runs start-to-finish before any other handler resumes. No interleaving, no races, no locks: the serialization the contract demands falls out of the execution model. This is the simplest correct FastAPI + <code>tinydantic</code> app, and the right default for everything <code>tinydantic</code> targets.</p>
+<p>The trade to understand: a blocking call on the event loop stalls <em>all</em> request handling for its duration. For TinyDB-scale operations — milliseconds against a small local file — that pause is unobservable. It only starts to matter when operations get slow (see the transition criteria below).</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Two easy ways to break Pattern A's guarantee, both of which reintroduce the threadpool:</p>
 <ul>
-<li><strong>Run a single process.</strong> Do not put a TinyDB file behind multiple worker processes (for example <code>uvicorn --workers 4</code> or several Gunicorn workers). Each process holds its own view of the file and they will clobber one another. Use one process — scale with the threadpool, not with processes.</li>
-<li><strong>Serialize writes.</strong> Route writes through one place. FastAPI's threadpool can run several <code>def</code> handlers at once, so guard write paths with a lock (or funnel them through a single worker) if concurrent writes are possible.</li>
-<li><strong>Prefer <a class="autorefs autorefs-internal" title="            patch" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.patch">patch()</a> for partial updates.</strong> A lock serializes the writes themselves, but not the stale reads handlers hold between load and save — a whole-document <code>save()</code> from a stale copy silently overwrites other fields. <code>book.patch(**payload.model_dump(exclude_unset=True))</code> writes only the named fields, so concurrent changes to unrelated fields survive.</li>
+<li><strong>Plain <code>def</code> endpoints.</strong> FastAPI runs those in a <em>multi-threaded</em> pool — several can run at once, racing on the database. If a handler touches <code>tinydantic</code>, make it <code>async def</code>.</li>
+<li><strong><code>asyncio.to_thread</code> / <code>run_in_threadpool</code>.</strong> Wrapping calls this way sends them to the same multi-threaded pool. Don't offload <code>tinydantic</code> calls piecemeal; if the loop stall genuinely hurts, adopt Pattern B wholesale.</li>
 </ul>
+</div>
+<h3 id="pattern-b-one-dedicated-database-thread">Pattern B: one dedicated database thread<a class="headerlink" href="#pattern-b-one-dedicated-database-thread" title="Permanent link">¤</a></h3>
+<p>When the event loop must stay responsive during database work, move <strong>all</strong> <code>tinydantic</code> calls to a single-worker executor — one thread, serving operations in queue order. Serialization is still structural (there is only one thread that ever touches the database); the loop is free while it works:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span><span class="p">,</span> <span class="n">HTTPException</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="c1"># ONE worker: all database operations run on this thread, in order.</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="n">db_executor</span> <span class="o">=</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">in_db_thread</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run a tinydantic call on the dedicated database thread.&quot;&quot;&quot;</span>
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>    <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span>
+</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>    <span class="k">return</span> <span class="k">await</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_in_executor</span><span class="p">(</span>
+</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>        <span class="n">db_executor</span><span class="p">,</span> <span class="n">partial</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span id="__span-6-18"><a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>    <span class="p">)</span>
+</span><span id="__span-6-19"><a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>
+</span><span id="__span-6-20"><a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>
+</span><span id="__span-6-21"><a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users/</span><span class="si">{user_id}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-6-22"><a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_user</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">User</span><span class="p">:</span>
+</span><span id="__span-6-23"><a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>    <span class="n">user</span> <span class="o">=</span> <span class="k">await</span> <span class="n">in_db_thread</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">,</span> <span class="n">user_id</span><span class="p">)</span>
+</span><span id="__span-6-24"><a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>    <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-6-25"><a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">404</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
+</span><span id="__span-6-26"><a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>    <span class="k">return</span> <span class="n">user</span>
+</span></code></pre></div>
+<p>The discipline that keeps Pattern B correct: <strong>every</strong> database call goes through the executor — one stray inline call (or a <code>def</code> endpoint) and you have two threads again. <code>max_workers=1</code> is the entire safety argument; raising it reintroduces the races the contract exists to prevent.</p>
+<h3 id="when-to-move-from-a-to-b">When to move from A to B<a class="headerlink" href="#when-to-move-from-a-to-b" title="Permanent link">¤</a></h3>
+<p>Pattern A's cost is loop stall equal to your slowest database operation, so watch for these symptoms:</p>
+<ul>
+<li><strong>Latency under concurrency</strong>: p99 grows with request rate while p50 stays flat — requests are queueing behind database calls.</li>
+<li><strong>Slow endpoints stall unrelated ones</strong>: a heavy <code>search()</code> or a large-file write makes health checks and static endpoints time out.</li>
+<li><strong>Operations outgrow "milliseconds"</strong>: the database file has grown to where whole-file rewrites (how TinyDB writes) take tens of milliseconds or more.</li>
+</ul>
+<p>As rough guidance: an operation stalling the loop for 1 ms caps you around a thousand requests/second — far beyond what a TinyDB-backed tool sees — while a 100 ms rewrite of a bloated file is felt by every concurrent user, and is your cue. The migration is mechanical: add the executor and helper, wrap each call site (<code>User.get_by_id(x)</code> → <code>await in_db_thread(User.get_by_id, x)</code>), and change nothing about models or storage. If even a single serialized database thread is the bottleneck after that, you have outgrown TinyDB itself — move to a client/server database rather than adding threads.</p>
+<h3 id="concurrent-requests-still-interleave">Concurrent <em>requests</em> still interleave<a class="headerlink" href="#concurrent-requests-still-interleave" title="Permanent link">¤</a></h3>
+<p>Both patterns serialize database <em>operations</em>; neither serializes <em>user intent</em>. Two users can still load the same document into edit forms and submit conflicting saves minutes apart — no threads involved, just time. That is what <code>use_revision=True</code> optimistic concurrency is for, including the <code>ETag</code> / <code>If-Match</code> / <code>412</code> flow for exactly this API shape — see <a href="../concurrency/#optimistic-concurrency-use_revision">Concurrency</a>. And for partial updates, prefer <a class="autorefs autorefs-internal" title="            patch" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.patch">patch()</a>: <code>user.patch(**payload.model_dump(exclude_unset=True))</code> writes only the named fields, so concurrent edits to unrelated fields survive.</p>
+<p><strong>Run a single process.</strong> Never put a TinyDB file behind multiple workers (<code>uvicorn --workers 4</code>, Gunicorn workers) — each process rewrites the whole file from its own view and they destroy each other's writes. Add <a class="autorefs autorefs-internal" title="            ProcessLockMiddleware" href="../../reference/api/tinydantic/tinydb/middlewares/#tinydantic.tinydb.middlewares.ProcessLockMiddleware">ProcessLockMiddleware</a> to your storage so that misconfiguration fails at startup instead of corrupting slowly.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code>tinydantic</code>'s recommendation is sync-first, deliberately. The async lifecycle shims that exist for TinyDB are unmaintained, are <code>async with</code>-scoped in a way that conflicts with <code>tinydantic</code>'s long-lived class binding, and rely on file locking that is silently absent on some platforms. Plain <code>def</code> handlers in FastAPI's threadpool, plus <code>asyncio.to_thread</code> where you genuinely need it, cover the real use cases without that risk. Revisit if a future version adds first-class async support.</p>
+<p><code>tinydantic</code>'s recommendation is sync-first, deliberately. The async lifecycle shims that exist for TinyDB are unmaintained, are <code>async with</code>-scoped in a way that conflicts with <code>tinydantic</code>'s long-lived class binding, and rely on file locking that is silently absent on some platforms. Pattern A — and Pattern B where the loop must stay responsive — covers the real use cases without that risk. Revisit if a future version adds first-class async support.</p>
 </div>
 <p>None of this is a compromise for <code>tinydantic</code>'s intended audience.</p>
 <div class="admonition tip">
@@ -2183,6 +2342,7 @@
 </div>
 <h2 id="where-next">Where next<a class="headerlink" href="#where-next" title="Permanent link">¤</a></h2>
 <ul>
+<li><a href="../concurrency/">Concurrency</a> — the single-process contract in full: <code>use_revision</code> optimistic concurrency, the ETag pattern, <code>ProcessLockMiddleware</code>, and backup/restore semantics.</li>
 <li><a href="../security/">Security considerations</a> — file permissions and untrusted input, before anything network-facing goes live.</li>
 <li><a href="../testing/">Testing</a> — the <code>bind()</code> and application-factory patterns used to point these models at an in-memory database in tests.</li>
 <li><a href="../crud/">CRUD tour</a> — the <code>insert()</code>, <code>get_by_id()</code>, and <code>all()</code> methods these endpoints are built on.</li>
@@ -2258,13 +2418,13 @@
         
         
           
-          <a href="../security/" class="md-footer__link md-footer__link--next" aria-label="Next: Security considerations">
+          <a href="../concurrency/" class="md-footer__link md-footer__link--next" aria-label="Next: Concurrency">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Security considerations
+                Concurrency
               </div>
             </div>
             <div class="md-footer__button md-icon">
