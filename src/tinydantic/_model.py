@@ -47,6 +47,7 @@ from tinydantic._errors import (
     UnknownUpdateFieldError,
 )
 from tinydantic._fields import Unique
+from tinydantic._find import FindQuery
 from tinydantic._query import (
     DocIdCondition,
     DocIdQuery,
@@ -82,6 +83,10 @@ else:
 # Name of the per-class attribute caching per-field TypeAdapters
 # (built lazily by _field_adapter for update() serialization).
 _FIELD_ADAPTERS_ATTR = "__tinydantic_field_adapters__"
+
+# Sentinel distinguishing "find() called with no condition" (the
+# explicit whole-table spelling) from an accidental None value.
+_FIND_NOT_GIVEN = object()
 
 # Name of the per-class attribute caching unique field names
 # (computed once in __pydantic_init_subclass__).
@@ -716,6 +721,54 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             All documents in the table as validated models.
         """
         return [cls.from_tinydb_document(doc) for doc in iter(cls.get_table())]
+
+    @overload
+    @classmethod
+    def find(cls) -> FindQuery[Self]: ...
+
+    @overload
+    @classmethod
+    def find(cls, cond: QueryLike) -> FindQuery[Self]: ...
+
+    @classmethod
+    def find(cls, cond: Any = _FIND_NOT_GIVEN) -> FindQuery[Self]:
+        """Build a lazy fluent query over this model's table.
+
+        Returns an immutable [FindQuery][tinydantic.FindQuery]
+        describing a query; nothing touches storage until a
+        terminal runs. Called with no argument it describes the
+        whole table — that spelling is deliberate and explicit, so
+        a ``None`` that *arrives* as a value (a condition variable
+        that was never set) is refused loudly instead of silently
+        widening the query to every document.
+
+        ```python
+        adults = User.find(q("age") >= 18)
+        page = adults.sort("name").skip(20).limit(10).all()
+        ```
+
+        Args:
+            cond: The query condition, or omitted for the whole
+                table.
+
+        Returns:
+            A lazy query description; no I/O happens here.
+
+        Raises:
+            SelectorError: If ``cond`` is ``None`` — call
+                ``find()`` with no argument to query the whole
+                table.
+        """
+        if cond is None:
+            msg = (
+                "find() got None instead of a query condition — a "
+                "condition variable is unexpectedly None. To query "
+                "the whole table, call find() with no argument."
+            )
+            raise SelectorError(msg)
+        if cond is _FIND_NOT_GIVEN:
+            return FindQuery(cls)
+        return FindQuery(cls, cond=cast("QueryLike", cond))
 
     @classmethod
     def _match_id_condition_ids(cls, cond: QueryLike) -> list[int]:
