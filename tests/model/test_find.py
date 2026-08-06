@@ -327,6 +327,22 @@ class TestReadTerminals:
         assert ids == [3, 1]
 
 
+class TestBooleanContext:
+    """A chain refuses truthiness instead of lying."""
+
+    def test_bool_raises_find_query_error(
+        self, user_class: type[User]
+    ) -> None:
+        """If User.find(...) is refused with the fix named."""
+        with pytest.raises(FindQueryError, match="exists"):
+            bool(user_class.find())
+
+    def test_len_is_unsupported(self, user_class: type[User]) -> None:
+        """len() fails naturally; count() is the spelling."""
+        with pytest.raises(TypeError):
+            len(user_class.find())  # type: ignore[arg-type]
+
+
 class TestFindReservedWord:
     """find is a reserved word on the model namespace."""
 
