@@ -323,6 +323,24 @@ class FindQuery(Generic[ModelT]):
         """Iterate the materialized result of the pipeline."""
         return iter(self._execute())
 
+    def __bool__(self) -> bool:
+        """Refuse boolean context — a chain has no truth value.
+
+        Without this every ``if Model.find(cond):`` would be
+        silently, permanently true. Raising follows the
+        numpy/pandas ambiguous-truth precedent (and
+        ``FindQueryError`` is a ``ValueError``, matching them).
+
+        Raises:
+            FindQueryError: Always; call ``.exists()`` or
+                ``.count()``.
+        """
+        msg = (
+            "A FindQuery has no truth value (it is a lazy query "
+            "description). Use .exists() or .count()."
+        )
+        raise FindQueryError(msg)
+
     def __repr__(self) -> str:
         """Show the model and full clause set for debugging."""
         if self._sort_key is not None:
