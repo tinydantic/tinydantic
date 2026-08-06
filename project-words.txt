@@ -5,6 +5,7 @@ alikes
 annotationlib
 anson
 asyncio
+attrgetter
 autodocstring
 autorefs
 cacheprovider
@@ -28,6 +29,7 @@ crossref
 crossrefs
 cython
 dataclass
+datetimes
 davidanson
 debugpy
 dists
@@ -40,6 +42,7 @@ doctest
 doctested
 doctests
 donjayamanne
+dunder
 editmsg
 elif
 esbenp
@@ -106,6 +109,7 @@ njpwerner
 noqa
 nosetests
 numprocesses
+numpy
 opname
 optionflags
 pathlib
@@ -162,6 +166,7 @@ spyder
 spyderproject
 spyproject
 squeezy
+startswith
 stdlib
 stkb
 styleguides
@@ -203,5 +208,7 @@ viewports
 vivaxy
 webassets
 worklist
+worktree
+worktrees
 xdist
 Zensical

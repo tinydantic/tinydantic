@@ -7,13 +7,16 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Annotated, cast
+from typing import TYPE_CHECKING, Annotated, cast
 
 import pytest
 
 from pydantic import Field, ValidationError
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping, MutableMapping
 
 from tinydantic import (
     DocumentIDUpdateError,
@@ -322,10 +325,12 @@ class TestReadTerminals:
 
     def test_id_condition_chains(self, seeded: type[User]) -> None:
         """Model.id conditions work through the chain."""
-        second = seeded.find(seeded.id == 2).first()
+        second = seeded.find(q(seeded.id) == 2).first()
         assert second is not None
         assert second.name == "alice"
-        ids = [u.id for u in seeded.find(seeded.id.one_of([1, 3])).sort("-id")]
+        ids = [
+            u.id for u in seeded.find(q(seeded.id).one_of([1, 3])).sort("-id")
+        ]
         assert ids == [3, 1]
 
 
@@ -411,11 +416,15 @@ class TestUpdate:
     def test_update_accepts_transform(self, seeded: type[User]) -> None:
         """Transform callables pass through like update()."""
 
-        def bump(doc: dict) -> None:
+        def bump(doc: MutableMapping) -> None:
             """Increment the stored age in place."""
             doc["age"] += 1
 
-        seeded.find(q("name") == "erin").update(bump)
+        # TinyDB annotates transforms with Mapping though it
+        # passes a mutable dict; match update()'s precedent.
+        seeded.find(q("name") == "erin").update(
+            cast("Callable[[Mapping], None]", bump)
+        )
         erin = seeded.get(q("name") == "erin")
         assert erin is not None
         assert erin.age == 41
@@ -427,8 +436,7 @@ class TestUpdate:
             chain.update({"nickname": "bobby"})
         chain.update({"nickname": "bobby"}, extra_keys="allow")
         stored = seeded.get_table().get(doc_id=1)
-        assert stored is not None
-        assert stored["nickname"] == "bobby"  # type: ignore[index]
+        assert stored == {"name": "bob", "age": 30, "nickname": "bobby"}
 
     def test_id_key_rejected_through_chain(self, seeded: type[User]) -> None:
         """The id-key guard fires through both delegation paths."""

@@ -13,7 +13,11 @@ The examples share state top to bottom, so run them in order.
 ...     name: str
 ...     age: int
 >>> for name, age in [
-...     ("bob", 30), ("alice", 25), ("carol", 30), ("dave", 25), ("erin", 40),
+...     ("bob", 30),
+...     ("alice", 25),
+...     ("carol", 30),
+...     ("dave", 25),
+...     ("erin", 40),
 ... ]:
 ...     _ = User(name=name, age=age).insert()
 
@@ -22,7 +26,7 @@ The examples share state top to bottom, so run them in order.
 A chain in one glance — nothing touches storage until the terminal call:
 
 ```pycon
->>> adults = User.find(q("age") >= 18)      # lazy: no I/O yet
+>>> adults = User.find(q("age") >= 18)  # lazy: no I/O yet
 >>> [u.name for u in adults.sort("age", "-name").limit(3)]
 ['dave', 'alice', 'carol']
 >>> oldest = User.find().sort("-age").first()
@@ -41,7 +45,7 @@ A chain is a _clause set_ — one condition, one ordering, one window — not a 
 
 ```pycon
 >>> by_name = adults.sort("name")
->>> by_age = adults.sort("-age")        # `adults` itself is unchanged
+>>> by_age = adults.sort("-age")  # `adults` itself is unchanged
 >>> [u.name for u in by_name.limit(2)]
 ['alice', 'bob']
 >>> [u.name for u in by_age.limit(2)]
@@ -62,7 +66,9 @@ tinydantic._errors.FindQueryError: sort() was already called on this query. Clau
 **The pipeline is fixed: match → sort → skip → limit, regardless of call order.** `limit(2).sort(...)` does _not_ mean "take two documents, then sort them" — sorting always happens before the window is cut, exactly as in SQL (`ORDER BY` before `LIMIT`) and MongoDB (cursor options, applied server-side in fixed order):
 
 ```pycon
->>> User.find().limit(2).sort("-age").all() == User.find().sort("-age").limit(2).all()
+>>> spelled_backward = User.find().limit(2).sort("-age")
+>>> spelled_forward = User.find().sort("-age").limit(2)
+>>> spelled_backward.all() == spelled_forward.all()
 True
 
 ```
@@ -80,7 +86,7 @@ True
 Passing `None` as a _value_ is a different situation: it usually means a condition variable was never set, and treating it as "the whole table" would silently widen the query to every document. tinydantic refuses at construction:
 
 ```pycon
->>> cond = None                 # e.g. a filter builder returned None
+>>> cond = None  # e.g. a filter builder returned None
 >>> User.find(cond)
 Traceback (most recent call last):
     ...
@@ -138,9 +144,17 @@ Python refuses to order `None` against numbers, and tinydantic does not invent a
 Traceback (most recent call last):
     ...
 TypeError: '<' not supported between instances of 'NoneType' and 'int'
->>> [s.value for s in Score.find().sort(key=lambda s: (s.value is None, s.value or 0))]
+>>> [
+...     s.value
+...     for s in Score.find().sort(key=lambda s: (s.value is None, s.value or 0))
+... ]
 [1, 3, None]
->>> [s.value for s in Score.find().sort(key=lambda s: (s.value is not None, s.value or 0))]
+>>> [
+...     s.value
+...     for s in Score.find().sort(
+...         key=lambda s: (s.value is not None, s.value or 0)
+...     )
+... ]
 [None, 1, 3]
 
 ```
@@ -198,7 +212,7 @@ The signature use case is keep-newest-N pruning — sort descending, skip the ke
 
 ```pycon
 >>> _ = User(name="frank", age=50).insert()
->>> User.find().sort("-id").skip(4).delete()    # keep the 4 newest users
+>>> User.find().sort("-id").skip(4).delete()  # keep the 4 newest users
 [2, 1]
 >>> User.find().count()
 4
