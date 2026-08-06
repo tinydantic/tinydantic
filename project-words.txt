@@ -14,6 +14,7 @@ callables
 callout
 callouts
 callspec
+casefold
 cdwilson
 celerybeat
 charliermarsh

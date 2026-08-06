@@ -263,6 +263,74 @@ The contract, in full:
 - The table-level bulk path (`update()`/`update_all()`/`update_multiple()`) deliberately does **not** enforce uniqueness — it is the documented loose escape, like `extra_keys="allow"`.
 - The check is check-then-write within one process. That is sound under tinydantic's documented single-process, serialized-writes scope, but it is not a database constraint: another process writing the same file concurrently can still create duplicates.
 
+## Composite constraints
+
+Uniqueness over _several_ fields — a join model's pair, a slug per author — is a property of the model, not of any single field, so it is declared with [UniqueConstraint][tinydantic.UniqueConstraint] through the `constraints=` class keyword (a [TinydanticConfig][tinydantic.TinydanticConfig] key) rather than a field annotation:
+
+```pycon
+>>> from tinydantic import UniqueConstraint
+>>> class Follow(
+...     TinydanticModel,
+...     database=db,
+...     table_name="follows",
+...     constraints=(UniqueConstraint("follower_id", "followee_id"),),
+... ):
+...     follower_id: int
+...     followee_id: int
+>>> Follow(follower_id=3, followee_id=7).insert()
+Follow(id=1, follower_id=3, followee_id=7)
+>>> Follow(follower_id=3, followee_id=8).insert()
+Follow(id=2, follower_id=3, followee_id=8)
+>>> Follow(follower_id=3, followee_id=7).insert()
+Traceback (most recent call last):
+  ...
+tinydantic._errors.UniqueConstraintError: Values (3, 7) for unique fields ('follower_id', 'followee_id') already exist ...
+
+```
+
+### Normalized uniqueness with `key=`
+
+A constraint may carry a `key=` callable — the Python analog of an expression-based unique index (Django's `UniqueConstraint(Lower("username"))`). Uniqueness is then enforced on `key(*values)` instead of the raw values, while the **stored values stay untouched** — this is how you keep `"Chris"` for display while rejecting a second `"chris"`:
+
+```pycon
+>>> class Handle(
+...     TinydanticModel,
+...     database=db,
+...     table_name="handles",
+...     constraints=(
+...         UniqueConstraint(
+...             "name",
+...             "org_id",
+...             key=lambda name, org_id: (name.casefold(), org_id),
+...         ),
+...     ),
+... ):
+...     name: str
+...     org_id: int
+>>> Handle(name="Chris", org_id=7).insert()
+Handle(id=1, name='Chris', org_id=7)
+>>> Handle(name="chris", org_id=7).insert()
+Traceback (most recent call last):
+  ...
+tinydantic._errors.UniqueConstraintError: Values ('chris', 7) for unique fields ('name', 'org_id') already exist (comparison key ('chris', 7)) in table 'handles' ...
+
+```
+
+The single-field marker takes the same parameter — `email: Annotated[str, Unique(key=str.casefold)]` — and `UniqueConstraint("email")` with one field is exactly equivalent to a `Unique()` marker, so you can declare everything in one place if you prefer.
+
+The `key=` contract:
+
+- The callable receives the constraint's **serialized** field values (what storage holds — a `datetime` arrives as an ISO-format string), positionally, in declared field order, and must return a hashable result. Sorting-adjacent recipes follow from this — one entry per user per calendar _day_: `key=lambda uid, ts: (uid, ts[:10])`.
+- It must be pure and deterministic — this is documented, not policed; an impure key silently breaks enforcement, and an exception it raises propagates as-is.
+- It is never called with `None`: a constraint participates in a check only when **all** of its fields are non-`None` (the composite generalization of SQL's `NULL` under `UNIQUE`), and exempt rows skip the key entirely.
+- Case-insensitivity across every string member is `key=lambda *vs: tuple(v.casefold() if isinstance(v, str) else v for v in vs)`. When canonical storage is acceptable (emails, slugs), prefer normalizing at the boundary instead — `Annotated[str, StringConstraints(to_lower=True), Unique()]` stores the lowercased value and needs no key.
+- When a key produced the match, the error message shows the computed comparison key alongside the raw values, so a normalized clash (candidate `'chris'` vs stored `'Chris'`) never looks like a phantom collision.
+
+The rest of the single-field contract carries over unchanged: same write-path coverage, same `update()`/`update_all()`/`update_multiple()` bypass, same in-process check-then-write scope. Two more rules specific to declarations:
+
+- Constraints resolve like every other config key — nearest class in the MRO wins, so a subclass's `constraints=` **replaces** its parent's — and merge with `Unique()` markers. Exact duplicates (same field _set_, same `key` callable or both key-less) collapse to one; the same field set with _different_ keys is legal and every constraint must hold — declaring both `UniqueConstraint("v")` and `UniqueConstraint("v", key=str.casefold)` enforces exact **and** case-insensitive uniqueness.
+- A constraint naming a non-field or `id` raises [ConstraintFieldError][tinydantic.ConstraintFieldError] at class definition (or `bind()`) time. Both would otherwise be silent: an unknown field reads as `None` in every body and never enforces, and `id` is never stored in the document body at all — ids are unique already.
+
 ## Where next
 
 - [Queries](queries.md) — build query conditions from model fields, including nested ones.
