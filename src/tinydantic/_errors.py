@@ -115,33 +115,51 @@ class DocumentAlreadyExistsError(TinydanticError, ValueError):
 
 
 class UniqueConstraintError(TinydanticError):
-    """A write would duplicate a unique field's value.
+    """A write would duplicate a unique value (tuple).
 
     Raised by create-style and instance-level writes when a field
-    marked [Unique][tinydantic.Unique] already holds the same
-    value elsewhere — in the table, or earlier in the same
-    ``insert_multiple()`` batch.
+    marked [Unique][tinydantic.Unique] — or the field tuple of a
+    [UniqueConstraint][tinydantic.UniqueConstraint] — already
+    holds the same value elsewhere: in the table, or earlier in
+    the same ``insert_multiple()`` batch. When the constraint
+    carries a comparison-``key`` callable and its computed key
+    differs from the raw values, the message shows both, so a
+    normalized match never looks like a phantom collision.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         *,
         model_name: str,
         table_name: str,
-        field: str,
-        value: object,
+        fields: tuple[str, ...],
+        values: tuple[object, ...],
+        comparison_key: object | None = None,
         doc_id: int | None,
     ) -> None:
-        """Initialize with the clash location and value."""
+        """Initialize with the clash location and values."""
         where = (
             f"document {doc_id}"
             if doc_id is not None
             else "another document in the same batch"
         )
+        if len(fields) == 1:
+            subject = (
+                f"Value {values[0]!r} for unique field "
+                f"{fields[0]!r} already exists"
+            )
+        else:
+            subject = (
+                f"Values {values!r} for unique fields {fields!r} already exist"
+            )
+        key_clause = (
+            f" (comparison key {comparison_key!r})"
+            if comparison_key is not None and comparison_key != values
+            else ""
+        )
         super().__init__(
-            f"Value {value!r} for unique field {field!r} already "
-            f"exists in table {table_name!r} (model "
-            f"{model_name!r}) — held by {where}.",
+            f"{subject}{key_clause} in table {table_name!r} "
+            f"(model {model_name!r}) — held by {where}.",
         )
 
 
@@ -275,6 +293,44 @@ class ShadowedFieldError(TinydanticUserError):
             f"declare shadowed_fields=({names},) on the class "
             "and query them with q(<field name>).",
         )
+
+
+class ConstraintFieldError(TinydanticUserError):
+    """A unique constraint names a field it cannot enforce.
+
+    Raised at class definition or ``bind()`` time when a
+    [UniqueConstraint][tinydantic.UniqueConstraint] names a field
+    that is not a model field (it would be ``None`` in every
+    stored body and silently never enforce) or names ``id``
+    (document ids are never stored in the document body, so an
+    ``id`` constraint would silently never match — and ids are
+    unique already). Loud rejection instead of silent
+    non-enforcement.
+    """
+
+    def __init__(
+        self,
+        *,
+        model_name: str,
+        constraint_fields: tuple[str, ...],
+        field: str,
+        reason: str,
+    ) -> None:
+        """Initialize with the constraint and the offending field."""
+        names = ", ".join(repr(name) for name in constraint_fields)
+        subject = (
+            f"UniqueConstraint({names}) on model {model_name!r} "
+            f"names {field!r}"
+        )
+        if reason == "id":
+            message = (
+                f"{subject}: document ids are never stored in "
+                "the document body, so an id constraint would "
+                "silently never match — ids are unique already."
+            )
+        else:
+            message = f"{subject}, which is not a model field."
+        super().__init__(message)
 
 
 class DocumentIDRequiredError(TinydanticError):

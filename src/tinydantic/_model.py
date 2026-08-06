@@ -679,8 +679,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                         raise UniqueConstraintError(
                             model_name=cls.__name__,
                             table_name=table.name,
-                            field=name,
-                            value=value,
+                            fields=(name,),
+                            values=(value,),
                             doc_id=None,
                         )
                     seen[name].add(value)
@@ -848,8 +848,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                     raise UniqueConstraintError(
                         model_name=cls.__name__,
                         table_name=table.name,
-                        field=name,
-                        value=body[name],
+                        fields=(name,),
+                        values=(body[name],),
                         doc_id=stored.doc_id,
                     )
 
@@ -893,8 +893,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             raise UniqueConstraintError(
                 model_name=cls.__name__,
                 table_name=cls.get_table().name,
-                field=touched[0],
-                value=payload[touched[0]],
+                fields=(touched[0],),
+                values=(payload[touched[0]],),
                 doc_id=matched[0],
             )
         cls._check_unique(payload, exclude_doc_ids=set(matched))
