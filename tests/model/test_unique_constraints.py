@@ -18,6 +18,7 @@ from tinydantic import (
     Unique,
     UniqueConstraint,
     UniqueConstraintError,
+    q,
 )
 
 if TYPE_CHECKING:
@@ -456,7 +457,8 @@ class TestCompositeEnforcement:
 
         M(a=1, b=2).insert()
         target = M(a=9, b=9, tag="move").insert()
-        M.update({"a": 1, "b": 2}, M.tag == "move")
+        assert target.id is not None
+        M.update({"a": 1, "b": 2}, q(M.tag) == "move")
         moved = M.get_by_id(target.id)
         assert moved is not None
         assert (moved.a, moved.b) == (1, 2)
@@ -551,7 +553,7 @@ class TestBatchAndUpsert:
         M(a=1, b=1, tag="x").insert()
         M(a=2, b=2, tag="x").insert()
         with pytest.raises(UniqueConstraintError):
-            M.upsert(M(a=9, b=9, tag="x"), M.tag == "x")
+            M.upsert(M(a=9, b=9, tag="x"), q(M.tag) == "x")
 
     def test_upsert_single_match_novel_pair_ok(
         self,
@@ -571,8 +573,8 @@ class TestBatchAndUpsert:
             tag: str
 
         M(a=1, b=1, tag="x").insert()
-        M.upsert(M(a=9, b=9, tag="x"), M.tag == "x")
-        got = M.get_by_cond(M.tag == "x")
+        M.upsert(M(a=9, b=9, tag="x"), q(M.tag) == "x")
+        got = M.get_by_cond(q(M.tag) == "x")
         assert got is not None
         assert (got.a, got.b) == (9, 9)
 
@@ -596,7 +598,7 @@ class TestBatchAndUpsert:
         M(a=1, b=1, tag="x").insert()
         M(a=2, b=2, tag="y").insert()
         with pytest.raises(UniqueConstraintError):
-            M.upsert(M(a=1, b=1, tag="y"), M.tag == "y")
+            M.upsert(M(a=1, b=1, tag="y"), q(M.tag) == "y")
 
 
 class TestPatch:
@@ -620,6 +622,7 @@ class TestPatch:
 
         M(a=1, b=7).insert()
         patched = M(a=2, b=7).insert()
+        assert patched.id is not None
         with pytest.raises(UniqueConstraintError):
             patched.patch(a=1)  # stored b=7 completes taken (1, 7)
         stored = M.get_by_id(patched.id)
@@ -641,6 +644,7 @@ class TestPatch:
 
         M(a=1, b=7).insert()
         patched = M(a=2, b=7).insert()
+        assert patched.id is not None
         patched.patch(a=3)
         stored = M.get_by_id(patched.id)
         assert stored is not None

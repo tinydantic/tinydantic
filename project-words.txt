@@ -31,9 +31,11 @@ crossref
 crossrefs
 cython
 dataclass
+dataclasses
 datetimes
 davidanson
 debugpy
+dedup
 dists
 dmypy
 dnspython
@@ -47,6 +49,7 @@ donjayamanne
 dunder
 editmsg
 elif
+ellipsized
 esbenp
 excinfo
 fastapi
@@ -56,6 +59,7 @@ Firestore
 followee
 fontawesome
 footgun
+frozenset
 frozensets
 fspath
 functools
@@ -214,4 +218,5 @@ worklist
 worktree
 worktrees
 xdist
+xfail
 Zensical
