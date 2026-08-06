@@ -91,7 +91,7 @@ _FIND_NOT_GIVEN = object()
 
 # Name of the per-class attribute caching unique field names
 # (computed once in __pydantic_init_subclass__).
-_UNIQUE_FIELDS_ATTR = "__tinydantic_unique_fields__"
+_UNIQUE_MARKERS_ATTR = "__tinydantic_unique_markers__"
 
 if sys.version_info >= (3, 14):
     from annotationlib import Format, call_annotate_function
@@ -470,21 +470,21 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         cls._validate_constraints(
             get_config_value(cls, "constraints", default=()) or (),
         )
-        setattr(
-            cls,
-            _UNIQUE_FIELDS_ATTR,
-            tuple(
-                name
-                for name, info in cls.model_fields.items()
+        markers: list[UniqueConstraint] = []
+        for name, info in cls.model_fields.items():
+            for meta in info.metadata:
                 # The bare class is accepted alongside instances:
                 # treating Annotated[str, Unique] as inert would be
                 # a silent failure.
-                if any(
-                    meta is Unique or isinstance(meta, Unique)
-                    for meta in info.metadata
-                )
-            ),
-        )
+                if meta is Unique:
+                    markers.append(UniqueConstraint(name))
+                    break
+                if isinstance(meta, Unique):
+                    markers.append(
+                        UniqueConstraint(name, key=meta.key),
+                    )
+                    break
+        setattr(cls, _UNIQUE_MARKERS_ATTR, tuple(markers))
 
     @classmethod
     def _validate_constraints(
@@ -707,29 +707,33 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         # ValueError and must never be mistaken for a duplicate id.
         serialized = [doc.to_tinydb_document() for doc in docs]
         table = cls.get_table()
-        unique_fields: tuple[str, ...] = getattr(
-            cls,
-            _UNIQUE_FIELDS_ATTR,
-            (),
-        )
-        if unique_fields:
+        constraints = cls._unique_constraints()
+        if constraints:
             preset_ids = {doc.id for doc in docs if doc.id is not None}
-            seen: dict[str, set[Any]] = {name: set() for name in unique_fields}
+            seen: dict[int, set[object]] = {
+                index: set() for index in range(len(constraints))
+            }
             for body in serialized:
                 cls._check_unique(body, exclude_doc_ids=preset_ids)
-                for name in unique_fields:
-                    value = body.get(name)
-                    if value is None:
+                for index, constraint in enumerate(constraints):
+                    participation = cls._participating(constraint, body)
+                    if participation is None:
                         continue
-                    if value in seen[name]:
+                    values, comparison = participation
+                    if comparison in seen[index]:
                         raise UniqueConstraintError(
                             model_name=cls.__name__,
                             table_name=table.name,
-                            fields=(name,),
-                            values=(value,),
+                            fields=constraint.fields,
+                            values=values,
+                            comparison_key=(
+                                comparison
+                                if constraint.key is not None
+                                else None
+                            ),
                             doc_id=None,
                         )
-                    seen[name].add(value)
+                    seen[index].add(comparison)
         try:
             doc_ids = table.insert_multiple(serialized)
         except ValueError as exc:
@@ -856,46 +860,124 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 )
 
     @classmethod
+    def _unique_constraints(cls) -> tuple[UniqueConstraint, ...]:
+        """Resolve this model's effective unique constraints.
+
+        Merges per-field [Unique][tinydantic.Unique] markers
+        (collected at class definition) with the ``constraints``
+        config key (resolved here, so late ``bind()`` works).
+        Exact duplicates — same field *set* and same ``key``
+        callable (or both key-less) — collapse to one; the same
+        field set with different keys yields distinct constraints
+        that all enforce.
+        """
+        markers: tuple[UniqueConstraint, ...] = getattr(
+            cls,
+            _UNIQUE_MARKERS_ATTR,
+            (),
+        )
+        declared: tuple[UniqueConstraint, ...] = (
+            get_config_value(cls, "constraints", default=()) or ()
+        )
+        merged: list[UniqueConstraint] = []
+        seen: set[tuple[frozenset[str], int | None]] = set()
+        for constraint in (*markers, *declared):
+            identity = (
+                frozenset(constraint.fields),
+                None if constraint.key is None else id(constraint.key),
+            )
+            if identity in seen:
+                continue
+            seen.add(identity)
+            merged.append(constraint)
+        return tuple(merged)
+
+    @classmethod
+    def _participating(
+        cls,
+        constraint: UniqueConstraint,
+        body: Mapping,
+    ) -> tuple[tuple[object, ...], object] | None:
+        """Return ``(values, comparison key)`` or ``None`` if exempt.
+
+        A constraint participates only when **all** of its fields
+        are non-``None`` in ``body`` (SQL composite
+        ``UNIQUE``/``NULL`` semantics), so a ``key`` callable is
+        never invoked with ``None``. Key-less constraints compare
+        the raw serialized value tuple.
+        """
+        values = tuple(body.get(name) for name in constraint.fields)
+        if any(value is None for value in values):
+            return None
+        comparison = (
+            constraint.key(*values) if constraint.key is not None else values
+        )
+        return values, comparison
+
+    @classmethod
     def _check_unique(
         cls,
         body: Mapping,
         *,
         exclude_doc_ids: AbstractSet[int] = frozenset(),
+        touched_fields: AbstractSet[str] | None = None,
     ) -> None:
-        """Scan the table for unique-field clashes with ``body``.
+        """Scan the table for unique-constraint clashes with ``body``.
 
-        Compares serialized values (what storage holds). ``None``
-        values are exempt, mirroring SQL ``NULL`` under UNIQUE.
-        Check-then-write with no cross-process coordination —
-        sound within tinydantic's documented single-process,
-        serialized-writes scope.
+        Compares serialized values (what storage holds), through
+        each constraint's ``key`` callable when one is set. A
+        constraint participates only when all of its fields are
+        non-``None`` in ``body``, mirroring SQL ``NULL`` under
+        composite ``UNIQUE``. Check-then-write with no
+        cross-process coordination — sound within tinydantic's
+        documented single-process, serialized-writes scope.
+
+        Args:
+            body: The serialized document to test.
+            exclude_doc_ids: Stored ids that are being (re)written
+                and must not count as clashes.
+            touched_fields: When given, only constraints naming at
+                least one of these fields are checked — the
+                partial-write filter used by ``patch()``.
 
         Raises:
-            UniqueConstraintError: If any non-None unique value in
-                ``body`` is already held by a document whose id is
-                not in ``exclude_doc_ids``.
+            UniqueConstraintError: If any participating
+                constraint's comparison key is already held by a
+                document whose id is not in ``exclude_doc_ids``.
         """
-        unique_fields: tuple[str, ...] = getattr(
-            cls,
-            _UNIQUE_FIELDS_ATTR,
-            (),
-        )
-        relevant = [
-            name for name in unique_fields if body.get(name) is not None
-        ]
-        if not relevant:
+        active: list[tuple[UniqueConstraint, tuple[object, ...], object]] = []
+        for constraint in cls._unique_constraints():
+            if touched_fields is not None and touched_fields.isdisjoint(
+                constraint.fields,
+            ):
+                continue
+            participation = cls._participating(constraint, body)
+            if participation is None:
+                continue
+            values, comparison = participation
+            active.append((constraint, values, comparison))
+        if not active:
             return
         table = cls.get_table()
         for stored in iter(table):
             if stored.doc_id in exclude_doc_ids:
                 continue
-            for name in relevant:
-                if stored.get(name) == body[name]:
+            for constraint, values, comparison in active:
+                stored_participation = cls._participating(
+                    constraint,
+                    stored,
+                )
+                if stored_participation is None:
+                    continue
+                if stored_participation[1] == comparison:
                     raise UniqueConstraintError(
                         model_name=cls.__name__,
                         table_name=table.name,
-                        fields=(name,),
-                        values=(body[name],),
+                        fields=constraint.fields,
+                        values=values,
+                        comparison_key=(
+                            comparison if constraint.key is not None else None
+                        ),
                         doc_id=stored.doc_id,
                     )
 
@@ -917,12 +999,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         Raises:
             UniqueConstraintError: On any would-be duplicate.
         """
-        unique_fields: tuple[str, ...] = getattr(
-            cls,
-            _UNIQUE_FIELDS_ATTR,
-            (),
-        )
-        if not unique_fields:
+        constraints = cls._unique_constraints()
+        if not constraints:
             return
         payload = document.to_tinydb_document(force_dict=True)
         if cond is None:
@@ -932,15 +1010,24 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         else:
             matched = [doc.doc_id for doc in cls.get_table().search(cond)]
         touched = [
-            name for name in unique_fields if payload.get(name) is not None
+            (constraint, participation)
+            for constraint in constraints
+            if (participation := cls._participating(constraint, payload))
+            is not None
         ]
         if touched and len(matched) > 1:
-            # N matched documents cannot share one unique value.
+            # N matched documents cannot share one unique value
+            # (tuple): the payload would fan the same comparison
+            # key out to every match.
+            constraint, (values, comparison) = touched[0]
             raise UniqueConstraintError(
                 model_name=cls.__name__,
                 table_name=cls.get_table().name,
-                fields=(touched[0],),
-                values=(payload[touched[0]],),
+                fields=constraint.fields,
+                values=values,
+                comparison_key=(
+                    comparison if constraint.key is not None else None
+                ),
                 doc_id=matched[0],
             )
         cls._check_unique(payload, exclude_doc_ids=set(matched))
