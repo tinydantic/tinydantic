@@ -8,7 +8,11 @@ from __future__ import annotations
 
 import pytest
 
-from tinydantic import Unique, UniqueConstraint
+from tinydantic import (
+    Unique,
+    UniqueConstraint,
+    UniqueConstraintError,
+)
 
 
 class TestUniqueConstraintConstruction:
@@ -53,3 +57,69 @@ class TestUniqueConstraintConstruction:
     def test_unique_marker_key_defaults_to_none(self) -> None:
         """The bare marker keeps exact-match semantics."""
         assert Unique().key is None
+
+
+class TestErrorMessages:
+    """UniqueConstraintError renders tuples honestly."""
+
+    def test_singular_wording_preserved(self) -> None:
+        """One key-less field keeps today's exact message shape."""
+        err = UniqueConstraintError(
+            model_name="User",
+            table_name="user",
+            fields=("email",),
+            values=("a@x.io",),
+            doc_id=3,
+        )
+        assert str(err) == (
+            "Value 'a@x.io' for unique field 'email' already "
+            "exists in table 'user' (model 'User') — held by "
+            "document 3."
+        )
+
+    def test_composite_wording(self) -> None:
+        """Composites pluralize and show both tuples."""
+        err = UniqueConstraintError(
+            model_name="Follow",
+            table_name="follow",
+            fields=("follower_id", "followee_id"),
+            values=(3, 7),
+            doc_id=4,
+        )
+        assert "Values (3, 7) for unique fields" in str(err)
+        assert "('follower_id', 'followee_id')" in str(err)
+
+    def test_comparison_key_shown_when_differing(self) -> None:
+        """A normalizing key surfaces its computed key."""
+        err = UniqueConstraintError(
+            model_name="Article",
+            table_name="article",
+            fields=("author_id", "slug"),
+            values=(7, "My-Slug"),
+            comparison_key=(7, "my-slug"),
+            doc_id=4,
+        )
+        assert "(comparison key (7, 'my-slug'))" in str(err)
+
+    def test_comparison_key_hidden_when_equal(self) -> None:
+        """An identity key adds no noise."""
+        err = UniqueConstraintError(
+            model_name="A",
+            table_name="a",
+            fields=("x",),
+            values=("v",),
+            comparison_key=("v",),
+            doc_id=1,
+        )
+        assert "comparison key" not in str(err)
+
+    def test_batch_wording(self) -> None:
+        """``doc_id=None`` names the batch, as today."""
+        err = UniqueConstraintError(
+            model_name="U",
+            table_name="u",
+            fields=("email",),
+            values=("a@x.io",),
+            doc_id=None,
+        )
+        assert "another document in the same batch" in str(err)
