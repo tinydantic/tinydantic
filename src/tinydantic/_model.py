@@ -2363,15 +2363,30 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 model_name=cls.__name__,
                 keys=unknown,
             )
+        serialized_patch = {
+            key: cls._field_adapter(key).dump_python(
+                value,
+                mode="json",
+            )
+            for key, value in validated.items()
+        }
+        # Composite constraints need the post-write pair, not just
+        # the patched member: merge over the stored body. A vanished
+        # document skips the check — cls.update() below raises
+        # DocumentNotFoundError for it.
+        stored_body = self.get_table().get(doc_id=self.id)
+        body: dict[str, Any] = (
+            {**stored_body, **serialized_patch}
+            # TinyDB Documents are dict subclasses; anything else
+            # (None for a vanished document) falls back to the
+            # patch alone.
+            if isinstance(stored_body, dict)
+            else serialized_patch
+        )
         cls._check_unique(
-            {
-                key: cls._field_adapter(key).dump_python(
-                    value,
-                    mode="json",
-                )
-                for key, value in validated.items()
-            },
+            body,
             exclude_doc_ids={self.id},
+            touched_fields=set(serialized_patch),
         )
         cls.update(fields, doc_ids=[self.id])
         # Sync only after the write succeeded. Direct __dict__
