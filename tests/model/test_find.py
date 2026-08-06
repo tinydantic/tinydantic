@@ -7,14 +7,16 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Annotated, cast
 
 import pytest
 
-from pydantic import Field
+from pydantic import Field, ValidationError
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
 
 from tinydantic import (
+    DocumentIDUpdateError,
     DocumentNotFoundError,
     FindQuery,
     FindQueryError,
@@ -23,6 +25,8 @@ from tinydantic import (
     SortFieldError,
     TinydanticModel,
     TinydanticUserError,
+    Unique,
+    UnknownUpdateFieldError,
     q,
 )
 
@@ -383,6 +387,118 @@ class TestDelete:
         result = Item.find(q("name") == "missing").limit(3).delete()
         assert result == []
         assert storage.write_count == writes_before
+
+
+class TestUpdate:
+    """update() mirrors the verb through the chain."""
+
+    def test_update_without_modifiers(self, seeded: type[User]) -> None:
+        """Condition-only update touches every match."""
+        touched = seeded.find(q("age") == 25).update({"age": 26})
+        assert sorted(touched) == [2, 4]
+        assert seeded.count(q("age") == 26) == 2
+
+    def test_update_honors_modifiers(self, seeded: type[User]) -> None:
+        """Only the sorted window is updated."""
+        seeded.find(q("age") > 0).sort("age").limit(2).update({"age": 99})
+        assert seeded.count(q("age") == 99) == 2
+        # The two youngest (alice, dave) were selected.
+        assert {u.name for u in seeded.search(q("age") == 99)} == {
+            "alice",
+            "dave",
+        }
+
+    def test_update_accepts_transform(self, seeded: type[User]) -> None:
+        """Transform callables pass through like update()."""
+
+        def bump(doc: dict) -> None:
+            """Increment the stored age in place."""
+            doc["age"] += 1
+
+        seeded.find(q("name") == "erin").update(bump)
+        erin = seeded.get(q("name") == "erin")
+        assert erin is not None
+        assert erin.age == 41
+
+    def test_extra_keys_passthrough(self, seeded: type[User]) -> None:
+        """extra_keys forwards; default rejects unknowns."""
+        chain = seeded.find(q("name") == "bob").limit(1)
+        with pytest.raises(UnknownUpdateFieldError):
+            chain.update({"nickname": "bobby"})
+        chain.update({"nickname": "bobby"}, extra_keys="allow")
+        stored = seeded.get_table().get(doc_id=1)
+        assert stored is not None
+        assert stored["nickname"] == "bobby"  # type: ignore[index]
+
+    def test_id_key_rejected_through_chain(self, seeded: type[User]) -> None:
+        """The id-key guard fires through both delegation paths."""
+        with pytest.raises(DocumentIDUpdateError):
+            seeded.find(q("age") == 25).update({"id": 9})
+        with pytest.raises(DocumentIDUpdateError):
+            seeded.find().limit(1).update({"id": 9})
+
+    def test_merged_validation_aborts_atomically(
+        self, seeded: type[User]
+    ) -> None:
+        """A validation failure writes nothing (parity)."""
+        with pytest.raises(ValidationError):
+            seeded.find().sort("id").update({"age": "nope"})
+        assert [u.age for u in seeded.find().sort("id")] == [
+            30,
+            25,
+            30,
+            25,
+            40,
+        ]
+
+    def test_empty_window_update_is_noop(self, seeded: type[User]) -> None:
+        """Zero matches return [] without touching the verbs."""
+        result = seeded.find(q("age") > 200).limit(2).update({"age": 1})
+        assert result == []
+
+    def test_empty_window_still_rejects_bad_payload(
+        self, seeded: type[User]
+    ) -> None:
+        """Payload guards do not depend on the data state."""
+        empty = seeded.find(q("age") > 200).limit(1)
+        with pytest.raises(DocumentIDUpdateError):
+            empty.update({"id": 9})
+        with pytest.raises(UnknownUpdateFieldError):
+            empty.update({"bogus": 1})
+
+    def test_unique_markers_not_enforced_parity(self, db: TinyDB) -> None:
+        """The chain is the same loose path as update()."""
+
+        class Handle(TinydanticModel, database=db, table_name="handles"):
+            """Model with a unique field."""
+
+            slug: Annotated[str, Unique]
+
+        Handle(slug="a").insert()
+        Handle(slug="b").insert()
+        # update() deliberately skips Unique enforcement; the
+        # chain must not be stricter or looser.
+        Handle.find(q("slug") == "b").limit(1).update({"slug": "a"})
+        assert Handle.count(q("slug") == "a") == 2
+
+    def test_revision_rotates_through_chain(self, db: TinyDB) -> None:
+        """use_revision models get fresh tokens via the chain."""
+
+        class Doc(
+            TinydanticModel,
+            database=db,
+            table_name="docs",
+            use_revision=True,
+        ):
+            """Revisioned model."""
+
+            body: str
+
+        doc = Doc(body="v1").insert()
+        before = doc.revision_id
+        Doc.find(q("body") == "v1").sort("id").update({"body": "v2"})
+        stored = Doc.get_or_raise(doc_id=cast("int", doc.id))
+        assert stored.revision_id != before
 
 
 class TestBooleanContext:
