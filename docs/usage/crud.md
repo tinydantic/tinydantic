@@ -161,6 +161,8 @@ tinydantic._errors.DocumentNotFoundError: No document with id 999 in table 'book
 
 ```
 
+To sort, paginate, or reuse a query — or to update/delete a sorted, limited selection — build a chain with [find()][tinydantic.TinydanticModel.find] instead; see [Fluent queries](find.md).
+
 ### `contains`
 
 [contains()][tinydantic.TinydanticModel.contains] reports whether any matching document exists, by condition or by `doc_id=`.

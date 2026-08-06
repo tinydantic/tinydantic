@@ -10,6 +10,7 @@ nav:
   - quickstart.md
   - crud.md
   - queries.md
+  - find.md
   - models.md
   - schema-evolution.md
   - storage.md

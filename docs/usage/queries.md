@@ -283,3 +283,7 @@ A raw [Query][tinydb.queries.Query] (or [where()](https://tinydb.readthedocs.io/
 > [!NOTE]
 >
 > Pydantic also warns about shadowed fields at class definition (`Field name "search" ... shadows an attribute`). For a deliberate opt-in, silence it with `warnings.filterwarnings("ignore", message=r'Field name "search"')` — or treat the warning as a reminder that `q("search")` is the only query path for that field.
+
+## Fluent queries
+
+Every condition on this page — `Model.field` sugar, [q()][tinydantic.q], raw TinyDB queries, `Model.id` conditions — plugs directly into [find()][tinydantic.TinydanticModel.find], which adds sorting, pagination, and lazy, reusable query chains on top. See [Fluent queries](find.md).
