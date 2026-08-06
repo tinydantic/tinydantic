@@ -32,20 +32,23 @@ Design decisions (spelled out on the docs "Fluent queries" page):
 
 from __future__ import annotations
 
+from operator import attrgetter
 from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
     TypeVar,
+    cast,
 )
 
 from tinydantic._errors import (
+    DocumentNotFoundError,
     FindQueryError,
     SortFieldError,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
     from tinydb.queries import QueryLike
 
@@ -254,6 +257,71 @@ class FindQuery(Generic[ModelT]):
             msg = _REPEAT_MSG.format(name="limit", hint="")
             raise FindQueryError(msg)
         return self._replace(limit=_validated_window("limit", n))
+
+    def _execute(self) -> list[ModelT]:
+        """Run the pipeline: match, sort, then slice the window.
+
+        Matching delegates to the model's read verbs (inheriting
+        id-condition translation and the pure-id-equality fast
+        path); sorting runs on the validated model instances via
+        successive stable sorts, least-significant key first.
+        """
+        if self._cond is None:
+            results = self._model.all()
+        else:
+            results = self._model.search(self._cond)
+        if self._sort_key is not None:
+            results.sort(key=self._sort_key, reverse=self._sort_reverse)
+        elif self._sort_fields is not None:
+            for name, descending in reversed(self._sort_fields):
+                results.sort(key=attrgetter(name), reverse=descending)
+        start = self._skip or 0
+        stop = None if self._limit is None else start + self._limit
+        return cast("list[ModelT]", results[start:stop])
+
+    def all(self) -> list[ModelT]:
+        """Get the described documents as validated models."""
+        return self._execute()
+
+    def first(self) -> ModelT | None:
+        """Get the first document of the window, or ``None``.
+
+        Equivalent to ``chain.all()[0]`` when the window is
+        non-empty — the window (skip/limit) applies first.
+        """
+        results = self._execute()
+        return results[0] if results else None
+
+    def first_or_raise(self) -> ModelT:
+        """Get the first document of the window, or raise.
+
+        The strict counterpart to
+        [first][tinydantic.FindQuery.first], mirroring
+        [get_or_raise][tinydantic.TinydanticModel.get_or_raise].
+
+        Raises:
+            DocumentNotFoundError: If the window is empty.
+        """
+        result = self.first()
+        if result is None:
+            raise DocumentNotFoundError(
+                model_name=self._model.__name__,
+                table_name=self._model.get_table().name,
+                doc_id=None,
+            )
+        return result
+
+    def count(self) -> int:
+        """Count the documents in the window, not the raw match."""
+        return len(self._execute())
+
+    def exists(self) -> bool:
+        """Check whether the window contains any document."""
+        return bool(self._execute())
+
+    def __iter__(self) -> Iterator[ModelT]:
+        """Iterate the materialized result of the pipeline."""
+        return iter(self._execute())
 
     def __repr__(self) -> str:
         """Show the model and full clause set for debugging."""

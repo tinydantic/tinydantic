@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 import pytest
@@ -13,6 +14,7 @@ import pytest
 from pydantic import Field
 
 from tinydantic import (
+    DocumentNotFoundError,
     FindQuery,
     FindQueryError,
     SelectorError,
@@ -169,6 +171,160 @@ class TestModifiers:
                 find.limit(bad)  # type: ignore[arg-type]
         find.skip(0)  # legal no-op
         find.limit(0)  # legal empty window
+
+
+@pytest.fixture
+def seeded(user_class: type[User]) -> type[User]:
+    """Insert a small diverse dataset and return the class.
+
+    Ids are 1..5 in insertion order: bob/30, alice/25, carol/30,
+    dave/25, erin/40.
+    """
+    for name, age in [
+        ("bob", 30),
+        ("alice", 25),
+        ("carol", 30),
+        ("dave", 25),
+        ("erin", 40),
+    ]:
+        user_class(name=name, age=age).insert()
+    return user_class
+
+
+class TestReadTerminals:
+    """Read terminals and the fixed pipeline."""
+
+    def test_all_matches_search(self, seeded: type[User]) -> None:
+        """find(cond).all() equals search(cond)."""
+        cond = q("age") >= 30
+        assert seeded.find(cond).all() == seeded.search(cond)
+
+    def test_find_no_args_is_whole_table(self, seeded: type[User]) -> None:
+        """find() with no condition reads every document."""
+        assert seeded.find().count() == 5
+
+    def test_sort_ascending_and_descending(self, seeded: type[User]) -> None:
+        """Single-key sorts order by field value."""
+        names = [u.name for u in seeded.find().sort("name")]
+        assert names == sorted(names)
+        ages = [u.age for u in seeded.find().sort("-age")]
+        assert ages == sorted(ages, reverse=True)
+
+    def test_multi_key_mixed_directions(self, seeded: type[User]) -> None:
+        """Left-to-right significance with per-key direction."""
+        got = [(u.age, u.name) for u in seeded.find().sort("age", "-name")]
+        assert got == [
+            (25, "dave"),
+            (25, "alice"),
+            (30, "carol"),
+            (30, "bob"),
+            (40, "erin"),
+        ]
+
+    def test_ties_keep_doc_id_order(self, seeded: type[User]) -> None:
+        """Equal keys come out in stored (doc id) order."""
+        ids = [u.id for u in seeded.find().sort("age")]
+        # ages: alice(2)=25, dave(4)=25, bob(1)=30, carol(3)=30,
+        # erin(5)=40 — ties in doc-id order via sort stability.
+        assert ids == [2, 4, 1, 3, 5]
+
+    def test_key_callable_with_reverse(self, seeded: type[User]) -> None:
+        """The key= escape hatch sorts by arbitrary callables."""
+        names = [
+            u.name
+            for u in seeded.find().sort(
+                key=lambda u: (u.age, u.name), reverse=True
+            )
+        ]
+        assert names[0] == "erin"
+
+    def test_pipeline_order_is_fixed(self, seeded: type[User]) -> None:
+        """limit-then-sort spelling equals sort-then-limit."""
+        a = seeded.find().sort("-age").limit(2).all()
+        b = seeded.find().limit(2).sort("-age").all()
+        assert a == b
+        assert [u.name for u in a] == ["erin", "bob"]
+
+    def test_window_slicing(self, seeded: type[User]) -> None:
+        """skip/limit slice the sorted result."""
+        window = seeded.find().sort("name").skip(1).limit(2)
+        assert [u.name for u in window] == ["bob", "carol"]
+        assert seeded.find().limit(0).all() == []
+
+    def test_first_and_first_or_raise(self, seeded: type[User]) -> None:
+        """first() is all()[0]-or-None; strict form raises."""
+        oldest = seeded.find().sort("-age").first()
+        assert oldest is not None
+        assert oldest.name == "erin"
+        empty = seeded.find(q("age") > 200)
+        assert empty.first() is None
+        with pytest.raises(DocumentNotFoundError):
+            empty.first_or_raise()
+        # The window applies before first: an empty page raises.
+        with pytest.raises(DocumentNotFoundError):
+            seeded.find().skip(30).first_or_raise()
+
+    def test_terminal_invariants(self, seeded: type[User]) -> None:
+        """first/count/exists agree with all() on every chain."""
+        chains = [
+            seeded.find(),
+            seeded.find(q("age") >= 30),
+            seeded.find(q("age") > 200),
+            seeded.find().sort("-name").skip(1),
+            seeded.find(q("age") == 25).sort("name").limit(1),
+            seeded.find().skip(4).limit(3),
+        ]
+        for chain in chains:
+            everything = chain.all()
+            assert chain.count() == len(everything)
+            assert chain.exists() == bool(everything)
+            expected = everything[0] if everything else None
+            assert chain.first() == expected
+            assert list(chain) == everything
+
+    def test_execution_is_fresh_not_cached(self, seeded: type[User]) -> None:
+        """A reused chain sees writes made after it was built."""
+        chain = seeded.find(q("age") >= 30)
+        assert chain.count() == 3
+        seeded(name="frank", age=50).insert()
+        assert chain.count() == 4
+
+    def test_datetime_fields_sort_chronologically(self, db: TinyDB) -> None:
+        """Sorting uses validated values, not stored strings."""
+
+        class Event(TinydanticModel, database=db, table_name="events"):
+            """Event with a real datetime field."""
+
+            at: datetime
+
+        early = datetime(2026, 1, 2, tzinfo=timezone.utc)
+        late = datetime(2026, 11, 1, tzinfo=timezone.utc)
+        mid = datetime(2026, 3, 5, tzinfo=timezone.utc)
+        for at in (late, early, mid):
+            Event(at=at).insert()
+        got = [e.at for e in Event.find().sort("at")]
+        assert got == [early, mid, late]
+
+    def test_none_comparison_propagates_type_error(self, db: TinyDB) -> None:
+        """Optional-field Nones raise Python's TypeError."""
+
+        class Score(TinydanticModel, database=db, table_name="scores"):
+            """Score with an optional value."""
+
+            value: int | None = None
+
+        Score(value=3).insert()
+        Score(value=None).insert()
+        with pytest.raises(TypeError):
+            Score.find().sort("value").all()
+
+    def test_id_condition_chains(self, seeded: type[User]) -> None:
+        """Model.id conditions work through the chain."""
+        second = seeded.find(seeded.id == 2).first()
+        assert second is not None
+        assert second.name == "alice"
+        ids = [u.id for u in seeded.find(seeded.id.one_of([1, 3])).sort("-id")]
+        assert ids == [3, 1]
 
 
 class TestFindReservedWord:
