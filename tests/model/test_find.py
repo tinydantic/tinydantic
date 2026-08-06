@@ -367,7 +367,8 @@ class TestDelete:
         """delete() removes exactly what all() showed."""
         chain = seeded.find(q("age") >= 30).sort("age").limit(2)
         expected = [u.id for u in chain.all()]
-        assert chain.delete() == expected
+        removed = chain.delete()
+        assert removed == expected
 
     def test_whole_table_delete_is_explicit_and_legal(
         self, seeded: type[User]
