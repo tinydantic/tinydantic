@@ -37,6 +37,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
+    Literal,
     TypeVar,
     cast,
 )
@@ -48,7 +49,7 @@ from tinydantic._errors import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Mapping
 
     from tinydb.queries import QueryLike
 
@@ -367,6 +368,64 @@ class FindQuery(Generic[ModelT]):
         if not ids:
             return []
         return self._model.remove(doc_ids=ids)
+
+    def update(
+        self,
+        fields: Mapping | Callable[[Mapping], None],
+        *,
+        extra_keys: Literal["reject", "allow"] = "reject",
+    ) -> list[int]:
+        """Update exactly the documents ``.all()`` would return.
+
+        Mirrors [update][tinydantic.TinydanticModel.update] —
+        same ``fields`` mapping-or-transform contract, same
+        ``extra_keys`` policy, same errors, same merged-result
+        validation and atomic abort, and the same deliberate
+        non-enforcement of [Unique][tinydantic.Unique] markers —
+        with the chain supplying the selection. With only a
+        condition set the condition is delegated directly; with
+        modifiers (or no condition) the sorted window is
+        resolved to concrete ids first — unlike Beanie, which
+        silently ignores sort/skip/limit on update. An empty
+        window is a no-op returning ``[]``.
+
+        Args:
+            fields: A mapping of new field values, or a
+                transform callable applied to each matched
+                document body.
+            extra_keys: ``"reject"`` (default) refuses mapping
+                keys that are not model fields; ``"allow"``
+                writes them through unchanged.
+
+        Returns:
+            The updated document ids, in the window's order.
+
+        Raises:
+            DocumentIDUpdateError: If a mapping contains
+                ``id``.
+            UnknownUpdateFieldError: If a mapping has non-field
+                keys and ``extra_keys`` is ``"reject"``.
+            pydantic.ValidationError: If a value or a merged
+                document fails validation; nothing is written.
+        """
+        if self._cond is not None and not self._has_modifiers():
+            return self._model.update(
+                fields, self._cond, extra_keys=extra_keys
+            )
+        ids = self._resolved_ids()
+        if not ids:
+            # Still surface malformed payloads loudly: update()
+            # validates mapping keys before selection, so an
+            # empty window must not hide a DocumentIDUpdateError
+            # or UnknownUpdateFieldError the same call would
+            # raise on a non-empty one.
+            if not callable(fields):
+                self._model._serialize_update_fields(  # noqa: SLF001
+                    fields,
+                    extra_keys=extra_keys,
+                )
+            return []
+        return self._model.update(fields, doc_ids=ids, extra_keys=extra_keys)
 
     def __bool__(self) -> bool:
         """Refuse boolean context — a chain has no truth value.
