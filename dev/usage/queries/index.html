@@ -16,7 +16,7 @@
         <link rel="prev" href="../crud/">
       
       
-        <link rel="next" href="../models/">
+        <link rel="next" href="../find/">
       
       
         
@@ -568,6 +568,8 @@
       
         
       
+        
+      
     
     
     
@@ -880,10 +882,49 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#fluent-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fluent queries
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../find/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fluent queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2063,6 +2104,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#fluent-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fluent queries
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2305,6 +2357,13 @@
 <p class="admonition-title">Note</p>
 <p>Pydantic also warns about shadowed fields at class definition (<code>Field name "search" ... shadows an attribute</code>). For a deliberate opt-in, silence it with <code>warnings.filterwarnings("ignore", message=r'Field name "search"')</code> — or treat the warning as a reminder that <code>q("search")</code> is the only query path for that field.</p>
 </div>
+<h2 id="fluent-queries">Fluent queries<a class="headerlink" href="#fluent-queries" title="Permanent link">¤</a></h2>
+<p>Every condition on this page — <code>Model.field</code> sugar, <a class="autorefs autorefs-internal" title="            q" href="../../reference/api/tinydantic/#tinydantic.q">q()</a>, raw TinyDB queries, <code>Model.id</code> conditions — plugs directly into <a class="autorefs autorefs-internal" title="            find
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.find">find()</a>, which adds sorting, pagination, and lazy, reusable query chains on top. See <a href="../find/">Fluent queries</a>.</p>
 
 
 
@@ -2375,13 +2434,13 @@
         
         
           
-          <a href="../models/" class="md-footer__link md-footer__link--next" aria-label="Next: Models">
+          <a href="../find/" class="md-footer__link md-footer__link--next" aria-label="Next: Fluent queries">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Models
+                Fluent queries
               </div>
             </div>
             <div class="md-footer__button md-icon">

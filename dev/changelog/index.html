@@ -566,6 +566,8 @@
       
         
       
+        
+      
     
     
     
@@ -749,6 +751,34 @@
     
   
     Queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/find/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fluent queries
   
 
     
@@ -2085,6 +2115,9 @@
 <h2 id="unreleased"><a href="https://github.com/tinydantic/tinydantic/compare/v0.4.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">¤</a></h2>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">¤</a></h3>
 <ul>
+<li><strong>BREAKING:</strong> <code>find</code> is now a reserved attribute name on tinydantic models (flat-namespace policy). A model with a field named <code>find</code> raises <code>ShadowedFieldError</code> at class definition; opt out with <code>shadowed_fields=("find",)</code> or rename the field (opting out forgoes the <code>find()</code> entry point on that model — <code>search()</code> still works).</li>
+</ul>
+<ul>
 <li>Docs: the FastAPI guidance now documents the single-threaded contract explicitly and inverts the previous recommendation — <code>async def</code> handlers calling <code>tinydantic</code> inline (Pattern A: single-threaded by construction) replace plain <code>def</code> threadpool handlers as the default, with a single-worker executor (Pattern B) for when the event loop must stay responsive, and criteria for moving from A to B. Plain <code>def</code> handlers and <code>asyncio.to_thread</code> offloading are now documented as contract-breaking. <code>revision_id</code> joins <code>id</code> as a name <code>tinydantic</code> can manage on models (only with <code>use_revision=True</code>; without it the name stays yours).</li>
 <li><strong>BREAKING:</strong> <code>PyYAML</code> is no longer a default dependency — <code>YAMLStorage</code> now lives behind the <code>yaml</code> extra. Existing YAMLStorage users: <code>pip install tinydantic[yaml]</code> after upgrading (constructing <code>YAMLStorage</code> without it raises an <code>ImportError</code> naming that exact command; plain <code>import tinydantic</code> never needs PyYAML).</li>
 <li><strong>BREAKING:</strong> the <code>pydantic[email]</code> extra was dropped from the dependencies — nothing in tinydantic uses it. To use <code>EmailStr</code> fields in your models, install <code>pydantic[email]</code> yourself. The quickstart example now demonstrates an <code>age: int</code> field instead.</li>
@@ -2114,6 +2147,7 @@
 </ul>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">¤</a></h3>
 <ul>
+<li><code>Model.find()</code> fluent query API: lazy, immutable <code>FindQuery</code> chains with <code>sort()</code>/<code>skip()</code>/<code>limit()</code> modifiers, read terminals (<code>all()</code>, <code>first()</code>, <code>first_or_raise()</code>, <code>count()</code>, <code>exists()</code>, iteration), and write terminals (<code>delete()</code>, <code>update()</code>) that honor the sorted window by resolving it to document ids — <code>X.delete()</code> removes exactly what <code>X.all()</code> returns, unlike Beanie, which silently ignores sort/skip/limit on writes. <code>find()</code> with no argument is the explicit whole-table spelling; <code>find(None)</code> raises <code>SelectorError</code> so a condition variable that is unexpectedly <code>None</code> can never silently widen a query. Repeating a modifier raises the new <code>FindQueryError</code> (the ecosystem disagrees on what a second <code>sort()</code> means — Beanie appends a tiebreaker, Python's stable-sort idiom and pandas make the last sort primary, Django and MongoEngine replace — so tinydantic refuses to guess); unknown sort fields raise the new <code>SortFieldError</code> eagerly at the <code>sort()</code> call.</li>
 <li>Optimistic concurrency: the <code>use_revision=True</code> class kwarg (inherited like the other config keys; not late-bindable via <code>bind()</code>) injects a <code>revision_id: UUID | None</code> field — an opaque token minted on insert and rotated by every write path. <code>save()</code>, <code>replace()</code>, and <code>delete()</code> compare the instance's held token against storage first and raise the new <code>StaleDocumentError</code> (with a <code>deleted</code> attribute distinguishing concurrently-deleted from modified — a revisioned <code>save()</code> no longer silently resurrects a deleted document) when another writer got there in between; each takes <code>ignore_revision=True</code> for deliberate last-write-wins. <code>patch()</code> and the table-level verbs (<code>update()</code>, <code>update_all()</code>, <code>update_multiple()</code>, <code>upsert()</code>) rotate without checking. Writing <code>revision_id</code> directly through an update mapping or <code>patch()</code> raises the new <code>RevisionUpdateError</code>; declaring your own <code>revision_id</code> field on a revisioned model raises the new <code>RevisionFieldError</code> at class definition. Documents written before the opt-in are adopted conflict-free on their first revisioned write.</li>
 <li><code>ProcessLockMiddleware</code> — opt-in enforcement of TinyDB's single-process contract: takes a non-blocking exclusive OS advisory lock on a <code>&lt;database path&gt;.lock</code> sidecar at open and raises the new <code>DatabaseLockedError</code> immediately when the database is already open in another process (or a second TinyDB instance in this one), turning slow multi-process corruption into a startup error. The OS releases the lock on process death; detection only — it does not make multi-process access safe.</li>
 <li>Docs: a "Concurrency" usage page — the single-process/single-thread contract and why (TinyDB has no locks and its caches assume sole ownership), the cross-request stale-write window, the full <code>use_revision</code> protocol with a doctested <code>ETag</code>/<code>If-Match</code>/<code>412</code> FastAPI flow, <code>ProcessLockMiddleware</code>, backup/restore semantics (restores fork history; revision tokens catch reused-<code>doc_id</code> imposters on writes; a stable-<code>uid</code> recipe for external references), and an honest list of what remains unguarded.</li>
