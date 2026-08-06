@@ -35,10 +35,13 @@ from tinydantic._errors import AmbiguousConfigError
 if TYPE_CHECKING:
     from tinydb import TinyDB
 
+    from tinydantic._fields import UniqueConstraint
+
 # Name of the per-class attribute holding explicitly-set config.
 CONFIG_ATTR = "__tinydantic_config__"
 
 _CONFIG_KEYS = (
+    "constraints",
     "database",
     "shadowed_fields",
     "table_name",
@@ -113,6 +116,35 @@ class TinydanticConfig(TypedDict, total=False):
     to skip this re-validation — the escape hatch for
     performance-critical bulk writes, where per-document
     validation cost matters more than the guarantee.
+    """
+
+    constraints: tuple[UniqueConstraint, ...]
+    """Table-level unique constraints (default none).
+
+    Each [UniqueConstraint][tinydantic.UniqueConstraint] enforces
+    uniqueness over one or more fields, optionally through a
+    comparison-``key`` callable:
+
+    ```python
+    class Follow(
+        TinydanticModel,
+        database=db,
+        constraints=(
+            UniqueConstraint("follower_id", "followee_id"),
+        ),
+    ):
+        follower_id: int
+        followee_id: int
+    ```
+
+    Resolved with the same nearest-wins MRO walk as every other
+    key — a subclass's ``constraints=`` *replaces* its parent's,
+    it does not extend it. Constraints declared here merge with
+    per-field [Unique][tinydantic.Unique] markers; declarations
+    naming ``id`` or a non-model field raise
+    [ConstraintFieldError][tinydantic.ConstraintFieldError] at
+    class definition (or ``bind()``) time. See the models guide
+    for the enforcement contract.
     """
 
 

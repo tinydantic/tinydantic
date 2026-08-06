@@ -6,13 +6,20 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
 from tinydantic import (
+    ConstraintFieldError,
+    TinydanticModel,
     Unique,
     UniqueConstraint,
     UniqueConstraintError,
 )
+
+if TYPE_CHECKING:
+    from tinydb import TinyDB
 
 
 class TestUniqueConstraintConstruction:
@@ -123,3 +130,105 @@ class TestErrorMessages:
             doc_id=None,
         )
         assert "another document in the same batch" in str(err)
+
+
+class TestDeclarationValidation:
+    """Bad constraints fail loudly at definition or bind time."""
+
+    def test_unknown_field_raises_at_class_definition(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """A constraint naming a non-field is rejected."""
+        with pytest.raises(ConstraintFieldError, match="typo"):
+
+            class Bad(
+                TinydanticModel,
+                database=db,
+                constraints=(UniqueConstraint("typo"),),
+            ):
+                """Test model with a misspelled constraint."""
+
+                real: int
+
+    def test_id_field_raises_at_class_definition(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """``id`` is never in the body — silent-non-match trap."""
+        with pytest.raises(ConstraintFieldError, match="'id'"):
+
+            class Bad(
+                TinydanticModel,
+                database=db,
+                constraints=(UniqueConstraint("id", "a"),),
+            ):
+                """Test model constraining the id field."""
+
+                a: int
+
+    def test_bind_validates_constraints(self, db: TinyDB) -> None:
+        """Late binding gets the same loud validation."""
+
+        class Late(TinydanticModel):
+            """Test model bound after definition."""
+
+            a: int
+
+        with pytest.raises(ConstraintFieldError, match="typo"):
+            Late.bind(
+                database=db,
+                constraints=(UniqueConstraint("typo"),),
+            )
+
+    @pytest.mark.xfail(
+        reason="enforcement lands with the registry task",
+        strict=True,
+    )
+    def test_nearest_wins_inheritance(self, db: TinyDB) -> None:
+        """A subclass's ``constraints=`` replaces its parent's."""
+
+        class Parent(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model declaring a pair constraint."""
+
+            a: int
+            b: int
+
+        class Child(Parent, table_name="child", constraints=()):
+            """Subclass suppressing the inherited constraint."""
+
+        Child(a=1, b=2).insert()
+        Child(a=1, b=2).insert()  # no constraint — allowed
+        Parent(a=1, b=2).insert()
+        with pytest.raises(UniqueConstraintError):
+            Parent(a=1, b=2).insert()
+
+    @pytest.mark.xfail(
+        reason="enforcement lands with the registry task",
+        strict=True,
+    )
+    def test_unbind_restores_parent(self, db: TinyDB) -> None:
+        """``unbind('constraints')`` resurfaces inherited config."""
+
+        class Base(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a"),),
+        ):
+            """Test model declaring a single-field constraint."""
+
+            a: int
+
+        class Sub(Base, table_name="sub"):
+            """Subclass inheriting the constraint."""
+
+        Sub.bind(constraints=())
+        Sub(a=1).insert()
+        Sub(a=1).insert()  # constraint suppressed
+        Sub.unbind("constraints")
+        with pytest.raises(UniqueConstraintError):
+            Sub(a=1).insert()

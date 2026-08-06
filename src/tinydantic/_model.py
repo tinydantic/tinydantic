@@ -32,6 +32,7 @@ from tinydantic._config import (
     get_config_value,
 )
 from tinydantic._errors import (
+    ConstraintFieldError,
     DatabaseNotBoundError,
     DocumentAlreadyExistsError,
     DocumentIDRequiredError,
@@ -46,7 +47,7 @@ from tinydantic._errors import (
     UniqueConstraintError,
     UnknownUpdateFieldError,
 )
-from tinydantic._fields import Unique
+from tinydantic._fields import Unique, UniqueConstraint
 from tinydantic._find import FindQuery
 from tinydantic._query import (
     DocIdCondition,
@@ -392,7 +393,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
     # --- configuration ---
 
-    def __init_subclass__(
+    def __init_subclass__(  # noqa: PLR0913
         cls,
         *,
         database: TinyDB | None = None,
@@ -400,6 +401,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         use_revision: bool | None = None,
         validate_writes: bool | None = None,
         shadowed_fields: tuple[str, ...] | None = None,
+        constraints: tuple[UniqueConstraint, ...] | None = None,
         **kwargs: Any,
     ) -> None:
         """Capture tinydantic class keywords.
@@ -424,6 +426,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             config["validate_writes"] = validate_writes
         if shadowed_fields is not None:
             config["shadowed_fields"] = shadowed_fields
+        if constraints is not None:
+            # Validation waits for __pydantic_init_subclass__ —
+            # model_fields does not exist yet at this point.
+            config["constraints"] = constraints
         setattr(cls, CONFIG_ATTR, config)
 
     @classmethod
@@ -461,6 +467,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 model_name=cls.__name__,
                 shadowed=shadowed,
             )
+        cls._validate_constraints(
+            get_config_value(cls, "constraints", default=()) or (),
+        )
         setattr(
             cls,
             _UNIQUE_FIELDS_ATTR,
@@ -478,6 +487,39 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         )
 
     @classmethod
+    def _validate_constraints(
+        cls,
+        constraints: tuple[UniqueConstraint, ...],
+    ) -> None:
+        """Reject constraints naming ``id`` or non-model fields.
+
+        Both failure modes would otherwise be *silent*: ``id`` is
+        never stored in the document body (it maps to TinyDB's
+        ``doc_id``), so an id constraint would never match; an
+        unknown field reads as ``None`` in every body, so its
+        constraint would never enforce.
+
+        Raises:
+            ConstraintFieldError: On the first offending field.
+        """
+        for constraint in constraints:
+            for name in constraint.fields:
+                if name == "id":
+                    raise ConstraintFieldError(
+                        model_name=cls.__name__,
+                        constraint_fields=constraint.fields,
+                        field=name,
+                        reason="id",
+                    )
+                if name not in cls.model_fields:
+                    raise ConstraintFieldError(
+                        model_name=cls.__name__,
+                        constraint_fields=constraint.fields,
+                        field=name,
+                        reason="unknown",
+                    )
+
+    @classmethod
     def bind(
         cls,
         *,
@@ -485,6 +527,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         table_name: str | None = None,
         validate_writes: bool | None = None,
         shadowed_fields: tuple[str, ...] | None = None,
+        constraints: tuple[UniqueConstraint, ...] | None = None,
     ) -> None:
         """Bind or rebind tinydantic config after class definition.
 
@@ -517,6 +560,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             config["validate_writes"] = validate_writes
         if shadowed_fields is not None:
             config["shadowed_fields"] = shadowed_fields
+        if constraints is not None:
+            cls._validate_constraints(constraints)
+            config["constraints"] = constraints
         setattr(cls, CONFIG_ATTR, config)
 
     @classmethod
