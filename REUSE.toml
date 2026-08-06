@@ -26,5 +26,7 @@ SPDX-FileCopyrightText = "Chris Wilson <christopher.david.wilson@gmail.com>"
 SPDX-License-Identifier = "CC-BY-4.0"
 path = [
   "**.md",
+  "assets/logo/**",
+  "docs/assets/logo/**",
 ]
 precedence = "aggregate"

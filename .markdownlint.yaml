@@ -36,6 +36,20 @@ MD052: false
 # Material for MkDocs "content tabs" used in the docs causes this rule to fail.
 MD046: false
 
+# MD033/no-inline-html : Inline HTML
+# https://github.com/DavidAnson/markdownlint/blob/main/doc/md033.md
+#
+# The README uses a <picture> element for the light/dark logo lockup
+# (GitHub's documented approach for theme-aware images; PyPI falls back
+# to the inner <img>).
+MD033:
+  allowed_elements:
+    - picture
+    - source
+    - img
+    - br
+    - p
+
 # Keep a Changelog repeats section headings (Added/Changed/Fixed) across
 # version entries; only flag duplicates among sibling headings.
 MD024:
