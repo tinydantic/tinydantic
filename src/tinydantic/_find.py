@@ -323,6 +323,51 @@ class FindQuery(Generic[ModelT]):
         """Iterate the materialized result of the pipeline."""
         return iter(self._execute())
 
+    def _has_modifiers(self) -> bool:
+        """Check whether any sort/skip/limit clause is set."""
+        return (
+            self._sort_fields is not None
+            or self._sort_key is not None
+            or self._skip is not None
+            or self._limit is not None
+        )
+
+    def _resolved_ids(self) -> list[int]:
+        """Resolve the chain to concrete document ids.
+
+        Runs the read pipeline and collects ids — the same set
+        (and order) ``.all()`` returns. Ids are always present on
+        read results, so the cast is safe.
+        """
+        return [cast("int", model.id) for model in self._execute()]
+
+    def delete(self) -> list[int]:
+        """Remove exactly the documents ``.all()`` would return.
+
+        With only a condition set, delegates the condition to
+        [remove][tinydantic.TinydanticModel.remove] directly. With
+        modifiers (or no condition), resolves the sorted window to
+        concrete ids first and removes those — unlike Beanie,
+        which silently ignores sort/skip/limit on delete. Under
+        the documented single-process, single-threaded contract
+        the two paths are observably identical.
+
+        An empty window is a no-op returning ``[]`` with zero
+        storage writes. Deleting the whole table via ``find()``
+        with no condition is legal (the spelling is explicit);
+        [truncate][tinydantic.TinydanticModel.truncate] remains
+        the idiomatic one-pass spelling.
+
+        Returns:
+            The removed document ids, in the window's order.
+        """
+        if self._cond is not None and not self._has_modifiers():
+            return self._model.remove(self._cond)
+        ids = self._resolved_ids()
+        if not ids:
+            return []
+        return self._model.remove(doc_ids=ids)
+
     def __bool__(self) -> bool:
         """Refuse boolean context — a chain has no truth value.
 

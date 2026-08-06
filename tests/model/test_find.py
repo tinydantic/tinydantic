@@ -7,11 +7,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
 
 import pytest
 
 from pydantic import Field
+from tinydb import TinyDB
+from tinydb.storages import MemoryStorage
 
 from tinydantic import (
     DocumentNotFoundError,
@@ -24,9 +25,6 @@ from tinydantic import (
     TinydanticUserError,
     q,
 )
-
-if TYPE_CHECKING:
-    from tinydb import TinyDB
 
 
 class User(TinydanticModel):
@@ -325,6 +323,66 @@ class TestReadTerminals:
         assert second.name == "alice"
         ids = [u.id for u in seeded.find(seeded.id.one_of([1, 3])).sort("-id")]
         assert ids == [3, 1]
+
+
+class CountingStorage(MemoryStorage):
+    """MemoryStorage that counts write() calls."""
+
+    def __init__(self) -> None:
+        """Start with a zero write count."""
+        super().__init__()
+        self.write_count = 0
+
+    def write(self, data: dict) -> None:
+        """Record the write, then delegate."""
+        self.write_count += 1
+        super().write(data)
+
+
+class TestDelete:
+    """delete() removes exactly the .all() set."""
+
+    def test_delete_without_modifiers(self, seeded: type[User]) -> None:
+        """Condition-only delete removes every match."""
+        removed = seeded.find(q("age") == 25).delete()
+        assert sorted(removed) == [2, 4]
+        assert seeded.count() == 3
+
+    def test_delete_honors_sort_skip_limit(self, seeded: type[User]) -> None:
+        """Keep-newest-N pruning: modifiers select victims."""
+        removed = seeded.find().sort("-id").skip(2).delete()
+        assert removed == [3, 2, 1]  # sorted order preserved
+        assert {u.id for u in seeded.all()} == {4, 5}
+
+    def test_delete_matches_all_set(self, seeded: type[User]) -> None:
+        """delete() removes exactly what all() showed."""
+        chain = seeded.find(q("age") >= 30).sort("age").limit(2)
+        expected = [u.id for u in chain.all()]
+        assert chain.delete() == expected
+
+    def test_whole_table_delete_is_explicit_and_legal(
+        self, seeded: type[User]
+    ) -> None:
+        """find().delete() deletes everything, deliberately."""
+        removed = seeded.find().delete()
+        assert len(removed) == 5
+        assert seeded.count() == 0
+
+    def test_empty_window_delete_writes_nothing(self) -> None:
+        """Zero matches: no-op, [] returned, zero writes."""
+        storage = CountingStorage()
+        counting_db = TinyDB(storage=lambda: storage)
+
+        class Item(TinydanticModel, database=counting_db, table_name="items"):
+            """Minimal model over the counting storage."""
+
+            name: str
+
+        Item(name="only").insert()
+        writes_before = storage.write_count
+        result = Item.find(q("name") == "missing").limit(3).delete()
+        assert result == []
+        assert storage.write_count == writes_before
 
 
 class TestBooleanContext:
