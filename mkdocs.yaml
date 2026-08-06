@@ -14,6 +14,8 @@ extra_css:
   - css/admonitions.css
 theme:
   name: materialx
+  logo: assets/logo/logo-mark.svg
+  favicon: assets/logo/favicon.svg
   icon:
     repo: fontawesome/brands/github
     edit: material/pencil
