@@ -121,10 +121,10 @@ class UniqueConstraintError(TinydanticError):
     marked [Unique][tinydantic.Unique] — or the field tuple of a
     [UniqueConstraint][tinydantic.UniqueConstraint] — already
     holds the same value elsewhere: in the table, or earlier in
-    the same ``insert_multiple()`` batch. When the constraint
-    carries a comparison-``key`` callable and its computed key
-    differs from the raw values, the message shows both, so a
-    normalized match never looks like a phantom collision.
+    the same ``insert_multiple()`` batch. When the match was
+    produced by a comparison-``key`` callable, the message shows
+    the computed key alongside the raw values, so a normalized
+    match never looks like a phantom collision.
     """
 
     def __init__(  # noqa: PLR0913
@@ -154,7 +154,7 @@ class UniqueConstraintError(TinydanticError):
             )
         key_clause = (
             f" (comparison key {comparison_key!r})"
-            if comparison_key is not None and comparison_key != values
+            if comparison_key is not None
             else ""
         )
         super().__init__(

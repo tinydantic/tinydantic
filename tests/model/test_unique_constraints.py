@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import datetime
+
+from typing import TYPE_CHECKING, Annotated
 
 import pytest
 
@@ -108,14 +110,13 @@ class TestErrorMessages:
         )
         assert "(comparison key (7, 'my-slug'))" in str(err)
 
-    def test_comparison_key_hidden_when_equal(self) -> None:
-        """An identity key adds no noise."""
+    def test_no_clause_without_key(self) -> None:
+        """Key-less (exact-match) errors carry no key clause."""
         err = UniqueConstraintError(
             model_name="A",
             table_name="a",
             fields=("x",),
             values=("v",),
-            comparison_key=("v",),
             doc_id=1,
         )
         assert "comparison key" not in str(err)
@@ -181,10 +182,6 @@ class TestDeclarationValidation:
                 constraints=(UniqueConstraint("typo"),),
             )
 
-    @pytest.mark.xfail(
-        reason="enforcement lands with the registry task",
-        strict=True,
-    )
     def test_nearest_wins_inheritance(self, db: TinyDB) -> None:
         """A subclass's ``constraints=`` replaces its parent's."""
 
@@ -207,10 +204,6 @@ class TestDeclarationValidation:
         with pytest.raises(UniqueConstraintError):
             Parent(a=1, b=2).insert()
 
-    @pytest.mark.xfail(
-        reason="enforcement lands with the registry task",
-        strict=True,
-    )
     def test_unbind_restores_parent(self, db: TinyDB) -> None:
         """``unbind('constraints')`` resurfaces inherited config."""
 
@@ -232,3 +225,253 @@ class TestDeclarationValidation:
         Sub.unbind("constraints")
         with pytest.raises(UniqueConstraintError):
             Sub(a=1).insert()
+
+
+class TestCompositeEnforcement:
+    """Pair uniqueness on the instance-level write paths."""
+
+    def test_duplicate_pair_insert_raises(self, db: TinyDB) -> None:
+        """The same (a, b) pair twice is rejected."""
+
+        class Follow(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a pair constraint."""
+
+            a: int
+            b: int
+
+        Follow(a=3, b=7).insert()
+        with pytest.raises(UniqueConstraintError) as exc:
+            Follow(a=3, b=7).insert()
+        assert "Values (3, 7)" in str(exc.value)
+        assert Follow.count() == 1
+
+    def test_distinct_pairs_pass(self, db: TinyDB) -> None:
+        """Sharing one member of the pair is not a clash."""
+
+        class Follow(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a pair constraint."""
+
+            a: int
+            b: int
+
+        Follow(a=3, b=7).insert()
+        Follow(a=3, b=8).insert()
+        Follow(a=4, b=7).insert()
+        assert Follow.count() == 3
+
+    def test_any_none_member_exempts(self, db: TinyDB) -> None:
+        """``(1, None)`` twice is allowed; ``key=`` never runs."""
+        calls: list[tuple[object, ...]] = []
+
+        def spy(*values: object) -> tuple[object, ...]:
+            """Record every invocation and return the tuple."""
+            calls.append(values)
+            return values
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b", key=spy),),
+        ):
+            """Test model with an optional constraint member."""
+
+            a: int
+            b: int | None = None
+
+        M(a=1).insert()
+        M(a=1).insert()
+        assert M.count() == 2
+        assert calls == []
+
+    def test_casefold_key_rejects_case_variant(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """('Chris', 7) then ('chris', 7) collides via the key."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(
+                UniqueConstraint(
+                    "name",
+                    "org",
+                    key=lambda n, o: (n.casefold(), o),
+                ),
+            ),
+        ):
+            """Test model with a case-insensitive pair."""
+
+            name: str
+            org: int
+
+        M(name="Chris", org=7).insert()
+        with pytest.raises(UniqueConstraintError) as exc:
+            M(name="chris", org=7).insert()
+        assert "comparison key ('chris', 7)" in str(exc.value)
+        M(name="Chris", org=8).insert()
+
+    def test_key_receives_serialized_values(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """Datetimes arrive as ISO strings; ``[:10]`` is the date."""
+
+        class Entry(
+            TinydanticModel,
+            database=db,
+            constraints=(
+                UniqueConstraint(
+                    "user_id",
+                    "at",
+                    key=lambda uid, ts: (uid, ts[:10]),
+                ),
+            ),
+        ):
+            """Test model unique per user per calendar day."""
+
+            user_id: int
+            at: datetime.datetime
+
+        Entry(
+            user_id=1,
+            at=datetime.datetime(2026, 8, 5, 9, 0),  # noqa: DTZ001
+        ).insert()
+        with pytest.raises(UniqueConstraintError):
+            Entry(
+                user_id=1,
+                at=datetime.datetime(2026, 8, 5, 17, 30),  # noqa: DTZ001
+            ).insert()
+        Entry(
+            user_id=1,
+            at=datetime.datetime(2026, 8, 6, 9, 0),  # noqa: DTZ001
+        ).insert()
+
+    def test_exact_and_normalized_coexist(self, db: TinyDB) -> None:
+        """Same field set, different keys: both enforce."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(
+                UniqueConstraint("v"),
+                UniqueConstraint("v", key=str.casefold),
+            ),
+        ):
+            """Test model with exact plus normalized constraints."""
+
+            v: str
+
+        M(v="A").insert()
+        with pytest.raises(UniqueConstraintError):
+            M(v="a").insert()  # caught by the casefold constraint
+
+    def test_field_order_dedupes(self, db: TinyDB) -> None:
+        """('a','b') and ('b','a') key-less collapse to one.
+
+        Behavioral proxy: both orders enforce identically and
+        swapped values still count as a distinct pair.
+        """
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(
+                UniqueConstraint("a", "b"),
+                UniqueConstraint("b", "a"),
+            ),
+        ):
+            """Test model with the same pair declared twice."""
+
+            a: int
+            b: int
+
+        M(a=1, b=2).insert()
+        with pytest.raises(UniqueConstraintError):
+            M(a=1, b=2).insert()
+        M(a=2, b=1).insert()
+
+    def test_marker_key_enforces(self, db: TinyDB) -> None:
+        """``Unique(key=str.casefold)`` on a single field."""
+
+        class U(TinydanticModel, database=db):
+            """Test model with a normalized single-field marker."""
+
+            email: Annotated[str, Unique(key=str.casefold)]
+
+        U(email="A@X.io").insert()
+        with pytest.raises(UniqueConstraintError) as exc:
+            U(email="a@x.IO").insert()
+        assert "comparison key" in str(exc.value)
+
+    def test_save_own_pair_ok_conflict_raises(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """Re-writing a document's own pair is never a clash."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a pair constraint."""
+
+            a: int
+            b: int
+            note: str = ""
+
+        first = M(a=1, b=2).insert()
+        first.note = "still mine"
+        first.save()
+
+        second = M(a=1, b=3).insert()
+        second.a, second.b = 1, 2
+        with pytest.raises(UniqueConstraintError):
+            second.save()
+        with pytest.raises(UniqueConstraintError):
+            second.replace()
+
+    def test_update_bypass_pinned(self, db: TinyDB) -> None:
+        """The table-level bulk path stays the documented bypass."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a pair constraint."""
+
+            a: int
+            b: int
+            tag: str = ""
+
+        M(a=1, b=2).insert()
+        target = M(a=9, b=9, tag="move").insert()
+        M.update({"a": 1, "b": 2}, M.tag == "move")
+        moved = M.get_by_id(target.id)
+        assert moved is not None
+        assert (moved.a, moved.b) == (1, 2)
+
+    def test_key_exception_propagates(self, db: TinyDB) -> None:
+        """A raising key is a user bug — no wrapping."""
+
+        class Boom(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", key=lambda _: 1 / 0),),
+        ):
+            """Test model whose key always raises."""
+
+            a: int
+
+        with pytest.raises(ZeroDivisionError):
+            Boom(a=1).insert()
