@@ -597,3 +597,99 @@ class TestBatchAndUpsert:
         M(a=2, b=2, tag="y").insert()
         with pytest.raises(UniqueConstraintError):
             M.upsert(M(a=1, b=1, tag="y"), M.tag == "y")
+
+
+class TestPatch:
+    """patch() sees the whole pair, not just the patched member."""
+
+    def test_patch_completing_conflicting_pair_raises(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """Patching one member cannot sneak into a taken pair."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a pair constraint."""
+
+            a: int
+            b: int
+
+        M(a=1, b=7).insert()
+        patched = M(a=2, b=7).insert()
+        with pytest.raises(UniqueConstraintError):
+            patched.patch(a=1)  # stored b=7 completes taken (1, 7)
+        stored = M.get_by_id(patched.id)
+        assert stored is not None
+        assert stored.a == 2  # nothing written
+
+    def test_patch_to_novel_pair_passes(self, db: TinyDB) -> None:
+        """Completing a free pair updates storage and self."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a pair constraint."""
+
+            a: int
+            b: int
+
+        M(a=1, b=7).insert()
+        patched = M(a=2, b=7).insert()
+        patched.patch(a=3)
+        stored = M.get_by_id(patched.id)
+        assert stored is not None
+        assert (stored.a, stored.b) == (3, 7)
+        assert patched.a == 3
+
+    def test_patch_own_pair_is_never_a_clash(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """Re-writing a member with its stored value is fine."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a pair constraint."""
+
+            a: int
+            b: int
+
+        doc = M(a=1, b=7).insert()
+        doc.patch(a=1)
+
+    def test_patch_non_member_field_skips_composite(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """The touched-fields filter skips unrelated patches."""
+        calls: list[tuple[object, ...]] = []
+
+        def spy(*values: object) -> tuple[object, ...]:
+            """Record every invocation and return the tuple."""
+            calls.append(values)
+            return values
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b", key=spy),),
+        ):
+            """Test model with a spied pair constraint."""
+
+            a: int
+            b: int
+            note: str = ""
+
+        doc = M(a=1, b=2).insert()
+        calls.clear()
+        doc.patch(note="hi")
+        assert calls == []
