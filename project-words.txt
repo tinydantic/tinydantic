@@ -52,6 +52,7 @@ fastapi
 fcntl
 filterwarnings
 Firestore
+followee
 fontawesome
 footgun
 frozensets

@@ -36,7 +36,7 @@ from tinydantic._errors import (
     UniqueConstraintError,
     UnknownUpdateFieldError,
 )
-from tinydantic._fields import Unique
+from tinydantic._fields import Unique, UniqueConstraint
 from tinydantic._find import FindQuery
 from tinydantic._model import TinydanticModel, q
 
@@ -64,6 +64,7 @@ __all__ = [
     "TinydanticModel",
     "TinydanticUserError",
     "Unique",
+    "UniqueConstraint",
     "UniqueConstraintError",
     "UnknownUpdateFieldError",
     "__version__",
