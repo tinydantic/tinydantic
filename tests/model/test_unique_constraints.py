@@ -475,3 +475,125 @@ class TestCompositeEnforcement:
 
         with pytest.raises(ZeroDivisionError):
             Boom(a=1).insert()
+
+
+class TestBatchAndUpsert:
+    """Constraint enforcement on the batch and upsert paths."""
+
+    def test_insert_multiple_intra_batch_duplicate_aborts(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """A duplicate computed key inside a batch writes nothing."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(
+                UniqueConstraint(
+                    "a",
+                    "b",
+                    key=lambda a, b: (a, b.casefold()),
+                ),
+            ),
+        ):
+            """Test model with a normalized pair constraint."""
+
+            a: int
+            b: str
+
+        with pytest.raises(UniqueConstraintError) as exc:
+            M.insert_multiple(
+                [M(a=1, b="X"), M(a=2, b="y"), M(a=1, b="x")],
+            )
+        assert "same batch" in str(exc.value)
+        assert "comparison key (1, 'x')" in str(exc.value)
+        assert M.count() == 0
+
+    def test_insert_multiple_against_stored_documents(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """Batch inserts also clash with already-stored pairs."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a pair constraint."""
+
+            a: int
+            b: int
+
+        M(a=1, b=2).insert()
+        with pytest.raises(UniqueConstraintError):
+            M.insert_multiple([M(a=3, b=4), M(a=1, b=2)])
+        assert M.count() == 1
+
+    def test_upsert_multi_match_with_full_constraint_raises(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """N matched docs cannot share one constrained tuple."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a pair constraint."""
+
+            a: int
+            b: int
+            tag: str
+
+        M(a=1, b=1, tag="x").insert()
+        M(a=2, b=2, tag="x").insert()
+        with pytest.raises(UniqueConstraintError):
+            M.upsert(M(a=9, b=9, tag="x"), M.tag == "x")
+
+    def test_upsert_single_match_novel_pair_ok(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """One match plus a free pair updates cleanly."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a pair constraint."""
+
+            a: int
+            b: int
+            tag: str
+
+        M(a=1, b=1, tag="x").insert()
+        M.upsert(M(a=9, b=9, tag="x"), M.tag == "x")
+        got = M.get_by_cond(M.tag == "x")
+        assert got is not None
+        assert (got.a, got.b) == (9, 9)
+
+    def test_upsert_stealing_a_stored_pair_raises(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """An upsert cannot steal a different document's pair."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a pair constraint."""
+
+            a: int
+            b: int
+            tag: str
+
+        M(a=1, b=1, tag="x").insert()
+        M(a=2, b=2, tag="y").insert()
+        with pytest.raises(UniqueConstraintError):
+            M.upsert(M(a=1, b=1, tag="y"), M.tag == "y")
