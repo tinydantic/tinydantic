@@ -8,7 +8,12 @@ from __future__ import annotations
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, computed_field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    ValidationError,
+    computed_field,
+)
 from pydantic.alias_generators import to_camel
 from tinydb import TinyDB, where
 from tinydb.queries import Query, QueryInstance
@@ -84,6 +89,280 @@ class TestFieldQueries:
 
         with pytest.raises(AttributeError):
             _ = User.not_a_field
+
+
+class TestComputedFieldQueries:
+    """Class-level access to computed fields builds queries."""
+
+    def test_comparison_is_a_query_instance(self, memory_db: TinyDB):
+        """Model.computed == value produces a QueryInstance."""
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model with a computed field."""
+
+            name: str
+
+            @computed_field  # type: ignore[prop-decorator]
+            @property
+            def shout(self) -> str:
+                """Return the name in upper case."""
+                return self.name.upper()
+
+        condition = User.shout == "ALICE"
+        assert isinstance(condition, QueryInstance)
+
+    def test_query_round_trip(self, memory_db: TinyDB):
+        """A computed-field query finds an inserted document."""
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model with a computed field."""
+
+            name: str
+
+            @computed_field  # type: ignore[prop-decorator]
+            @property
+            def shout(self) -> str:
+                """Return the name in upper case."""
+                return self.name.upper()
+
+        User(name="alice").insert()
+        results = User.search(User.shout == "ALICE")  # type: ignore[arg-type]
+        assert [user.name for user in results] == ["alice"]
+
+    def test_matches_the_field_helper_query(self, memory_db: TinyDB):
+        """Every spelling builds the same query on the same key.
+
+        Comparing the queries themselves would prove nothing —
+        ``Query.__eq__`` builds a condition, and every condition is
+        truthy. The built conditions are what compare and hash.
+        """
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model with a computed field."""
+
+            name: str
+
+            @computed_field  # type: ignore[prop-decorator]
+            @property
+            def shout(self) -> str:
+                """Return the name in upper case."""
+                return self.name.upper()
+
+        built = User.shout == "ALICE"
+        via_field = field(User, "shout") == "ALICE"
+        raw = where("shout") == "ALICE"
+        assert built == via_field
+        assert built == raw
+        assert hash(built) == hash(raw)
+
+    def test_instance_access_returns_the_value(self, memory_db: TinyDB):
+        """user.computed still computes, untouched by the query."""
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model with a computed field."""
+
+            name: str
+
+            @computed_field  # type: ignore[prop-decorator]
+            @property
+            def shout(self) -> str:
+                """Return the name in upper case."""
+                return self.name.upper()
+
+        value = User(name="alice").shout
+        assert isinstance(value, str)
+        assert value == "ALICE"
+
+    def test_computed_field_is_still_serialized(self, memory_db: TinyDB):
+        """Wrapping the property leaves storage output intact."""
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model with a computed field."""
+
+            name: str
+
+            @computed_field  # type: ignore[prop-decorator]
+            @property
+            def shout(self) -> str:
+                """Return the name in upper case."""
+                return self.name.upper()
+
+        user = User(name="alice")
+        assert user.model_dump()["shout"] == "ALICE"
+        user.insert()
+        assert memory_db.table("user").all()[0]["shout"] == "ALICE"
+
+    def test_computed_field_is_still_read_only(self, memory_db: TinyDB):
+        """Assignment raises the property's own AttributeError.
+
+        A bare ``__get__`` wrapper is a *non-data* descriptor, which
+        sends assignment down pydantic's fallback path and reports
+        "object has no attribute 'shout'" — untrue and unhelpful.
+        Delegating ``__set__`` keeps the property's own message.
+        """
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model with a computed field."""
+
+            name: str
+
+            @computed_field  # type: ignore[prop-decorator]
+            @property
+            def shout(self) -> str:
+                """Return the name in upper case."""
+                return self.name.upper()
+
+        user = User(name="alice")
+        with pytest.raises(AttributeError, match="can't set attribute"):
+            user.shout = "HACKED"  # type: ignore[misc]
+
+    def test_computed_field_setter_still_runs(self, memory_db: TinyDB):
+        """A settable computed field keeps its setter.
+
+        The assignment route delegates to the property rather than
+        refusing outright, so pydantic's support for computed fields
+        that *do* have a setter survives.
+        """
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model with a settable computed field."""
+
+            name: str
+
+            @computed_field  # type: ignore[prop-decorator]
+            @property
+            def shout(self) -> str:
+                """Return the name in upper case."""
+                return self.name.upper()
+
+            @shout.setter
+            def shout(self, value: str) -> None:
+                """Set the name from an upper-case value."""
+                self.name = value.lower()
+
+        user = User(name="alice")
+        user.shout = "BOB"
+        assert user.name == "bob"
+
+    def test_frozen_model_reports_the_frozen_error(self, memory_db: TinyDB):
+        """Frozen models are left to pydantic's own guard.
+
+        "Instance is frozen" is the right answer for every attribute
+        of a frozen model, computed or not, so the assignment route
+        is deliberately not installed there.
+        """
+
+        class User(TinydanticModel, database=memory_db):
+            """Frozen test model with a computed field."""
+
+            model_config = ConfigDict(frozen=True)
+
+            name: str
+
+            @computed_field  # type: ignore[prop-decorator]
+            @property
+            def shout(self) -> str:
+                """Return the name in upper case."""
+                return self.name.upper()
+
+        user = User(name="alice")
+        with pytest.raises(ValidationError, match="frozen"):
+            user.shout = "HACKED"  # type: ignore[misc]
+
+    def test_inherited_computed_field_is_queryable(self, memory_db: TinyDB):
+        """A subclass reports the same key as its base."""
+
+        class Base(TinydanticModel, database=memory_db):
+            """Base model with a computed field."""
+
+            name: str
+
+            @computed_field  # type: ignore[prop-decorator]
+            @property
+            def shout(self) -> str:
+                """Return the name in upper case."""
+                return self.name.upper()
+
+        class Child(Base, table_name="child"):
+            """Subclass inheriting the computed field."""
+
+            rank: int = 0
+
+        assert q(Child.shout) == where("shout")
+        value = Child(name="bob").shout
+        assert isinstance(value, str)
+        assert value == "BOB"
+
+    def test_inherited_computed_field_is_read_only(self, memory_db: TinyDB):
+        """A subclass routes assignment to the inherited property.
+
+        The subclass declares no property of its own, so its
+        descriptor has to be resolved from the base class — a
+        subclass that looked only at its own namespace would fall
+        through to pydantic and report the field as unknown.
+        """
+
+        class Base(TinydanticModel, database=memory_db):
+            """Base model with a computed field."""
+
+            name: str
+
+            @computed_field  # type: ignore[prop-decorator]
+            @property
+            def shout(self) -> str:
+                """Return the name in upper case."""
+                return self.name.upper()
+
+        class Child(Base, table_name="child"):
+            """Subclass inheriting the computed field."""
+
+            rank: int = 0
+
+        with pytest.raises(AttributeError, match="can't set attribute"):
+            Child(name="bob").shout = "HACKED"  # type: ignore[misc]
+
+    def test_property_docstring_survives_wrapping(self, memory_db: TinyDB):
+        """The descriptor carries the property's docstring.
+
+        Class access no longer returns the property, so dynamic
+        introspection (help(), runtime doc tooling) reads the
+        descriptor instead — it has to carry the documentation.
+        """
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model with a computed field."""
+
+            name: str
+
+            @computed_field  # type: ignore[prop-decorator]
+            @property
+            def shout(self) -> str:
+                """Return the name in upper case."""
+                return self.name.upper()
+
+        descriptor = User.__dict__["shout"]
+        assert descriptor.__doc__ == "Return the name in upper case."
+
+    def test_plain_property_is_not_queryable(self, memory_db: TinyDB):
+        """An ordinary property is not stored, so it stays a property.
+
+        Only ``@computed_field`` properties are serialized and
+        therefore reachable in storage; wrapping the rest would
+        promise queries that can never match.
+        """
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model with an ordinary property."""
+
+            name: str
+
+            @property
+            def title(self) -> str:
+                """Return the name in title case."""
+                return self.name.title()
+
+        assert isinstance(User.__dict__["title"], property)
+        assert User(name="alice").title == "Alice"
 
 
 class TestQHelper:
@@ -170,8 +449,40 @@ class TestQHelper:
         # Class access finds the method, so the comparison is a plain
         # False rather than a condition — q() turns that into a raise.
         assert (Command.search == "fuzzy") is False
-        with pytest.raises(TypeError, match="Query"):
+        with pytest.raises(TypeError) as excinfo:
             q(Command.search)
+        # The method knows both its own name and its owning class, so
+        # the advice can be the exact call the user needs to make.
+        assert "field(Command, 'search')" in str(excinfo.value)
+        assert "on an instance" not in str(excinfo.value)
+
+    def test_q_advises_computed_field_for_a_plain_property(
+        self,
+        memory_db: TinyDB,
+    ):
+        """A plain property is told how to become queryable.
+
+        Computed fields resolve to a Query and never reach the hint,
+        so a property arriving there is necessarily the kind that is
+        never stored: no document key exists for it to match.
+        """
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model with an ordinary property."""
+
+            name: str
+
+            @property
+            def slug(self) -> str:
+                """Return the name in lower case."""
+                return self.name.lower()
+
+        with pytest.raises(TypeError) as excinfo:
+            q(User.slug)
+        message = str(excinfo.value)
+        assert "computed_field" in message
+        assert "'slug'" in message
+        assert "on an instance" not in message
 
     def test_q_rejects_non_queries(self):
         """q() raises TypeError for non-Query values."""

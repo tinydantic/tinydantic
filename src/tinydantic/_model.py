@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import inspect
 import sys
 
 from importlib import metadata
@@ -185,7 +186,9 @@ def _q_hint(expr: Any) -> str:
 
     Each wrong argument type implies a different mistake, so the
     generic "expected a Query" line is followed by advice aimed at
-    the one that was actually made.
+    the one that was actually made. Two of those types carry the
+    name of what was passed, so their advice can be the exact call
+    to make rather than a description of it.
     """
     if isinstance(expr, str):
         return (
@@ -198,6 +201,27 @@ def _q_hint(expr: Any) -> str:
         return (
             "That is a built condition, not a field. Wrap the "
             "field, not the comparison: q(Model.field) == value."
+        )
+    if isinstance(expr, property):
+        # Computed fields resolve to a Query and never arrive here,
+        # so a property is necessarily the kind that is never stored.
+        name = getattr(expr.fget, "__name__", None)
+        subject = repr(name) if name else "it"
+        shorthand = f"Model.{name}" if name else "the shorthand"
+        return (
+            f"A plain property is not serialized, so no document "
+            f"key exists for {subject} to match. Decorate it with "
+            f"pydantic's @computed_field to store it, after which "
+            f"{shorthand} queries it like any other field."
+        )
+    if inspect.isroutine(expr):
+        owner = getattr(expr, "__self__", None)
+        model = owner.__name__ if isinstance(owner, type) else "Model"
+        name = getattr(expr, "__name__", "name")
+        return (
+            f"That resolves to a method, not a field, so the "
+            f"comparison is a plain False matching nothing. Reach "
+            f"the field by name: field({model}, {name!r})."
         )
     return (
         "Reach for the value on an instance (user.name); "
@@ -237,6 +261,10 @@ def q(expr: Any) -> Query:
         TypeError: If ``expr`` is not a TinyDB Query — for example
             when called with an instance attribute instead of
             class-level field access, or with a field name string.
+            The message is tailored to what was passed: a method
+            (a shadowed field) and a plain property both carry
+            their own name, so those two name the exact call to
+            make instead of describing it.
     """
     if not isinstance(expr, Query):
         msg = (
@@ -278,6 +306,9 @@ def field(model: type[TinydanticModel], name: str) -> Query:
 
     Accepted names are the model's fields plus its computed fields,
     which pydantic serializes and which therefore reach storage.
+    Computed fields are also reachable through the ``Model.field``
+    shorthand, so ``field()`` is the escape hatch for them only when
+    the name is shadowed, exactly as for ordinary fields.
     ``id`` is refused (it maps to ``doc_id`` and is never written to
     the document body — use ``Model.id`` for document-id queries),
     as are storage aliases and dotted paths.
@@ -332,6 +363,78 @@ def field(model: type[TinydanticModel], name: str) -> Query:
     return where(name)
 
 
+class _ComputedFieldQuery:
+    """Descriptor making a computed field queryable by attribute.
+
+    Computed fields are serialized, so they reach storage and are
+    genuinely matchable — but unlike ordinary fields they survive
+    class creation as real class attributes, so the metaclass
+    ``__getattr__`` that turns ``Model.field`` into a query is never
+    consulted for them. Without this, ``Model.computed == value``
+    compares a ``property`` object to a value and quietly evaluates
+    to ``False``.
+
+    Descriptors see the difference the metaclass cannot: class-level
+    access calls ``__get__`` with ``obj=None``. Class access
+    therefore yields the query, and instance access delegates to the
+    wrapped property, leaving ``user.computed`` untouched.
+    """
+
+    def __init__(self, prop: Any, name: str) -> None:
+        """Wrap ``prop``, the computed field published as ``name``."""
+        self._prop = prop
+        self._name = name
+        self.__doc__ = prop.__doc__
+
+    def __get__(self, obj: Any, owner: Any = None) -> Any:
+        """Return a Query on the class, the value on an instance."""
+        if obj is None:
+            return where(self._name)
+        return self._prop.__get__(obj, owner)
+
+    def __set__(self, obj: Any, value: Any) -> None:
+        """Delegate assignment to the wrapped property.
+
+        Pydantic's ``__setattr__`` does not use descriptor protocol,
+        so this is not reached by ordinary assignment — it is the
+        delegation target for
+        ``TinydanticModel.__setattr__``, which routes computed-field
+        names here so the property's own setter (or its
+        ``AttributeError``) decides the outcome.
+        """
+        self._prop.__set__(obj, value)
+
+
+def _install_computed_field_queries(model: type[Any]) -> None:
+    """Wrap a class's computed fields as query descriptors.
+
+    Only names in the class's own namespace are wrapped; inherited
+    computed fields already resolve to the base class's descriptor,
+    which reports the same key. The descriptors are also collected
+    into ``__tinydantic_computed_queries__`` — resolved here, once,
+    so ``__setattr__`` costs a single dict lookup rather than an MRO
+    walk on every assignment.
+
+    Frozen models get an empty mapping: pydantic's frozen-instance
+    error is the right answer for every attribute of a frozen model,
+    computed or not, so assignment is left entirely to pydantic.
+    """
+    queries: dict[str, _ComputedFieldQuery] = {}
+    for name in model.model_computed_fields:
+        prop = model.__dict__.get(name)
+        if isinstance(prop, property):
+            setattr(model, name, _ComputedFieldQuery(prop, name))
+        for klass in model.__mro__:
+            descriptor = klass.__dict__.get(name)
+            if isinstance(descriptor, _ComputedFieldQuery):
+                queries[name] = descriptor
+                break
+    frozen = model.model_config.get("frozen", False)
+    # Always assigned, never left to inheritance: a frozen subclass
+    # of an unfrozen base must not inherit the base's mapping.
+    model.__tinydantic_computed_queries__ = {} if frozen else queries
+
+
 class TinydanticModelMetaclass(ModelMetaclass):
     """Metaclass providing class-level field queries.
 
@@ -345,6 +448,12 @@ class TinydanticModelMetaclass(ModelMetaclass):
     ``Model.id`` returns a ``DocIdQuery`` (translated by the model's
     query methods to document-id operations) instead of a
     ``where("id")`` body query that would silently match nothing.
+
+    Computed fields are queryable too, but cannot go through
+    ``__getattr__``: pydantic leaves them as real class attributes,
+    so ordinary lookup succeeds and the hook never fires. They are
+    handled by ``_ComputedFieldQuery`` instead, installed after the
+    class is built.
 
     Classes created with ``use_revision=True`` additionally get a
     ``revision_id: UUID | None`` field injected before pydantic
@@ -389,7 +498,9 @@ class TinydanticModelMetaclass(ModelMetaclass):
                 default=None,
                 description="Optimistic-concurrency token",
             )
-        return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+        model = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+        _install_computed_field_queries(model)
+        return model
 
     def __getattr__(cls, attr: str) -> Any:
         """Return a field Query, falling back to normal lookup.
@@ -445,6 +556,37 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     )
 
     __tinydantic_config__: ClassVar[TinydanticConfig] = {}
+
+    # Computed-field name -> query descriptor, resolved at class
+    # creation. Empty for models without computed fields (and for
+    # frozen ones), which is what keeps __setattr__ cheap.
+    __tinydantic_computed_queries__: ClassVar[
+        dict[str, _ComputedFieldQuery]
+    ] = {}
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Set an attribute, routing computed fields to the property.
+
+        Class-level access to a computed field yields a Query — the
+        whole point of ``_ComputedFieldQuery`` — and pydantic's
+        assignment dispatch decides what to do by inspecting exactly
+        that (``attr = getattr(cls, name)``, then
+        ``isinstance(attr, property)``). It therefore no longer
+        recognizes the property and reports the field as unknown:
+        "Object has no attribute 'shout'", of an attribute that
+        plainly exists. Routing the name here first restores the
+        property's own behavior — its setter if it has one, its
+        ``AttributeError`` if it does not.
+
+        Args:
+            name: The attribute being assigned.
+            value: The value to assign.
+        """
+        descriptor = type(self).__tinydantic_computed_queries__.get(name)
+        if descriptor is not None:
+            descriptor.__set__(self, value)
+            return
+        super().__setattr__(name, value)
 
     # --- model fields ---
 
