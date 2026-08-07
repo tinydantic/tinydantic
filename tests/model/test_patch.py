@@ -20,7 +20,7 @@ from tinydantic import (
     DocumentNotFoundError,
     TinydanticModel,
     UnknownUpdateFieldError,
-    q,
+    field,
 )
 
 if TYPE_CHECKING:
@@ -163,7 +163,7 @@ class TestPatchWrites:
 
         command = Command(name="grep", search="fuzzy").insert()
         command.patch(search="regex")
-        found = Command.get(q("search") == "regex")
+        found = Command.get(field(Command, "search") == "regex")
         assert found is not None
         assert found.id == command.id
 

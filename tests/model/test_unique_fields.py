@@ -16,6 +16,7 @@ from tinydantic import (
     TinydanticModel,
     Unique,
     UniqueConstraintError,
+    field,
     q,
 )
 
@@ -186,7 +187,7 @@ class TestUpsert:
             User(name="al", email="a2@x.io"),
             q(User.name) == "al",
         )
-        found = User.get(q("email") == "a2@x.io")
+        found = User.get(field(User, "email") == "a2@x.io")
         assert found is not None
 
     def test_insert_branch_checked(self, db: TinyDB):

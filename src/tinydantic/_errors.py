@@ -262,6 +262,22 @@ class SortFieldError(FindQueryError):
     """
 
 
+class QueryFieldError(TinydanticUserError):
+    """[field()][tinydantic.field] was given a name it cannot query.
+
+    Raised eagerly at the ``field()`` call rather than returning a
+    query that matches nothing forever. Covers names the model does
+    not declare (including storage aliases, which are never storage
+    keys), ``id`` (mapped to ``doc_id``, never written to the
+    document body), and dotted paths (``where()`` does not traverse
+    them — chain attributes instead).
+
+    Keys the model genuinely does not declare — ``extra="allow"``
+    documents, legacy keys — are reachable with TinyDB's
+    ``where()``, which the message names.
+    """
+
+
 class ShadowedFieldError(TinydanticUserError):
     """A model field shadows an existing class attribute.
 
@@ -271,7 +287,7 @@ class ShadowedFieldError(TinydanticUserError):
     nothing (or fails cryptically, depending on table contents).
     tinydantic refuses the class definition instead. Rename the
     field, or list it in the ``shadowed_fields=`` class kwarg and
-    query it with ``q("name")``.
+    query it with ``field(Model, "name")``.
     """
 
     def __init__(
@@ -291,7 +307,7 @@ class ShadowedFieldError(TinydanticUserError):
             f"attributes: {pairs}. Model.field query sugar would "
             "silently break for them. Rename the field(s), or "
             f"declare shadowed_fields=({names},) on the class "
-            "and query them with q(<field name>).",
+            f"and query them with field({model_name}, <field name>).",
         )
 
 

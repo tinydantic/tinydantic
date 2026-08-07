@@ -19,6 +19,8 @@ The first direction is noisy but harmless. The second is the dangerous one, and 
 
 `q()` is a runtime no-op that returns its argument re-typed as a `Query`. Wrapping a field silences the false error and preserves inference through overloaded methods; skipping it costs nothing at runtime.
 
+`q()` is a cast and nothing else. It once also accepted a field _name_, building a query on that document key — one function serving both a type-checker concern and a shadowed-field escape hatch. That overload made a silent failure unreachable by any guard: `q("search")` (a field-name literal) and `q(user.name)` (an instance attribute that happens to hold a string) are the same call with the same runtime information, so the second quietly built a query on the _value_ and matched nothing forever. Splitting the name-based form out into [field()][tinydantic.field] is what makes `q()`'s `TypeError` total — a string is now unambiguously wrong.
+
 Documentation examples deliberately stay on the bare form, with `q()` introduced once in the [quickstart](../usage/quickstart.md#if-you-use-a-type-checker) and once in [Queries](../usage/queries.md#static-type-checking). `tinydantic` targets scripts and small tools where a type checker is often absent; putting `q()` on every example would tax every reader to serve a subset of them. SQLModel makes the same call — its [where tutorial](https://sqlmodel.tiangolo.com/tutorial/where/) uses bare comparisons throughout and introduces `col()` only in a closing section on editor errors.
 
 ## Rejected: a typed descriptor (`Mapped[T]`)

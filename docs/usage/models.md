@@ -198,6 +198,17 @@ Meanwhile your wire format is untouched — serialize with `by_alias=True` as us
 
 Under the hood, tinydantic validates with `by_name=True` at its own storage boundaries (reads, write checks, and merged update results), so stored field-name keys always validate — no `validate_by_name` needed in your model config. Aliases still apply everywhere _you_ talk to the model: construction and `model_validate` follow your model's own alias rules, exactly as in plain pydantic.
 
+The same policy governs querying by name: [field()][tinydantic.field] takes Python field names and refuses aliases, rather than translating them.
+
+```pycon
+>>> from tinydantic import field
+>>> field(Profile, "firstName")
+Traceback (most recent call last):
+  ...
+tinydantic._errors.QueryFieldError: 'firstName' is not a queryable field of 'Profile'. Names are Python field names (not storage aliases); queryable fields: ['first_name', 'home_city']. For keys your model does not declare (extra='allow' documents, legacy keys), use tinydb.where('firstName').
+
+```
+
 ## Lifecycle hooks
 
 Two overridable no-op methods mark the storage boundary. [before_save()][tinydantic.TinydanticModel.before_save] runs once at the start of every whole-model write (`insert()`, each document of `insert_multiple()`, `save()`, `replace()`, `upsert()`) — before serialization, so anything it sets is validated and persisted with the write. The classic use is audit timestamps:

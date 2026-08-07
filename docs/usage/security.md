@@ -50,7 +50,7 @@ Untrusted **regex patterns** are not safe. `.matches()` and `.search()` compile 
 
 ```
 
-Untrusted **field names** are somewhere in between. `q("some_key")` builds a query against any document key, so passing user input to it lets callers probe keys your models never expose — stored extra keys included. Keep field names server-chosen; user input belongs on the value side of a query.
+Untrusted **field names** are somewhere in between. [field()][tinydantic.field] refuses any name the model does not declare, so it will not probe keys your models never expose. TinyDB's `where("some_key")` has no such check — it builds a query against any document key, stored extra keys included — so never hand it user input. Keep field names server-chosen either way; user input belongs on the value side of a query.
 
 ## Untrusted input in updates
 

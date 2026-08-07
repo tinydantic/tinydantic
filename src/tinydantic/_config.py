@@ -80,8 +80,9 @@ class TinydanticConfig(TypedDict, total=False):
     Fields listed here may share a name with an existing class
     attribute (a tinydantic or pydantic method, or one of your
     own). Everything about them works — storage, instance access,
-    ``q("name")`` queries — except the ``Model.field`` query
-    sugar, which keeps resolving to the real attribute. Unlisted
+    ``field(Model, "name")`` queries — except the ``Model.field``
+    query sugar, which keeps resolving to the real attribute.
+    Unlisted
     shadowed fields raise
     [ShadowedFieldError][tinydantic.ShadowedFieldError] at class
     definition.

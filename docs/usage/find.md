@@ -7,7 +7,7 @@ The examples share state top to bottom, so run them in order.
 ```pycon
 >>> from tinydb import TinyDB
 >>> from tinydb.storages import MemoryStorage
->>> from tinydantic import TinydanticModel, q
+>>> from tinydantic import TinydanticModel, field, q
 >>> db = TinyDB(storage=MemoryStorage)
 >>> class User(TinydanticModel, database=db, table_name="users"):
 ...     name: str
@@ -26,13 +26,13 @@ The examples share state top to bottom, so run them in order.
 A chain in one glance — nothing touches storage until the terminal call:
 
 ```pycon
->>> adults = User.find(q("age") >= 18)  # lazy: no I/O yet
+>>> adults = User.find(field(User, "age") >= 18)  # lazy: no I/O yet
 >>> [u.name for u in adults.sort("age", "-name").limit(3)]
 ['dave', 'alice', 'carol']
 >>> oldest = User.find().sort("-age").first()
 >>> oldest.name
 'erin'
->>> User.find(q("age") > 100).exists()
+>>> User.find(field(User, "age") > 100).exists()
 False
 
 ```
@@ -181,7 +181,7 @@ Every terminal answers about the same windowed, ordered result that [all()][tiny
 [first_or_raise()][tinydantic.FindQuery.first_or_raise] is the strict variant for call sites where an empty window is an error — the chain counterpart to [get_or_raise()][tinydantic.TinydanticModel.get_or_raise], raising the same [DocumentNotFoundError][tinydantic.DocumentNotFoundError]:
 
 ```pycon
->>> User.find(q("age") > 100).first_or_raise()
+>>> User.find(field(User, "age") > 100).first_or_raise()
 Traceback (most recent call last):
     ...
 tinydantic._errors.DocumentNotFoundError: No 'User' document in table 'users'
@@ -191,7 +191,7 @@ tinydantic._errors.DocumentNotFoundError: No 'User' document in table 'users'
 A chain itself has **no truth value** — `if User.find(cond):` would otherwise always be true, silently, forever. Use `.exists()` or `.count()`:
 
 ```pycon
->>> bool(User.find(q("age") > 100))
+>>> bool(User.find(field(User, "age") > 100))
 Traceback (most recent call last):
     ...
 tinydantic._errors.FindQueryError: A FindQuery has no truth value (it is a lazy query description). Use .exists() or .count().
@@ -222,7 +222,7 @@ The signature use case is keep-newest-N pruning — sort descending, skip the ke
 `update()` mirrors the verb exactly — mapping or transform callable, the same `extra_keys=` policy, the same errors, merged-result validation, and atomic all-or-nothing writes:
 
 ```pycon
->>> User.find(q("age") >= 30).sort("age").limit(2).update({"age": 35})
+>>> User.find(field(User, "age") >= 30).sort("age").limit(2).update({"age": 35})
 [3, 5]
 >>> sorted(u.age for u in User.find().all())
 [25, 35, 35, 50]

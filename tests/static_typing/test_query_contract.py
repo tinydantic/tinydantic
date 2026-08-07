@@ -16,7 +16,7 @@ from tinydb.queries import QueryInstance
 from tinydb.storages import MemoryStorage
 from typing_extensions import assert_type
 
-from tinydantic import FindQuery, TinydanticModel, q
+from tinydantic import FindQuery, TinydanticModel, field, q
 
 _db = TinyDB(storage=MemoryStorage)
 
@@ -77,7 +77,7 @@ def every_condition_spelling_is_accepted() -> None:
     for a user when a spelling stops being accepted.
     """
     assert_type(User.search(q(User.name) == "Alice"), list[User])
-    assert_type(User.search(q("name") == "Alice"), list[User])
+    assert_type(User.search(field(User, "name") == "Alice"), list[User])
     assert_type(User.search(q(User.address.city) == "Berlin"), list[User])
     assert_type(User.search(q(User.id) == 1), list[User])
     assert_type(User.search(q(User.name).matches("A.*")), list[User])

@@ -38,6 +38,7 @@ from tinydantic._errors import (
     DocumentIDRequiredError,
     DocumentIDUpdateError,
     DocumentNotFoundError,
+    QueryFieldError,
     RevisionFieldError,
     RevisionUpdateError,
     SelectorError,
@@ -179,8 +180,8 @@ class _NothingMatchedError(Exception):
     """
 
 
-def q(field: Any) -> Query:
-    """Build a typed TinyDB Query from a field or a field name.
+def q(expr: Any) -> Query:
+    """Re-type a class-level field expression as a TinyDB Query.
 
     At runtime, class-level field access like ``User.name`` already
     returns a [Query][tinydb.queries.Query] (courtesy of the model
@@ -193,44 +194,120 @@ def q(field: Any) -> Query:
     User.search(q(User.name) == "Alice")
     ```
 
-    A string builds a query on that document key
-    (``tinydb.queries.where``). This is the escape hatch for fields
-    whose names collide with model methods (``search``, ``get``,
-    ``count``, ...) and are therefore unreachable through the
-    ``Model.field`` shorthand:
-
-    ```python
-    Command.search(q("search") == "fuzzy")
-    ```
-
-    Note that ``q(Model.id)`` and ``q("id")`` differ: ``Model.id``
-    builds a document-id query (translated to TinyDB ``doc_id``
-    operations), while the string form queries a literal ``id``
-    key in the document body — which tinydantic never writes.
+    ``q()`` is a *cast*, not a constructor: it hands back the object
+    it was given and changes nothing at runtime. It does not accept
+    a field name — a string is indistinguishable from an instance
+    attribute that happens to hold one, so accepting either would
+    make ``q(user.name)`` silently build a query on the *value*. Use
+    [field()][tinydantic.field] for a field by name, and
+    ``tinydb.where()`` for a raw document key.
 
     Args:
-        field: A class-level field expression (e.g. ``User.name``)
-            or a field name string (e.g. ``"name"``).
+        expr: A class-level field expression (e.g. ``User.name``).
 
     Returns:
-        The field expression unchanged, or a Query on the named
-        field — either way, typed as a Query.
+        The expression unchanged, typed as a Query.
 
     Raises:
-        TypeError: If ``field`` is neither a TinyDB Query nor a
-            string — for example when called with an instance
-            attribute instead of class-level field access.
+        TypeError: If ``expr`` is not a TinyDB Query — for example
+            when called with an instance attribute instead of
+            class-level field access, or with a field name string.
     """
-    if isinstance(field, str):
-        return where(field)
-    if not isinstance(field, Query):
+    if not isinstance(expr, Query):
         msg = (
-            f"q() expected a TinyDB Query (class-level field access "
-            f"like Model.field) or a field name string, got "
-            f"{type(field).__name__!r}"
+            f"q() expected a TinyDB Query from class-level field "
+            f"access like Model.field, got {type(expr).__name__!r}. "
+            f"A string is a value, not a field: for a field whose "
+            f"name is shadowed by a method, use field(Model, "
+            f"'name'); for a raw document key, use "
+            f"tinydb.where('key')."
         )
         raise TypeError(msg)
-    return field
+    return expr
+
+
+def _queryable_field_names(model: type[TinydanticModel]) -> list[str]:
+    """Return the field names ``field()`` accepts, sorted.
+
+    Computed fields are included: pydantic serializes them, so they
+    reach storage and are genuinely matchable. ``id`` is excluded:
+    it maps to ``doc_id`` and is never written to the document
+    body, so a query on it would match nothing.
+    """
+    names = set(model.model_fields) | set(model.model_computed_fields)
+    return sorted(names - {"id"})
+
+
+def field(model: type[TinydanticModel], name: str) -> Query:
+    """Build a TinyDB Query on a model field by name.
+
+    The escape hatch for fields whose names collide with model
+    methods (``search``, ``get``, ``count``, ...) and are therefore
+    unreachable through the ``Model.field`` shorthand:
+
+    ```python
+    Command.search(field(Command, "search") == "fuzzy")
+    ```
+
+    The model is a build-time lookup table only — it never enters
+    the returned object, so the condition is an ordinary TinyDB
+    query, equal to (and hashing as) ``where(name)``. It composes
+    with raw queries and with ``Model.field`` conditions freely.
+
+    Accepted names are the model's fields plus its computed fields,
+    which pydantic serializes and which therefore reach storage.
+    ``id`` is refused (it maps to ``doc_id`` and is never written to
+    the document body — use ``Model.id`` for document-id queries),
+    as are storage aliases and dotted paths.
+
+    Validation covers the top-level name only. Chaining past it is
+    raw TinyDB, so a misspelled sub-field in
+    ``field(User, "address").city`` is still silently wrong.
+
+    Args:
+        model: The model class the name belongs to.
+        name: A Python field name (never a storage alias).
+
+    Returns:
+        A Query on that document key.
+
+    Raises:
+        QueryFieldError: If ``name`` is not a queryable field of
+            ``model``. Keys the model does not declare
+            (``extra="allow"`` documents, legacy keys) are reachable
+            with ``tinydb.where()``, which the message names.
+    """
+    if name == "id":
+        msg = (
+            f"'id' is not a queryable field of {model.__name__!r}: it "
+            f"maps to TinyDB's doc_id and is never written to the "
+            f"document body. Use {model.__name__}.id for document-id "
+            f"queries (q({model.__name__}.id) == 1)."
+        )
+        raise QueryFieldError(msg)
+    if "." in name:
+        head, _, rest = name.partition(".")
+        msg = (
+            f"{name!r} is not a queryable field of "
+            f"{model.__name__!r}: where() does not traverse dotted "
+            f"paths, it queries a literal key containing a dot. "
+            f"Chain attributes instead: "
+            f"field({model.__name__}, {head!r}).{rest}"
+        )
+        raise QueryFieldError(msg)
+    if name not in model.model_fields and (
+        name not in model.model_computed_fields
+    ):
+        msg = (
+            f"{name!r} is not a queryable field of "
+            f"{model.__name__!r}. Names are Python field names (not "
+            f"storage aliases); queryable fields: "
+            f"{_queryable_field_names(model)}. For keys your model "
+            f"does not declare (extra='allow' documents, legacy "
+            f"keys), use tinydb.where({name!r})."
+        )
+        raise QueryFieldError(msg)
+    return where(name)
 
 
 class TinydanticModelMetaclass(ModelMetaclass):
@@ -793,7 +870,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         widening the query to every document.
 
         ```python
-        adults = User.find(q("age") >= 18)
+        adults = User.find(q(User.age) >= 18)
         page = adults.sort("name").skip(20).limit(10).all()
         ```
 

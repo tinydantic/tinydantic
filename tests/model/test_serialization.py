@@ -26,7 +26,7 @@ from tinydantic import (
     DocumentNotFoundError,
     TinydanticModel,
     UnknownUpdateFieldError,
-    q,
+    field,
 )
 
 if TYPE_CHECKING:
@@ -211,7 +211,7 @@ class TestUpdateSerialization:
             2028, 1, 1, 12, 0, tzinfo=datetime.timezone.utc
         )
         rich_class.update_multiple(
-            [({"created_at": new_time}, q("name") == "Alice")],
+            [({"created_at": new_time}, field(rich_class, "name") == "Alice")],
         )
         raw = rich_class.get_table().get(doc_id=original.id)
         assert isinstance(raw, Document)

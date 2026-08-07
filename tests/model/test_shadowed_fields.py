@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tinydantic import ShadowedFieldError, TinydanticModel, q
+from tinydantic import ShadowedFieldError, TinydanticModel, field
 
 if TYPE_CHECKING:
     from tinydb import TinyDB
@@ -83,10 +83,10 @@ class TestDetection:
                 count: int  # type: ignore[assignment]
 
     def test_error_names_the_remedies(self, db: TinyDB):
-        """The message points at rename and shadowed_fields+q()."""
+        """The message points at rename and shadowed_fields+field()."""
         with pytest.raises(
             ShadowedFieldError,
-            match=r"shadowed_fields.*q\(",
+            match=r"shadowed_fields.*field\(Command, ",
         ):
 
             class Command(TinydanticModel, database=db):
@@ -135,7 +135,7 @@ class TestOptOut:
             search: str  # type: ignore[assignment]
 
         Command(name="grep", search="fuzzy").insert()
-        found = Command.get(q("search") == "fuzzy")
+        found = Command.get(field(Command, "search") == "fuzzy")
         assert found is not None
         assert found.search == "fuzzy"
 

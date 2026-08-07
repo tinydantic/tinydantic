@@ -26,6 +26,7 @@ from tinydantic._errors import (
     DocumentIDUpdateError,
     DocumentNotFoundError,
     FindQueryError,
+    QueryFieldError,
     RevisionFieldError,
     RevisionUpdateError,
     SelectorError,
@@ -39,7 +40,7 @@ from tinydantic._errors import (
 )
 from tinydantic._fields import Unique, UniqueConstraint
 from tinydantic._find import FindQuery
-from tinydantic._model import TinydanticModel, q
+from tinydantic._model import TinydanticModel, field, q
 
 __version__: str = metadata.version("tinydantic")
 
@@ -55,6 +56,7 @@ __all__ = [
     "DocumentNotFoundError",
     "FindQuery",
     "FindQueryError",
+    "QueryFieldError",
     "RevisionFieldError",
     "RevisionUpdateError",
     "SelectorError",
@@ -70,5 +72,6 @@ __all__ = [
     "UniqueConstraintError",
     "UnknownUpdateFieldError",
     "__version__",
+    "field",
     "q",
 ]
