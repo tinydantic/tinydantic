@@ -178,6 +178,34 @@ class TestQHelper:
         with pytest.raises(TypeError, match="Query"):
             q(42)
 
+    def test_wrapping_the_comparison_names_the_fix(
+        self,
+        memory_db: TinyDB,
+    ):
+        """q(Model.field == v) points at q(Model.field) == v.
+
+        A checker flags the whole comparison, so wrapping all of it
+        is the likely misreading — and a built condition is a
+        QueryInstance, which is not a Query.
+        """
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model."""
+
+            name: str
+
+        with pytest.raises(TypeError) as excinfo:
+            q(User.name == "Alice")
+        message = str(excinfo.value)
+        assert "q(Model.field) == value" in message
+        assert "string" not in message
+
+    def test_string_advice_is_only_for_strings(self):
+        """Non-string values do not get field()/where() advice."""
+        with pytest.raises(TypeError) as excinfo:
+            q(42)
+        assert "string" not in str(excinfo.value)
+
 
 class TestFieldHelper:
     """The field() named-field query constructor."""

@@ -21,7 +21,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from pydantic.alias_generators import to_snake
-from tinydb.queries import Query, where
+from tinydb.queries import Query, QueryInstance, where
 from tinydb.table import Document, Table
 
 from tinydantic._config import (
@@ -180,6 +180,31 @@ class _NothingMatchedError(Exception):
     """
 
 
+def _q_hint(expr: Any) -> str:
+    """Return the fix for the way ``q()`` was misused.
+
+    Each wrong argument type implies a different mistake, so the
+    generic "expected a Query" line is followed by advice aimed at
+    the one that was actually made.
+    """
+    if isinstance(expr, str):
+        return (
+            "A string is a value, not a field: for a field whose "
+            "name is shadowed by a method, use field(Model, "
+            "'name'); for a raw document key, use "
+            "tinydb.where('key')."
+        )
+    if isinstance(expr, QueryInstance):
+        return (
+            "That is a built condition, not a field. Wrap the "
+            "field, not the comparison: q(Model.field) == value."
+        )
+    return (
+        "Reach for the value on an instance (user.name); "
+        "Model.field is a query builder."
+    )
+
+
 def q(expr: Any) -> Query:
     """Re-type a class-level field expression as a TinyDB Query.
 
@@ -216,11 +241,8 @@ def q(expr: Any) -> Query:
     if not isinstance(expr, Query):
         msg = (
             f"q() expected a TinyDB Query from class-level field "
-            f"access like Model.field, got {type(expr).__name__!r}. "
-            f"A string is a value, not a field: for a field whose "
-            f"name is shadowed by a method, use field(Model, "
-            f"'name'); for a raw document key, use "
-            f"tinydb.where('key')."
+            f"access like Model.field, got "
+            f"{type(expr).__name__!r}. {_q_hint(expr)}"
         )
         raise TypeError(msg)
     return expr
