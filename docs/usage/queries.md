@@ -121,7 +121,7 @@ The field syntax covers the common cases, but TinyDB's [Query][tinydb.queries.Qu
 
 At runtime `User.name` is a Query, so `User.name == 'Alice'` produces a query condition. A static type checker, however, sees the field's _annotation_ (`str`) and concludes that `User.name == 'Alice'` is a `bool` — then complains when you pass that "bool" to `search()`. The code runs correctly; only the type checker is confused.
 
-The [q()][tinydantic.q] helper resolves this. It returns its argument unchanged but typed as a Query, so the comparison types as a query condition. This mirrors SQLModel's [col()](https://sqlmodel.tiangolo.com/tutorial/where/#type-annotations-and-errors) function, which exists for the same reason.
+The [q()][tinydantic.q] helper resolves this. It returns its argument unchanged but typed as a Query, so the comparison types as a query condition. This mirrors SQLModel's [col()](https://sqlmodel.tiangolo.com/tutorial/where/#type-annotations-and-errors) function, which exists for the same reason — and which SQLModel likewise introduces in one section while its examples stay bare.
 
 ```pycon
 >>> from tinydantic import q
@@ -132,7 +132,7 @@ The [q()][tinydantic.q] helper resolves this. It returns its argument unchanged 
 
 > [!TIP]
 >
-> `q()` changes nothing at runtime — `q(User.name) == 'Alice'` and `User.name == 'Alice'` build the identical query. Reach for it only to silence a type checker; every other example on this page uses the bare form.
+> `q()` changes nothing at runtime — it hands back the object you passed it, so `q(User.name) == 'Alice'` and `User.name == 'Alice'` build conditions that compare and hash equal. Not even TinyDB's query cache can tell them apart. Examples throughout these docs use the bare form because it reads more directly; in a project you type-check, `q()` is the form that passes.
 
 `q()` also accepts a field name as a string, building a query on that document key. This form exists for the shadowed-field escape hatch below.
 
@@ -141,6 +141,45 @@ The [q()][tinydantic.q] helper resolves this. It returns its argument unchanged 
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))]
 
 ```
+
+### Prefer `q()` to suppressing the error
+
+A suppressed error is not equivalent to a fixed one. `search()` takes a single condition, so `mypy` reports the argument and still knows the return type — but `get()`, `get_or_raise()`, and `find()` are overloaded, and when no overload matches `mypy` falls back to `Any` for the whole call:
+
+```text
+a = User.search(User.name == "Alice")   # error: incompatible type "bool"
+reveal_type(a)                          # list[User]      — return type survives
+
+b = User.get(User.name == "Alice")      # error: no overload variant matches
+reveal_type(b)                          # Any             — return type lost
+
+c = User.get(q(User.name) == "Alice")   # no error
+reveal_type(c)                          # User | None
+```
+
+Silence the `get()` error with `# type: ignore` and everything downstream of `b` goes unchecked. `pyright` is better behaved here — it reports the argument and keeps `User | None` — but under either checker the `q()` form is the one that leaves you with the types you came for.
+
+### What `q()` does not fix
+
+`q()` corrects the direction where the checker rejects working code. The mismatch runs the other way too: expressions the checker accepts because it believes the annotation, which then fail at runtime because the class attribute is really a Query.
+
+```pycon
+>>> User.name.upper()
+Traceback (most recent call last):
+  ...
+TypeError: QueryInstance.__call__() missing 1 required positional argument: 'value'
+>>> len(User.name)
+Traceback (most recent call last):
+  ...
+TypeError: object of type 'Query' has no len()
+>>> User.age + 1
+Traceback (most recent call last):
+  ...
+TypeError: unsupported operand type(s) for +: 'Query' and 'int'
+
+```
+
+A type checker passes all three. No wrapper can close that direction — it would take a change to how fields are annotated — so treat `Model.field` as a query builder and nothing else. Reach for the value on an _instance_ (`user.name.upper()`), which is a genuine `str`. The reasoning behind leaving this gap open is recorded in [Static typing design](../contributing/static_typing.md).
 
 ## Querying by id
 
@@ -258,6 +297,16 @@ If you need the field anyway — say the table is shared with another tool that 
 [1, 2]
 >>> Command.search == "fuzzy"  # still the method, not a query
 False
+
+```
+
+That `False` is silently wrong: no error, no match, forever. It is also where [q()][tinydantic.q] earns its keep for a reason that has nothing to do with type checkers — handed a method instead of a Query, it raises rather than shrugging:
+
+```pycon
+>>> q(Command.search)
+Traceback (most recent call last):
+  ...
+TypeError: q() expected a TinyDB Query (class-level field access like Model.field) or a field name string, got ...
 
 ```
 

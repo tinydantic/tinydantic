@@ -52,6 +52,31 @@ User(id=1, name='Alice', age=37)
 
 ```
 
+## If you use a type checker
+
+That query runs correctly, but `mypy` or `pyright` will flag it. On the _class_, `User.name` returns a TinyDB query — that is what makes the comparison a query condition. A type checker cannot see that: it reads the field's annotation (`str`) and concludes `User.name == "Alice"` is a `bool`.
+
+```text
+error: Argument 1 to "get" has incompatible type "bool"; expected "QueryLike"
+```
+
+Wrap the field in [q()][tinydantic.q] to tell the checker what actually happens at runtime:
+
+```pycon
+>>> from tinydantic import q
+>>> User.get(q(User.name) == "Alice")
+User(id=1, name='Alice', age=37)
+
+```
+
+`q()` hands back the very object you passed it, so both spellings build the identical query — there is no runtime cost and no behavior change. If you do not run a type checker you never need it, which is why the rest of these docs use the shorter bare form.
+
+> [!TIP]
+>
+> Reach for `q()` rather than silencing the error. `get()`, `get_or_raise()`, and `find()` are overloaded, and when no overload matches, `mypy` gives up on the whole call and types the result `Any` — so a `# type: ignore` hides the message and leaves you with an unchecked value where a `User` should be.
+
+See [Queries → Static type checking](queries.md#static-type-checking) for what `q()` does and does not fix.
+
 ## Update it
 
 Mutate the instance and call [save()][tinydantic.TinydanticModel.save]. Because the model already has an `id`, `save()` updates the stored document in place.

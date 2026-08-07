@@ -12,17 +12,23 @@ import os
 import warnings
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from tinydb.storages import Storage, touch
 
-try:
+# PyYAML ships in the optional `yaml` extra; YAMLStorage's __init__
+# raises a helpful ImportError when it is missing so
+# `import tinydantic.tinydb.storages` itself never fails. Type
+# checkers are shown the import unconditionally: no method body can
+# run with `yaml` unbound, because __init__ raises first, and the
+# `Module | None` alternative makes every use site a false positive.
+if TYPE_CHECKING:
     import yaml
-except ImportError:  # pragma: no cover - exercised via attribute patch
-    # PyYAML ships in the optional `yaml` extra; YAMLStorage's
-    # __init__ raises a helpful ImportError when it is missing so
-    # `import tinydantic.tinydb.storages` itself never fails.
-    yaml = None  # type: ignore[assignment]
+else:
+    try:
+        import yaml
+    except ImportError:  # pragma: no cover - exercised via patch
+        yaml = None
 
 
 # This YAMLStorage class is adapted from TinyDB's JSONStorage class:
