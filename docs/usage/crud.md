@@ -175,6 +175,10 @@ False
 
 ```
 
+> [!TIP]
+>
+> `contains()` is the existence check. A bare condition is not one — `if Book.title == "Dune":` raises [QueryConditionError][tinydantic.QueryConditionError], because a condition describes a query rather than answering one. See [A condition is never a boolean](queries.md#a-condition-is-never-a-boolean).
+
 ### `count`
 
 [count()][tinydantic.TinydanticModel.count] returns the number of documents matching a condition — or, called with no arguments, the total number of documents in the table.

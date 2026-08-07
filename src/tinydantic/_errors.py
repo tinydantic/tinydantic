@@ -253,6 +253,20 @@ class FindQueryError(TinydanticUserError, ValueError):
     """
 
 
+class QueryConditionError(TinydanticUserError, ValueError):
+    """A query object was used as if it were a value.
+
+    ``Model.field`` is a query builder and ``Model.field == value``
+    is a description of a test — neither is a boolean, and neither
+    is iterable. Python's default answers for both are silently
+    wrong (every object is truthy; a ``Query`` iterates forever
+    through ``__getitem__``), so tinydantic raises instead. A
+    ``ValueError`` for the same reason
+    [FindQueryError][tinydantic.FindQueryError] is one: it matches
+    the numpy/pandas ambiguous-truth precedent.
+    """
+
+
 class SortFieldError(FindQueryError):
     """A sort key does not name a model field.
 

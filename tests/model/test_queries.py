@@ -293,7 +293,13 @@ class TestComputedFieldQueries:
 
             rank: int = 0
 
-        assert q(Child.shout) == where("shout")
+        # Compare the conditions, not the builders: `==` on two
+        # Query objects *builds* a condition rather than
+        # comparing them, so the old spelling asserted on a
+        # QueryConditionError-guarded object that used to be
+        # unconditionally truthy — it passed no matter what key
+        # the computed field resolved to.
+        assert (q(Child.shout) == "BOB") == (where("shout") == "BOB")
         value = Child(name="bob").shout
         assert isinstance(value, str)
         assert value == "BOB"

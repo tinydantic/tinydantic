@@ -22,7 +22,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from pydantic.alias_generators import to_snake
-from tinydb.queries import Query, QueryInstance, where
+from tinydb.queries import Query, QueryInstance
 from tinydb.table import Document, Table
 
 from tinydantic._config import (
@@ -54,6 +54,7 @@ from tinydantic._find import FindQuery
 from tinydantic._query import (
     DocIdCondition,
     DocIdQuery,
+    GuardedQuery,
     has_id_condition,
 )
 from tinydantic.tinydb.operations import replace
@@ -360,7 +361,7 @@ def field(model: type[TinydanticModel], name: str) -> Query:
             f"keys), use tinydb.where({name!r})."
         )
         raise QueryFieldError(msg)
-    return where(name)
+    return GuardedQuery()[name]
 
 
 class _ComputedFieldQuery:
@@ -389,7 +390,7 @@ class _ComputedFieldQuery:
     def __get__(self, obj: Any, owner: Any = None) -> Any:
         """Return a Query on the class, the value on an instance."""
         if obj is None:
-            return where(self._name)
+            return GuardedQuery()[self._name]
         return self._prop.__get__(obj, owner)
 
     def __set__(self, obj: Any, value: Any) -> None:
@@ -517,7 +518,7 @@ class TinydanticModelMetaclass(ModelMetaclass):
                 # in the document body — a plain where("id") query
                 # would silently match nothing.
                 return DocIdQuery()
-            return where(attr)
+            return GuardedQuery()[attr]
         return super().__getattr__(attr)  # type: ignore[misc]
 
 
