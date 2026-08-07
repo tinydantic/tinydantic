@@ -213,7 +213,12 @@ class TestComputedFieldQueries:
                 return self.name.upper()
 
         user = User(name="alice")
-        with pytest.raises(AttributeError, match="can't set attribute"):
+        # CPython reworded property's no-setter message in 3.11, so
+        # the assertion pins what does not move: an AttributeError
+        # naming the field. Falling through to pydantic instead
+        # would raise ValidationError, so the type carries the
+        # distinction this test exists for.
+        with pytest.raises(AttributeError, match="shout"):
             user.shout = "HACKED"  # type: ignore[misc]
 
     def test_computed_field_setter_still_runs(self, memory_db: TinyDB):
@@ -318,7 +323,12 @@ class TestComputedFieldQueries:
 
             rank: int = 0
 
-        with pytest.raises(AttributeError, match="can't set attribute"):
+        # CPython reworded property's no-setter message in 3.11, so
+        # the assertion pins what does not move: an AttributeError
+        # naming the field. Falling through to pydantic instead
+        # would raise ValidationError, so the type carries the
+        # distinction this test exists for.
+        with pytest.raises(AttributeError, match="shout"):
             Child(name="bob").shout = "HACKED"  # type: ignore[misc]
 
     def test_property_docstring_survives_wrapping(self, memory_db: TinyDB):
