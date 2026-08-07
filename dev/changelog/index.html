@@ -1573,6 +1573,8 @@
       
         
       
+        
+      
     
     
     
@@ -1644,6 +1646,34 @@
     
   
     Development Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/static_typing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Static Typing Design
   
 
     
@@ -2114,6 +2144,10 @@
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">¤</a></h3>
 <ul>
 <li><strong>BREAKING:</strong> <code>find</code> is now a reserved attribute name on tinydantic models (flat-namespace policy). A model with a field named <code>find</code> raises <code>ShadowedFieldError</code> at class definition; opt out with <code>shadowed_fields=("find",)</code> or rename the field (opting out forgoes the <code>find()</code> entry point on that model — <code>search()</code> still works).</li>
+</ul>
+<ul>
+<li>Docs: static type checking is now introduced where users first meet it. The quickstart gained an "If you use a type checker" section explaining why <code>User.name == "Alice"</code> types as <code>bool</code>, showing the <code>q()</code> form, and warning that suppressing the error on an overloaded method (<code>get()</code>, <code>get_or_raise()</code>, <code>find()</code>) costs mypy the return type entirely. The Queries page documents what <code>q()</code> does <em>not</em> fix — expressions like <code>User.name.upper()</code> that satisfy a checker and fail at runtime — and that <code>q()</code> raises rather than shrugging when handed a shadowed field's method. Examples throughout the docs deliberately keep the bare form; <code>q()</code> is opt-in, and the reasoning (along with the rejected <code>Mapped[T]</code> and mypy-plugin alternatives) is recorded in the new <a href="https://tinydantic.dev/contributing/static_typing/">Static typing design</a> page.</li>
+<li>CI now runs both mypy and pyright (<code>poe types</code> runs the pair; <code>pyright</code> joins the <code>types</code> dependency group). Neither checker had been gating anything: <code>poe types</code> was a local-only task. The two disagree in ways that matter here — pyright preserves a return type where mypy falls back to <code>Any</code> — so the query-typing contract is pinned against both by the new <code>tests/static_typing/</code> suite, which asserts inferred types rather than running assertions.</li>
 </ul>
 <ul>
 <li>Docs: the FastAPI guidance now documents the single-threaded contract explicitly and inverts the previous recommendation — <code>async def</code> handlers calling <code>tinydantic</code> inline (Pattern A: single-threaded by construction) replace plain <code>def</code> threadpool handlers as the default, with a single-worker executor (Pattern B) for when the event loop must stay responsive, and criteria for moving from A to B. Plain <code>def</code> handlers and <code>asyncio.to_thread</code> offloading are now documented as contract-breaking. <code>revision_id</code> joins <code>id</code> as a name <code>tinydantic</code> can manage on models (only with <code>use_revision=True</code>; without it the name stays yours).</li>

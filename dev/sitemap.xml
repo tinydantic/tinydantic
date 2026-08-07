@@ -26,6 +26,11 @@
         <changefreq>daily</changefreq>
     </url>
     <url>
+        <loc>https://tinydantic.dev/latest/contributing/static_typing/</loc>
+        <lastmod>2020-02-02</lastmod>
+        <changefreq>daily</changefreq>
+    </url>
+    <url>
         <loc>https://tinydantic.dev/latest/contributing/tinydb_limitations/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>

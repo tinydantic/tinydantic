@@ -856,6 +856,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Static type checking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prefer-q-to-suppressing-the-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prefer q() to suppressing the error
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-q-does-not-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What q() does not fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1711,6 +1739,8 @@
       
         
       
+        
+      
     
     
     
@@ -1782,6 +1812,34 @@
     
   
     Development Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/static_typing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Static Typing Design
   
 
     
@@ -2078,6 +2136,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Static type checking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prefer-q-to-suppressing-the-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prefer q() to suppressing the error
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-q-does-not-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What q() does not fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2237,55 +2323,83 @@
 </span></code></pre></div>
 <h2 id="static-type-checking">Static type checking<a class="headerlink" href="#static-type-checking" title="Permanent link">¤</a></h2>
 <p>At runtime <code>User.name</code> is a Query, so <code>User.name == 'Alice'</code> produces a query condition. A static type checker, however, sees the field's <em>annotation</em> (<code>str</code>) and concludes that <code>User.name == 'Alice'</code> is a <code>bool</code> — then complains when you pass that "bool" to <code>search()</code>. The code runs correctly; only the type checker is confused.</p>
-<p>The <a class="autorefs autorefs-internal" title="            q" href="../../reference/api/tinydantic/#tinydantic.q">q()</a> helper resolves this. It returns its argument unchanged but typed as a Query, so the comparison types as a query condition. This mirrors SQLModel's <a href="https://sqlmodel.tiangolo.com/tutorial/where/#type-annotations-and-errors">col()</a> function, which exists for the same reason.</p>
+<p>The <a class="autorefs autorefs-internal" title="            q" href="../../reference/api/tinydantic/#tinydantic.q">q()</a> helper resolves this. It returns its argument unchanged but typed as a Query, so the comparison types as a query condition. This mirrors SQLModel's <a href="https://sqlmodel.tiangolo.com/tutorial/where/#type-annotations-and-errors">col()</a> function, which exists for the same reason — and which SQLModel likewise introduces in one section while its examples stay bare.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">q</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Alice&quot;</span><span class="p">)</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="go">[User(id=1, name=&#39;Alice&#39;, age=30, email=&#39;alice@example.com&#39;, address=Address(city=&#39;Portland&#39;, country=&#39;US&#39;))]</span>
 </span></code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p><code>q()</code> changes nothing at runtime — <code>q(User.name) == 'Alice'</code> and <code>User.name == 'Alice'</code> build the identical query. Reach for it only to silence a type checker; every other example on this page uses the bare form.</p>
+<p><code>q()</code> changes nothing at runtime — it hands back the object you passed it, so <code>q(User.name) == 'Alice'</code> and <code>User.name == 'Alice'</code> build conditions that compare and hash equal. Not even TinyDB's query cache can tell them apart. Examples throughout these docs use the bare form because it reads more directly; in a project you type-check, <code>q()</code> is the form that passes.</p>
 </div>
 <p><code>q()</code> also accepts a field name as a string, building a query on that document key. This form exists for the shadowed-field escape hatch below.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Alice&quot;</span><span class="p">)</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">[User(id=1, name=&#39;Alice&#39;, age=30, email=&#39;alice@example.com&#39;, address=Address(city=&#39;Portland&#39;, country=&#39;US&#39;))]</span>
 </span></code></pre></div>
+<h3 id="prefer-q-to-suppressing-the-error">Prefer <code>q()</code> to suppressing the error<a class="headerlink" href="#prefer-q-to-suppressing-the-error" title="Permanent link">¤</a></h3>
+<p>A suppressed error is not equivalent to a fixed one. <code>search()</code> takes a single condition, so <code>mypy</code> reports the argument and still knows the return type — but <code>get()</code>, <code>get_or_raise()</code>, and <code>find()</code> are overloaded, and when no overload matches <code>mypy</code> falls back to <code>Any</code> for the whole call:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>a = User.search(User.name == &quot;Alice&quot;)   # error: incompatible type &quot;bool&quot;
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>reveal_type(a)                          # list[User]      — return type survives
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>b = User.get(User.name == &quot;Alice&quot;)      # error: no overload variant matches
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>reveal_type(b)                          # Any             — return type lost
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>c = User.get(q(User.name) == &quot;Alice&quot;)   # no error
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>reveal_type(c)                          # User | None
+</span></code></pre></div>
+<p>Silence the <code>get()</code> error with <code># type: ignore</code> and everything downstream of <code>b</code> goes unchecked. <code>pyright</code> is better behaved here — it reports the argument and keeps <code>User | None</code> — but under either checker the <code>q()</code> form is the one that leaves you with the types you came for.</p>
+<h3 id="what-q-does-not-fix">What <code>q()</code> does not fix<a class="headerlink" href="#what-q-does-not-fix" title="Permanent link">¤</a></h3>
+<p><code>q()</code> corrects the direction where the checker rejects working code. The mismatch runs the other way too: expressions the checker accepts because it believes the annotation, which then fail at runtime because the class attribute is really a Query.</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="gr">TypeError</span>: <span class="n">QueryInstance.__call__() missing 1 required positional argument: &#39;value&#39;</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="gr">TypeError</span>: <span class="n">object of type &#39;Query&#39; has no len()</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">age</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for +: &#39;Query&#39; and &#39;int&#39;</span>
+</span></code></pre></div>
+<p>A type checker passes all three. No wrapper can close that direction — it would take a change to how fields are annotated — so treat <code>Model.field</code> as a query builder and nothing else. Reach for the value on an <em>instance</em> (<code>user.name.upper()</code>), which is a genuine <code>str</code>. The reasoning behind leaving this gap open is recorded in <a href="../../contributing/static_typing/">Static typing design</a>.</p>
 <h2 id="querying-by-id">Querying by id<a class="headerlink" href="#querying-by-id" title="Permanent link">¤</a></h2>
 <p>The <code>id</code> field is not a body field: it maps to TinyDB's <code>doc_id</code>, the document's key in the table (see <a href="../models/">Models</a>). Class-level <code>User.id</code> therefore builds a <em>document-id query</em>, which the model methods translate to TinyDB's native id operations — the same convenience Beanie and ODMantic provide for MongoDB's <code>_id</code>:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="go">User(id=2, name=&#39;Bob&#39;, age=25, email=&#39;bob@example.org&#39;, address=Address(city=&#39;Berlin&#39;, country=&#39;DE&#39;))</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">one_of</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="go">[User(id=1, name=&#39;Alice&#39;, age=30, email=&#39;alice@example.com&#39;, address=Address(city=&#39;Portland&#39;, country=&#39;US&#39;)),</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="go">  User(id=3, name=&#39;Carol&#39;, age=35, email=&#39;carol@example.com&#39;, address=Address(city=&#39;Berlin&#39;, country=&#39;DE&#39;))]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">User(id=2, name=&#39;Bob&#39;, age=25, email=&#39;bob@example.org&#39;, address=Address(city=&#39;Berlin&#39;, country=&#39;DE&#39;))</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">one_of</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">[User(id=1, name=&#39;Alice&#39;, age=30, email=&#39;alice@example.com&#39;, address=Address(city=&#39;Portland&#39;, country=&#39;US&#39;)),</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">  User(id=3, name=&#39;Carol&#39;, age=35, email=&#39;carol@example.com&#39;, address=Address(city=&#39;Berlin&#39;, country=&#39;DE&#39;))]</span>
 </span></code></pre></div>
 <p>The full comparison set works (<code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>one_of</code>), and id conditions compose with field conditions:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">((</span><span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span> <span class="o">==</span> <span class="s2">&quot;DE&quot;</span><span class="p">))</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">[User(id=2, name=&#39;Bob&#39;, age=25, email=&#39;bob@example.org&#39;, address=Address(city=&#39;Berlin&#39;, country=&#39;DE&#39;)),</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="go">  User(id=3, name=&#39;Carol&#39;, age=35, email=&#39;carol@example.com&#39;, address=Address(city=&#39;Berlin&#39;, country=&#39;DE&#39;))]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">((</span><span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span> <span class="o">==</span> <span class="s2">&quot;DE&quot;</span><span class="p">))</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">[User(id=2, name=&#39;Bob&#39;, age=25, email=&#39;bob@example.org&#39;, address=Address(city=&#39;Berlin&#39;, country=&#39;DE&#39;)),</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="go">  User(id=3, name=&#39;Carol&#39;, age=35, email=&#39;carol@example.com&#39;, address=Address(city=&#39;Berlin&#39;, country=&#39;DE&#39;))]</span>
 </span></code></pre></div>
 <p>An id condition only accepts an int. Anything else raises immediately — including <code>None</code>, which is what <code>id</code> is on a model that was never inserted:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">draft</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Dana&quot;</span><span class="p">,</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="gp">... </span>    <span class="n">age</span><span class="o">=</span><span class="mi">41</span><span class="p">,</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="gp">... </span>    <span class="n">email</span><span class="o">=</span><span class="s2">&quot;dana@example.com&quot;</span><span class="p">,</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="gp">... </span>    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s2">&quot;Oslo&quot;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s2">&quot;NO&quot;</span><span class="p">),</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="gp">... </span><span class="p">)</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">draft</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="gr">TypeError</span>: <span class="n">id conditions require an int document id, got None</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">draft</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Dana&quot;</span><span class="p">,</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="gp">... </span>    <span class="n">age</span><span class="o">=</span><span class="mi">41</span><span class="p">,</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="gp">... </span>    <span class="n">email</span><span class="o">=</span><span class="s2">&quot;dana@example.com&quot;</span><span class="p">,</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="gp">... </span>    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s2">&quot;Oslo&quot;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s2">&quot;NO&quot;</span><span class="p">),</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="gp">... </span><span class="p">)</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">draft</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="gr">TypeError</span>: <span class="n">id conditions require an int document id, got None</span>
 </span></code></pre></div>
 <p><code>Model.id</code> and <code>q("id")</code> are different things: <code>q(User.id)</code> is the typed form of the document-id query, while the string form <code>q("id")</code> queries a literal <code>id</code> key in the document body — a key tinydantic never writes:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">[User(id=1, name=&#39;Alice&#39;, age=30, email=&#39;alice@example.com&#39;, address=Address(city=&#39;Portland&#39;, country=&#39;US&#39;))]</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">[]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">[User(id=1, name=&#39;Alice&#39;, age=30, email=&#39;alice@example.com&#39;, address=Address(city=&#39;Portland&#39;, country=&#39;US&#39;))]</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">[]</span>
 </span></code></pre></div>
 <p>Because TinyDB's own query evaluator only ever sees the document body, an id condition that bypasses the model methods fails loudly rather than silently matching nothing:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s2">&quot;users&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="gr">tinydantic._errors.DocumentIDConditionError</span>: <span class="n">An id condition reached TinyDB&#39;s raw query evaluator</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s2">&quot;users&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="gr">tinydantic._errors.DocumentIDConditionError</span>: <span class="n">An id condition reached TinyDB&#39;s raw query evaluator</span>
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -2297,59 +2411,65 @@
   " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.truncate">truncate()</a> resets the counter so new documents start again at 1, and <a class="autorefs autorefs-internal" title="            save" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.save">save()</a> can re-insert a document under its old id. A stored bookmark like "poll for <code>User.id &gt; 50</code>" silently misses everything inserted after a reset — use a real timestamp or sequence field for insertion-order logic.</p>
 </div>
 <p>The reset trap, concretely — a checkpoint recorded before a truncate silently misses everything inserted after it:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Draft</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;drafts&quot;</span><span class="p">):</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="gp">... </span>    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">drafts</span> <span class="o">=</span> <span class="n">Draft</span><span class="o">.</span><span class="n">insert_multiple</span><span class="p">(</span>
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="gp">... </span>    <span class="p">[</span><span class="n">Draft</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">Draft</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;b&quot;</span><span class="p">),</span> <span class="n">Draft</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;c&quot;</span><span class="p">)]</span>
-</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="gp">... </span><span class="p">)</span>
-</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">draft</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">draft</span> <span class="ow">in</span> <span class="n">drafts</span><span class="p">]</span>
-</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="go">[1, 2, 3]</span>
-</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">checkpoint</span> <span class="o">=</span> <span class="mi">3</span>
-</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Draft</span><span class="o">.</span><span class="n">truncate</span><span class="p">()</span>
-</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Draft</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;newest, after the reset&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
-</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="go">Draft(id=1, text=&#39;newest, after the reset&#39;)</span>
-</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Draft</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Draft</span><span class="o">.</span><span class="n">id</span> <span class="o">&gt;</span> <span class="n">checkpoint</span><span class="p">)</span>
-</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="go">[]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Draft</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;drafts&quot;</span><span class="p">):</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="gp">... </span>    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">drafts</span> <span class="o">=</span> <span class="n">Draft</span><span class="o">.</span><span class="n">insert_multiple</span><span class="p">(</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="gp">... </span>    <span class="p">[</span><span class="n">Draft</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">Draft</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;b&quot;</span><span class="p">),</span> <span class="n">Draft</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;c&quot;</span><span class="p">)]</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="gp">... </span><span class="p">)</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">draft</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">draft</span> <span class="ow">in</span> <span class="n">drafts</span><span class="p">]</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">[1, 2, 3]</span>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">checkpoint</span> <span class="o">=</span> <span class="mi">3</span>
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Draft</span><span class="o">.</span><span class="n">truncate</span><span class="p">()</span>
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Draft</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;newest, after the reset&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="go">Draft(id=1, text=&#39;newest, after the reset&#39;)</span>
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Draft</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Draft</span><span class="o">.</span><span class="n">id</span> <span class="o">&gt;</span> <span class="n">checkpoint</span><span class="p">)</span>
+</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="go">[]</span>
 </span></code></pre></div>
 <h2 id="sharp-edge-fields-that-shadow-query-methods">Sharp edge: fields that shadow query methods<a class="headerlink" href="#sharp-edge-fields-that-shadow-query-methods" title="Permanent link">¤</a></h2>
 <p>A field cannot silently share its name with a method. Because <code>search</code>, <code>get</code>, <code>count</code>, and the other model methods are real attributes on the model class, a field with the same name would be shadowed — attribute access would find the method, not a field query, so <code>Model.field</code> sugar would break. tinydantic refuses the class definition instead of letting that happen:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;commands&quot;</span><span class="p">):</span>
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="gp">... </span>    <span class="n">search</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="gr">tinydantic._errors.ShadowedFieldError</span>: <span class="n">Field(s) on &#39;Command&#39; shadow existing attributes ...</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;commands&quot;</span><span class="p">):</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="gp">... </span>    <span class="n">search</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="gr">tinydantic._errors.ShadowedFieldError</span>: <span class="n">Field(s) on &#39;Command&#39; shadow existing attributes ...</span>
 </span></code></pre></div>
 <p>If you need the field anyway — say the table is shared with another tool that writes a <code>search</code> key — opt in explicitly with the <code>shadowed_fields=</code> class kwarg. The field then works everywhere (storage, instance access, validation) except the <code>Model.field</code> shorthand, which keeps resolving to the method:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span>
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="gp">... </span>    <span class="n">TinydanticModel</span><span class="p">,</span>
-</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="gp">... </span>    <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span>
-</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="gp">... </span>    <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;commands&quot;</span><span class="p">,</span>
-</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="gp">... </span>    <span class="n">shadowed_fields</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">,),</span>
-</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="gp">... </span><span class="p">):</span>
-</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="gp">... </span>    <span class="n">search</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">commands</span> <span class="o">=</span> <span class="n">Command</span><span class="o">.</span><span class="n">insert_multiple</span><span class="p">(</span>
-</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="gp">... </span>    <span class="p">[</span>
-</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;find&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;fuzzy&quot;</span><span class="p">),</span>
-</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;grep&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;regex&quot;</span><span class="p">),</span>
-</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="gp">... </span>    <span class="p">]</span>
-</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="gp">... </span><span class="p">)</span>
-</span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">command</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">command</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">]</span>
-</span><span id="__span-15-16"><a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="go">[1, 2]</span>
-</span><span id="__span-15-17"><a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span>  <span class="c1"># still the method, not a query</span>
-</span><span id="__span-15-18"><a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="go">False</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="gp">... </span>    <span class="n">TinydanticModel</span><span class="p">,</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="gp">... </span>    <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="gp">... </span>    <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;commands&quot;</span><span class="p">,</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="gp">... </span>    <span class="n">shadowed_fields</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">,),</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="gp">... </span><span class="p">):</span>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="gp">... </span>    <span class="n">search</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">commands</span> <span class="o">=</span> <span class="n">Command</span><span class="o">.</span><span class="n">insert_multiple</span><span class="p">(</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="gp">... </span>    <span class="p">[</span>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;find&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;fuzzy&quot;</span><span class="p">),</span>
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;grep&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;regex&quot;</span><span class="p">),</span>
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="gp">... </span>    <span class="p">]</span>
+</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="gp">... </span><span class="p">)</span>
+</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">command</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">command</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">]</span>
+</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="go">[1, 2]</span>
+</span><span id="__span-17-17"><a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span>  <span class="c1"># still the method, not a query</span>
+</span><span id="__span-17-18"><a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="go">False</span>
+</span></code></pre></div>
+<p>That <code>False</code> is silently wrong: no error, no match, forever. It is also where <a class="autorefs autorefs-internal" title="            q" href="../../reference/api/tinydantic/#tinydantic.q">q()</a> earns its keep for a reason that has nothing to do with type checkers — handed a method instead of a Query, it raises rather than shrugging:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="p">(</span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">)</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="gr">TypeError</span>: <span class="n">q() expected a TinyDB Query (class-level field access like Model.field) or a field name string, got ...</span>
 </span></code></pre></div>
 <p>Reach the opted-in field by passing its name to <a class="autorefs autorefs-internal" title="            q" href="../../reference/api/tinydantic/#tinydantic.q">q()</a>, which builds a query on that document key:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span><span class="p">)</span>
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">[Command(id=1, name=&#39;find&#39;, search=&#39;fuzzy&#39;)]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span><span class="p">)</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">[Command(id=1, name=&#39;find&#39;, search=&#39;fuzzy&#39;)]</span>
 </span></code></pre></div>
 <p>A raw <a class="autorefs autorefs-external" href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.queries.Query">Query</a> (or <a href="https://tinydb.readthedocs.io/en/latest/usage.html#queries">where()</a>) works the same way:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb</span><span class="w"> </span><span class="kn">import</span> <span class="n">Query</span><span class="p">,</span> <span class="n">where</span>
-</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Query</span><span class="p">()[</span><span class="s2">&quot;search&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span><span class="p">)</span>
-</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="go">[Command(id=1, name=&#39;find&#39;, search=&#39;fuzzy&#39;)]</span>
-</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;regex&quot;</span><span class="p">)</span>
-</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="go">[Command(id=2, name=&#39;grep&#39;, search=&#39;regex&#39;)]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb</span><span class="w"> </span><span class="kn">import</span> <span class="n">Query</span><span class="p">,</span> <span class="n">where</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Query</span><span class="p">()[</span><span class="s2">&quot;search&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span><span class="p">)</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go">[Command(id=1, name=&#39;find&#39;, search=&#39;fuzzy&#39;)]</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;regex&quot;</span><span class="p">)</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="go">[Command(id=2, name=&#39;grep&#39;, search=&#39;regex&#39;)]</span>
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
