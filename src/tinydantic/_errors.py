@@ -257,13 +257,30 @@ class QueryConditionError(TinydanticUserError, ValueError):
     """A query object was used as if it were a value.
 
     ``Model.field`` is a query builder and ``Model.field == value``
-    is a description of a test — neither is a boolean, and neither
-    is iterable. Python's default answers for both are silently
-    wrong (every object is truthy; a ``Query`` iterates forever
-    through ``__getitem__``), so tinydantic raises instead. A
-    ``ValueError`` for the same reason
-    [FindQueryError][tinydantic.FindQueryError] is one: it matches
-    the numpy/pandas ambiguous-truth precedent.
+    is a description of a test — neither is a boolean, neither is
+    iterable, and a query path is a sequence of document keys.
+    Python's default answers for all three are silently wrong
+    (every object is truthy; a ``Query`` iterates forever through
+    ``__getitem__``; a non-string path step is read as a callable
+    and matches nothing), so tinydantic raises instead.
+
+    One error type covers all three because they are one mistake —
+    using a query object where a value belongs — and a caller
+    recovers from them the same way. It subclasses ``ValueError``
+    for the same reason
+    [FindQueryError][tinydantic.FindQueryError] does: the
+    numpy/pandas ambiguous-truth precedent, which
+    ``FindQuery.__bool__`` already follows for this exact mistake
+    one layer up.
+
+    That deviates from the convention static analyzers expect —
+    ``TypeError`` from ``__bool__``/``__iter__``, ``LookupError``
+    from ``__getitem__`` — deliberately. numpy and pandas both
+    raise ``ValueError`` from ``__bool__``, splitting one concept
+    across three exception types would be worse than matching
+    them, and nothing can depend on the conventional types here:
+    raw TinyDB raises *nothing* from any of the three, so there is
+    no prior behavior to stay compatible with.
     """
 
 
