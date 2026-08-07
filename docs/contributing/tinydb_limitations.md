@@ -52,6 +52,14 @@ Existing queries and third-party `QueryLike` objects pay nothing (the `getattr` 
 
 **Suggested improvement.** Let storages opt into native id keys (for example, a class attribute on `Storage` declaring whether keys must be strings), or perform the stringification inside `JSONStorage` rather than in `Table`, so key formatting becomes a storage concern.
 
+## Query objects answer `bool()` and `in` silently
+
+**Limitation.** `QueryInstance` defines no `__bool__` and no `__len__`, so every condition is truthy — `bool(where("name") == "Alice")` is `True`, and so is the same expression for a value no document holds. `Query` additionally defines `__getitem__` (the alternate spelling for nested keys) but no `__iter__`, so Python's legacy sequence protocol makes `x in Query().name` iterate the query and report `True` for any `x`. A non-string path step is read as a callable to apply (`_generate_test`'s runner), so `Query().tags[0] == "red"` raises internally, is swallowed by the runner's `except (KeyError, TypeError)`, and matches nothing.
+
+**Why it matters.** `tinydantic` presents these objects as its primary query API, so `if User.name == requested:` reads like an existence check, passes review, and is permanently true. `tinydantic` therefore ships `GuardedQuery`/`GuardedCondition` (`src/tinydantic/_query.py`), which raise `QueryConditionError` for all three. Because TinyDB constructs conditions with `QueryInstance(...)` directly — a `Query` subclass cannot change what its own comparisons return — the guard is applied by reassigning `__class__` on the object TinyDB just built. That uses no private names and preserves the test function and hashval (so guarded conditions still compare, hash, and cache identically), but it does depend on `QueryInstance` remaining a plain, `__slots__`-free class. Each of the ~15 public condition builders is overridden to apply it; a builder added by a future TinyDB would return an unguarded condition, degrading to today's behavior rather than breaking.
+
+**Suggested improvement.** Define `__bool__` on `QueryInstance` (and `__iter__` on `Query`) to raise `TypeError`, following the numpy/pandas ambiguous-truth precedent; reject non-string path steps in `__getitem__`. Failing that, a public hook for the condition type a `Query` subclass builds (for example a `condition_class` class attribute consulted by `_generate_test`) would remove the need to retag.
+
 ## Private API usage registry
 
 Every approved use of a TinyDB internal/private API in `tinydantic` is recorded here. An empty table means the shipped code uses only the public API.

@@ -9,6 +9,7 @@ asyncio
 attrgetter
 autodocstring
 autorefs
+autouse
 cacheprovider
 callables
 callout
@@ -64,6 +65,7 @@ frozensets
 fspath
 functools
 getattr
+getitem
 gitter
 greppable
 gunicorn
@@ -157,6 +159,9 @@ Repr
 Representer
 reprs
 rerunfailures
+retag
+retagged
+retagging
 revisioned
 ropeproject
 rpartition

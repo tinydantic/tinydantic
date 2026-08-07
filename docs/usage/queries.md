@@ -80,7 +80,7 @@ The query object also exposes TinyDB's own methods. `.matches` tests the _whole_
 
 ## Logical composition
 
-Combine conditions with `&` (and), `|` (or), and `~` (not). Parenthesize each operand — Python's bitwise operators bind more loosely than comparisons.
+Combine conditions with `&` (and), `|` (or), and `~` (not). Parenthesize each operand — Python's bitwise operators bind more loosely than comparisons. The keywords `and`, `or`, and `not` are _not_ substitutes — they discard half the query, and raise rather than doing so silently; see [A condition is never a boolean](#a-condition-is-never-a-boolean).
 
 ```pycon
 >>> User.search((User.age >= 30) & (User.address.country == "US"))
@@ -334,6 +334,182 @@ Draft(id=1, text='newest, after the reset')
 []
 
 ```
+
+## A condition is never a boolean
+
+`User.name == "Alice"` does not compare anything. It builds a description of a test — an object TinyDB runs later, once per document. In raw TinyDB such an object is truthy, and truthy _always_: the field, the operator, the value, and the contents of the table make no difference, so `if User.name == requested:` is a check that always passes. tinydantic raises [QueryConditionError][tinydantic.QueryConditionError] instead:
+
+```pycon
+>>> bool(User.name == "Alice")  # doctest: -IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+  ...
+tinydantic._errors.QueryConditionError: A query condition has no truth value
+(it is a lazy description of a test, not a comparison). For an existence check
+use Model.contains(cond), Model.get(cond) is not None, or
+Model.find(cond).exists(). To combine conditions use & | ~ — and/or/not
+evaluate truthiness and silently discard half the query. To compare a value
+you already hold, reach through an instance (user.name == x), not the class
+(User.name == x). To test whether a condition variable was set, write
+'cond is not None'.
+
+```
+
+That covers every construct which asks an object for its truth value — `if`, `not`, `and`, `or`, `any()`, `all()`, a comprehension's `if` clause. The sections below name each mistake and the query that says what was meant.
+
+### Asking whether a document exists
+
+A condition reads like a check, so it gets written as one. It is not a check: at this point nothing has touched the table.
+
+```pycon
+>>> if User.name == "nobody by this name":
+...     print("unreachable")
+Traceback (most recent call last):
+  ...
+tinydantic._errors.QueryConditionError: A query condition has no truth value ...
+
+```
+
+Hand the condition to a method instead. Which method depends on what you want back:
+
+```pycon
+>>> User.contains(User.name == "nobody by this name")
+False
+>>> User.get(User.name == "nobody by this name") is not None
+False
+>>> User.find(User.name == "nobody by this name").exists()
+False
+
+```
+
+[contains()][tinydantic.TinydanticModel.contains] when a bool is the whole answer, [get()][tinydantic.TinydanticModel.get] when you want the document too, and [exists()][tinydantic.FindQuery.exists] when you already hold a chain.
+
+### Combining conditions
+
+`&`, `|`, and `~` compose queries. `and`, `or`, and `not` do not — they evaluate truthiness and hand back one operand unchanged, so half the query would disappear. All three raise:
+
+```pycon
+>>> (User.age >= 30) and (User.address.country == "DE")
+Traceback (most recent call last):
+  ...
+tinydantic._errors.QueryConditionError: A query condition has no truth value ...
+>>> not (User.age >= 30)
+Traceback (most recent call last):
+  ...
+tinydantic._errors.QueryConditionError: A query condition has no truth value ...
+
+```
+
+Composition keeps the guard, so a composed condition cannot leak into boolean context either:
+
+```pycon
+>>> combined = (User.age >= 30) & (User.address.country == "DE")
+>>> [user.name for user in User.search(combined)]
+['Carol']
+>>> bool(combined)
+Traceback (most recent call last):
+  ...
+tinydantic._errors.QueryConditionError: A query condition has no truth value ...
+
+```
+
+Building a condition from a list needs the same care. `any()` and `all()` reduce with `or`/`and`, so they raise as well; reduce with the query operators instead:
+
+```pycon
+>>> import functools, operator
+>>> conditions = [User.age >= 30, User.address.country == "DE"]
+>>> matched = User.search(functools.reduce(operator.and_, conditions))
+>>> [user.name for user in matched]
+['Carol']
+
+```
+
+### Membership and indexing
+
+`in` is not a query operator. In raw TinyDB it reports `True` for any operand at all — Python falls back to iterating the query object, which yields more query objects endlessly, and the first comparison it makes is truthy. Iteration is refused, so `in` raises:
+
+```pycon
+>>> "Ali" in User.name
+Traceback (most recent call last):
+  ...
+tinydantic._errors.QueryConditionError: A field query is not iterable ...
+
+```
+
+For a substring, use `.search()` (a regular expression, matched anywhere in the value) or `.test()` with a predicate:
+
+```pycon
+>>> [user.name for user in User.search(User.name.search("Ali"))]
+['Alice']
+>>> [user.name for user in User.search(User.name.test(lambda v: "Ali" in v))]
+['Alice']
+
+```
+
+For a list field, `.any()` is the query that means "contains this element":
+
+```pycon
+>>> class Post(TinydanticModel, database=db, table_name="posts"):
+...     title: str
+...     tags: list[str] = []
+>>> posts = Post.insert_multiple(
+...     [
+...         Post(title="Intro", tags=["python", "tinydb"]),
+...         Post(title="Notes", tags=["docs"]),
+...     ]
+... )
+>>> [post.title for post in Post.search(Post.tags.any(["python"]))]
+['Intro']
+
+```
+
+Indexing a list field by position is refused too. A query path is a sequence of document _keys_, and TinyDB reads a non-string step as a function to call — so a positional index used to build a condition that quietly matched nothing:
+
+```pycon
+>>> Post.tags[0] == "python"
+Traceback (most recent call last):
+  ...
+tinydantic._errors.QueryConditionError: Query paths are document keys ...
+
+```
+
+```pycon
+>>> matched = Post.search(Post.tags.test(lambda v: bool(v) and v[0] == "python"))
+>>> [post.title for post in matched]
+['Intro']
+
+```
+
+String keys are the supported form and are untouched — that is how [where()](https://tinydb.readthedocs.io/en/latest/usage.html#queries) reaches keys with spaces or dots.
+
+### `Model.field` versus `instance.field`
+
+Every case above comes from one root: **`User.name` is a query, `user.name` is a value.** The same expression means opposite things depending on what is left of the dot.
+
+```pycon
+>>> alice.name == "Alice"
+True
+>>> User.name == "Alice"  # doctest: +ELLIPSIS
+QueryImpl('==', ('name',), 'Alice')
+
+```
+
+The distinction bites hardest when filtering documents you have already loaded — a class-level condition in a comprehension used to filter nothing:
+
+```pycon
+>>> [user.name for user in User.all() if User.age > 30]
+Traceback (most recent call last):
+  ...
+tinydantic._errors.QueryConditionError: A query condition has no truth value ...
+>>> [user.name for user in User.all() if user.age > 30]
+['Carol']
+
+```
+
+Conditions belong in the query methods, which run them against storage. Once you hold instances, compare their attributes.
+
+> [!NOTE]
+>
+> The guards live on the query objects tinydantic hands out — `Model.field`, [q()][tinydantic.q], [field()][tinydantic.field], `Model.id`, and anything composed from them. A raw `tinydb.Query()` built yourself is an ordinary TinyDB object and keeps TinyDB's behavior, so `bool(Query().name == "Alice")` is still silently `True`.
 
 ## Sharp edge: fields that shadow query methods
 

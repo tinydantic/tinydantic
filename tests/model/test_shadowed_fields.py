@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from tinydb.queries import Query
+
 from tinydantic import ShadowedFieldError, TinydanticModel, field
 
 if TYPE_CHECKING:
@@ -107,7 +109,7 @@ class TestNotFlagged:
             name: str
             year: int = 1999
 
-        assert type(User.name).__name__ == "Query"
+        assert isinstance(User.name, Query)
 
     def test_id_is_not_flagged(self, db: TinyDB):
         """The built-in id field is exempt (DocIdQuery handles it)."""
