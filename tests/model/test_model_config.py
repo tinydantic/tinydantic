@@ -85,7 +85,9 @@ class TestClassKwargsConfig:
 
             name: str
 
-        assert "tinydantic_" in User.model_config["protected_namespaces"]
+        assert "tinydantic_" in User.model_config.get(
+            "protected_namespaces", ()
+        )
 
 
 class TestUnboundModel:

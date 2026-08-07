@@ -129,6 +129,51 @@ class TestQHelper:
         results = Command.search(q("search") == "fuzzy")  # type: ignore[operator]
         assert [command.name for command in results] == ["find"]
 
+    def test_q_is_a_runtime_no_op(self, memory_db: TinyDB):
+        """Wrapping a field changes nothing about the query.
+
+        The docs promise that skipping q() costs nothing, so the two
+        spellings must stay indistinguishable — down to the hash,
+        which is what TinyDB's query cache keys on.
+        """
+
+        class User(TinydanticModel, database=memory_db):
+            """Test model."""
+
+            name: str
+
+        field = User.name
+        assert q(field) is field
+
+        bare = User.name == "Alice"
+        wrapped = q(User.name) == "Alice"
+        assert bare == wrapped
+        assert hash(bare) == hash(wrapped)
+
+    # The shadowed field is the point of this test; pydantic rightly
+    # warns about it.
+    @pytest.mark.filterwarnings(
+        'ignore:Field name "search":UserWarning',
+    )
+    def test_q_rejects_a_shadowed_method(self, memory_db: TinyDB):
+        """q() refuses the one silently-wrong query expression."""
+
+        class Command(
+            TinydanticModel,
+            database=memory_db,
+            shadowed_fields=("search",),
+        ):
+            """Test model with a field shadowed by search()."""
+
+            name: str
+            search: str  # type: ignore[assignment]
+
+        # Class access finds the method, so the comparison is a plain
+        # False rather than a condition — q() turns that into a raise.
+        assert (Command.search == "fuzzy") is False
+        with pytest.raises(TypeError, match="Query"):
+            q(Command.search)
+
     def test_q_rejects_non_queries(self):
         """q() raises TypeError for non-Query, non-string values."""
         with pytest.raises(TypeError, match="Query"):

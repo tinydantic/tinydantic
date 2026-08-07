@@ -282,7 +282,7 @@ class TestSaveCheck:
         legacy.title = "Adopted"
         legacy.save()
         assert isinstance(legacy.revision_id, UUID)
-        stored = Book.get_table().get(doc_id=doc_id)
+        stored = cast("Document", Book.get_table().get(doc_id=doc_id))
         assert stored is not None
         assert stored["revision_id"] == str(legacy.revision_id)
 

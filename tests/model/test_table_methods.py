@@ -528,7 +528,7 @@ class TestUpdateMergedValidation:
             @model_validator(mode="after")
             def record_id(self) -> Audited:
                 """Record the id visible during validation."""
-                self.__dict__["seen_id"] = self.id
+                object.__setattr__(self, "seen_id", self.id)
                 return self
 
         recorder: list[int | None] = []

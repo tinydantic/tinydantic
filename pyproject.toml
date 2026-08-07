@@ -117,6 +117,7 @@ test = [
 types = [
   "mypy>=1.14",
   "packaging",
+  "pyright>=1.1.400",
   "types-PyYAML",
 ]
 
@@ -200,8 +201,16 @@ test-matrix = [
   "_coverage-combine",
   "_coverage-report",
 ]
-types = "mypy --install-types --non-interactive src/tinydantic tests"
 update-project-words = { shell = "npx cspell --gitignore --dot --words-only --unique . | sort --ignore-case >> project-words.txt" }
+
+# Both checkers run: they disagree often enough to matter. mypy
+# alone missed that pyright keeps a return type where mypy falls
+# back to Any, and pyright alone would not catch what mypy's error
+# codes pin. See docs/contributing/static_typing.md.
+types = [
+  "_types-mypy",
+  "_types-pyright",
+]
 
 _coverage-combine = "coverage combine .coverage.py310 .coverage.py311 .coverage.py312 .coverage.py313 .coverage.py314"
 _coverage-report = "coverage report"
@@ -209,6 +218,8 @@ _ruff-check = "ruff check ."
 _ruff-fix = "ruff check --fix ."
 _ruff-format = "ruff format ."
 _ruff-format-check = "ruff format --check ."
+_types-mypy = "mypy --install-types --non-interactive src/tinydantic tests"
+_types-pyright = "pyright src/tinydantic tests"
 
 check = [
   "lint",
@@ -261,6 +272,12 @@ env = { COVERAGE_FILE = ".coverage.py313" }
 [tool.poe.tasks._test-py314]
 cmd = "uv run --isolated --python 3.14 --group test poe test-cov"
 env = { COVERAGE_FILE = ".coverage.py314" }
+
+[tool.pyright]
+pythonVersion = "3.10"
+typeCheckingMode = "standard"
+venv = ".venv"
+venvPath = "."
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --doctest-glob '*.md'"

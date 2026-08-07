@@ -2041,7 +2041,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         validators, and the written state was already validated —
         the same reasoning as ``patch()``'s instance sync.
         """
-        self.__dict__["revision_id"] = token
+        # The cast is for pyright, which resolves BaseModel's
+        # `__slots__` entry for `__dict__` to a read-only
+        # MappingProxyType; at runtime it is an ordinary dict.
+        cast("dict[str, Any]", self.__dict__)["revision_id"] = token
         self.__pydantic_fields_set__.add("revision_id")
 
     def _check_revision(
@@ -2395,7 +2398,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         # a transient state (start moved before end) even though
         # the final state — already checked by the merged-result
         # validation above — is valid.
-        self.__dict__.update(validated)
+        # The cast is for pyright; see _set_revision().
+        cast("dict[str, Any]", self.__dict__).update(validated)
         self.__pydantic_fields_set__.update(validated)
         if cls._uses_revision():
             # patch() rotates without checking (it is the
