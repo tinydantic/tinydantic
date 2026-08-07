@@ -909,6 +909,67 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#a-condition-is-never-a-boolean" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A condition is never a boolean
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="A condition is never a boolean">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#asking-whether-a-document-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asking whether a document exists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combining-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combining conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#membership-and-indexing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Membership and indexing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modelfield-versus-instancefield" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model.field versus instance.field
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#sharp-edge-fields-that-shadow-query-methods" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2200,6 +2261,67 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#a-condition-is-never-a-boolean" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A condition is never a boolean
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="A condition is never a boolean">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#asking-whether-a-document-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asking whether a document exists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combining-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combining conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#membership-and-indexing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Membership and indexing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modelfield-versus-instancefield" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model.field versus instance.field
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#sharp-edge-fields-that-shadow-query-methods" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2320,7 +2442,7 @@
 <p><code>.matches()</code> and <code>.search()</code> compile their pattern with Python's <code>re</code> module. Never compile untrusted input as a pattern — attacker-chosen regexes can trigger catastrophic backtracking (ReDoS). See <a href="../security/#untrusted-input-in-queries">Security considerations</a>.</p>
 </div>
 <h2 id="logical-composition">Logical composition<a class="headerlink" href="#logical-composition" title="Permanent link">¤</a></h2>
-<p>Combine conditions with <code>&amp;</code> (and), <code>|</code> (or), and <code>~</code> (not). Parenthesize each operand — Python's bitwise operators bind more loosely than comparisons.</p>
+<p>Combine conditions with <code>&amp;</code> (and), <code>|</code> (or), and <code>~</code> (not). Parenthesize each operand — Python's bitwise operators bind more loosely than comparisons. The keywords <code>and</code>, <code>or</code>, and <code>not</code> are <em>not</em> substitutes — they discard half the query, and raise rather than doing so silently; see <a href="#a-condition-is-never-a-boolean">A condition is never a boolean</a>.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">((</span><span class="n">User</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span> <span class="o">==</span> <span class="s2">&quot;US&quot;</span><span class="p">))</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">[User(id=1, name=&#39;Alice&#39;, age=30, email=&#39;alice@example.com&#39;, address=Address(city=&#39;Portland&#39;, country=&#39;US&#39;))]</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">((</span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Alice&quot;</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Bob&quot;</span><span class="p">))</span>
@@ -2500,54 +2622,180 @@
 </span><span id="__span-19-12"><a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Draft</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Draft</span><span class="o">.</span><span class="n">id</span> <span class="o">&gt;</span> <span class="n">checkpoint</span><span class="p">)</span>
 </span><span id="__span-19-13"><a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a><span class="go">[]</span>
 </span></code></pre></div>
+<h2 id="a-condition-is-never-a-boolean">A condition is never a boolean<a class="headerlink" href="#a-condition-is-never-a-boolean" title="Permanent link">¤</a></h2>
+<p><code>User.name == "Alice"</code> does not compare anything. It builds a description of a test — an object TinyDB runs later, once per document. In raw TinyDB such an object is truthy, and truthy <em>always</em>: the field, the operator, the value, and the contents of the table make no difference, so <code>if User.name == requested:</code> is a check that always passes. tinydantic raises <a class="autorefs autorefs-internal" title="            QueryConditionError" href="../../reference/api/tinydantic/#tinydantic.QueryConditionError">QueryConditionError</a> instead:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">bool</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Alice&quot;</span><span class="p">)</span>  <span class="c1"># doctest: -IGNORE_EXCEPTION_DETAIL</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="gr">tinydantic._errors.QueryConditionError</span>: <span class="n">A query condition has no truth value</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="x">(it is a lazy description of a test, not a comparison). For an existence check</span>
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="x">use Model.contains(cond), Model.get(cond) is not None, or</span>
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="x">Model.find(cond).exists(). To combine conditions use &amp; | ~ — and/or/not</span>
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="x">evaluate truthiness and silently discard half the query. To compare a value</span>
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="x">you already hold, reach through an instance (user.name == x), not the class</span>
+</span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="x">(User.name == x). To test whether a condition variable was set, write</span>
+</span><span id="__span-20-11"><a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="x">&#39;cond is not None&#39;.</span>
+</span></code></pre></div>
+<p>That covers every construct which asks an object for its truth value — <code>if</code>, <code>not</code>, <code>and</code>, <code>or</code>, <code>any()</code>, <code>all()</code>, a comprehension's <code>if</code> clause. The sections below name each mistake and the query that says what was meant.</p>
+<h3 id="asking-whether-a-document-exists">Asking whether a document exists<a class="headerlink" href="#asking-whether-a-document-exists" title="Permanent link">¤</a></h3>
+<p>A condition reads like a check, so it gets written as one. It is not a check: at this point nothing has touched the table.</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;nobody by this name&quot;</span><span class="p">:</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;unreachable&quot;</span><span class="p">)</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="gr">tinydantic._errors.QueryConditionError</span>: <span class="n">A query condition has no truth value ...</span>
+</span></code></pre></div>
+<p>Hand the condition to a method instead. Which method depends on what you want back:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;nobody by this name&quot;</span><span class="p">)</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">False</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;nobody by this name&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">False</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;nobody by this name&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="go">False</span>
+</span></code></pre></div>
+<p><a class="autorefs autorefs-internal" title="            contains
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.contains">contains()</a> when a bool is the whole answer, <a class="autorefs autorefs-internal" title="            get
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.get">get()</a> when you want the document too, and <a class="autorefs autorefs-internal" title="            exists" href="../../reference/api/tinydantic/#tinydantic.FindQuery.exists">exists()</a> when you already hold a chain.</p>
+<h3 id="combining-conditions">Combining conditions<a class="headerlink" href="#combining-conditions" title="Permanent link">¤</a></h3>
+<p><code>&amp;</code>, <code>|</code>, and <code>~</code> compose queries. <code>and</code>, <code>or</code>, and <code>not</code> do not — they evaluate truthiness and hand back one operand unchanged, so half the query would disappear. All three raise:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;=</span> <span class="mi">30</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span> <span class="o">==</span> <span class="s2">&quot;DE&quot;</span><span class="p">)</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="gr">tinydantic._errors.QueryConditionError</span>: <span class="n">A query condition has no truth value ...</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="ow">not</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;=</span> <span class="mi">30</span><span class="p">)</span>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="gr">tinydantic._errors.QueryConditionError</span>: <span class="n">A query condition has no truth value ...</span>
+</span></code></pre></div>
+<p>Composition keeps the guard, so a composed condition cannot leak into boolean context either:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">combined</span> <span class="o">=</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span> <span class="o">==</span> <span class="s2">&quot;DE&quot;</span><span class="p">)</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">combined</span><span class="p">)]</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="go">[&#39;Carol&#39;]</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">bool</span><span class="p">(</span><span class="n">combined</span><span class="p">)</span>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="gr">tinydantic._errors.QueryConditionError</span>: <span class="n">A query condition has no truth value ...</span>
+</span></code></pre></div>
+<p>Building a condition from a list needs the same care. <code>any()</code> and <code>all()</code> reduce with <code>or</code>/<code>and</code>, so they raise as well; reduce with the query operators instead:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">functools</span><span class="o">,</span><span class="w"> </span><span class="nn">operator</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">conditions</span> <span class="o">=</span> <span class="p">[</span><span class="n">User</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;=</span> <span class="mi">30</span><span class="p">,</span> <span class="n">User</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span> <span class="o">==</span> <span class="s2">&quot;DE&quot;</span><span class="p">]</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">matched</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">and_</span><span class="p">,</span> <span class="n">conditions</span><span class="p">))</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">matched</span><span class="p">]</span>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="go">[&#39;Carol&#39;]</span>
+</span></code></pre></div>
+<h3 id="membership-and-indexing">Membership and indexing<a class="headerlink" href="#membership-and-indexing" title="Permanent link">¤</a></h3>
+<p><code>in</code> is not a query operator. In raw TinyDB it reports <code>True</code> for any operand at all — Python falls back to iterating the query object, which yields more query objects endlessly, and the first comparison it makes is truthy. Iteration is refused, so <code>in</code> raises:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;Ali&quot;</span> <span class="ow">in</span> <span class="n">User</span><span class="o">.</span><span class="n">name</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="gr">tinydantic._errors.QueryConditionError</span>: <span class="n">A field query is not iterable ...</span>
+</span></code></pre></div>
+<p>For a substring, use <code>.search()</code> (a regular expression, matched anywhere in the value) or <code>.test()</code> with a predicate:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;Ali&quot;</span><span class="p">))]</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="go">[&#39;Alice&#39;]</span>
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">User</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="s2">&quot;Ali&quot;</span> <span class="ow">in</span> <span class="n">v</span><span class="p">))]</span>
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="go">[&#39;Alice&#39;]</span>
+</span></code></pre></div>
+<p>For a list field, <code>.any()</code> is the query that means "contains this element":</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Post</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;posts&quot;</span><span class="p">):</span>
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="gp">... </span>    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="gp">... </span>    <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">posts</span> <span class="o">=</span> <span class="n">Post</span><span class="o">.</span><span class="n">insert_multiple</span><span class="p">(</span>
+</span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="gp">... </span>    <span class="p">[</span>
+</span><span id="__span-28-6"><a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="gp">... </span>        <span class="n">Post</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Intro&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;python&quot;</span><span class="p">,</span> <span class="s2">&quot;tinydb&quot;</span><span class="p">]),</span>
+</span><span id="__span-28-7"><a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="gp">... </span>        <span class="n">Post</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Notes&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;docs&quot;</span><span class="p">]),</span>
+</span><span id="__span-28-8"><a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="gp">... </span>    <span class="p">]</span>
+</span><span id="__span-28-9"><a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="gp">... </span><span class="p">)</span>
+</span><span id="__span-28-10"><a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">post</span><span class="o">.</span><span class="n">title</span> <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="n">Post</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Post</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="s2">&quot;python&quot;</span><span class="p">]))]</span>
+</span><span id="__span-28-11"><a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a><span class="go">[&#39;Intro&#39;]</span>
+</span></code></pre></div>
+<p>Indexing a list field by position is refused too. A query path is a sequence of document <em>keys</em>, and TinyDB reads a non-string step as a function to call — so a positional index used to build a condition that quietly matched nothing:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Post</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;python&quot;</span>
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="gr">tinydantic._errors.QueryConditionError</span>: <span class="n">Query paths are document keys ...</span>
+</span></code></pre></div>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">matched</span> <span class="o">=</span> <span class="n">Post</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Post</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;python&quot;</span><span class="p">))</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">post</span><span class="o">.</span><span class="n">title</span> <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="n">matched</span><span class="p">]</span>
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="go">[&#39;Intro&#39;]</span>
+</span></code></pre></div>
+<p>String keys are the supported form and are untouched — that is how <a href="https://tinydb.readthedocs.io/en/latest/usage.html#queries">where()</a> reaches keys with spaces or dots.</p>
+<h3 id="modelfield-versus-instancefield"><code>Model.field</code> versus <code>instance.field</code><a class="headerlink" href="#modelfield-versus-instancefield" title="Permanent link">¤</a></h3>
+<p>Every case above comes from one root: <strong><code>User.name</code> is a query, <code>user.name</code> is a value.</strong> The same expression means opposite things depending on what is left of the dot.</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">alice</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Alice&quot;</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="go">True</span>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Alice&quot;</span>  <span class="c1"># doctest: +ELLIPSIS</span>
+</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="go">QueryImpl(&#39;==&#39;, (&#39;name&#39;,), &#39;Alice&#39;)</span>
+</span></code></pre></div>
+<p>The distinction bites hardest when filtering documents you have already loaded — a class-level condition in a comprehension used to filter nothing:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">User</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> <span class="k">if</span> <span class="n">User</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;</span> <span class="mi">30</span><span class="p">]</span>
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-32-4"><a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="gr">tinydantic._errors.QueryConditionError</span>: <span class="n">A query condition has no truth value ...</span>
+</span><span id="__span-32-5"><a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">User</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;</span> <span class="mi">30</span><span class="p">]</span>
+</span><span id="__span-32-6"><a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="go">[&#39;Carol&#39;]</span>
+</span></code></pre></div>
+<p>Conditions belong in the query methods, which run them against storage. Once you hold instances, compare their attributes.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The guards live on the query objects tinydantic hands out — <code>Model.field</code>, <a class="autorefs autorefs-internal" title="            q" href="../../reference/api/tinydantic/#tinydantic.q">q()</a>, <a class="autorefs autorefs-internal" title="            field" href="../../reference/api/tinydantic/#tinydantic.field">field()</a>, <code>Model.id</code>, and anything composed from them. A raw <code>tinydb.Query()</code> built yourself is an ordinary TinyDB object and keeps TinyDB's behavior, so <code>bool(Query().name == "Alice")</code> is still silently <code>True</code>.</p>
+</div>
 <h2 id="sharp-edge-fields-that-shadow-query-methods">Sharp edge: fields that shadow query methods<a class="headerlink" href="#sharp-edge-fields-that-shadow-query-methods" title="Permanent link">¤</a></h2>
 <p>A field cannot silently share its name with a method. Because <code>search</code>, <code>get</code>, <code>count</code>, and the other model methods are real attributes on the model class, a field with the same name would be shadowed — attribute access would find the method, not a field query, so <code>Model.field</code> sugar would break. tinydantic refuses the class definition instead of letting that happen:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;commands&quot;</span><span class="p">):</span>
-</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="gp">... </span>    <span class="n">search</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="gr">tinydantic._errors.ShadowedFieldError</span>: <span class="n">Field(s) on &#39;Command&#39; shadow existing attributes ...</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;commands&quot;</span><span class="p">):</span>
+</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-33-3"><a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="gp">... </span>    <span class="n">search</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-33-4"><a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-33-5"><a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-33-6"><a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a><span class="gr">tinydantic._errors.ShadowedFieldError</span>: <span class="n">Field(s) on &#39;Command&#39; shadow existing attributes ...</span>
 </span></code></pre></div>
 <p>If you need the field anyway — say the table is shared with another tool that writes a <code>search</code> key — opt in explicitly with the <code>shadowed_fields=</code> class kwarg. The field then works everywhere (storage, instance access, validation) except the <code>Model.field</code> shorthand, which keeps resolving to the method:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span>
-</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="gp">... </span>    <span class="n">TinydanticModel</span><span class="p">,</span>
-</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="gp">... </span>    <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span>
-</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="gp">... </span>    <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;commands&quot;</span><span class="p">,</span>
-</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="gp">... </span>    <span class="n">shadowed_fields</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">,),</span>
-</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="gp">... </span><span class="p">):</span>
-</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="gp">... </span>    <span class="n">search</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-21-9"><a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">commands</span> <span class="o">=</span> <span class="n">Command</span><span class="o">.</span><span class="n">insert_multiple</span><span class="p">(</span>
-</span><span id="__span-21-10"><a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="gp">... </span>    <span class="p">[</span>
-</span><span id="__span-21-11"><a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;find&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;fuzzy&quot;</span><span class="p">),</span>
-</span><span id="__span-21-12"><a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;grep&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;regex&quot;</span><span class="p">),</span>
-</span><span id="__span-21-13"><a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="gp">... </span>    <span class="p">]</span>
-</span><span id="__span-21-14"><a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="gp">... </span><span class="p">)</span>
-</span><span id="__span-21-15"><a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">command</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">command</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">]</span>
-</span><span id="__span-21-16"><a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a><span class="go">[1, 2]</span>
-</span><span id="__span-21-17"><a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span>  <span class="c1"># still the method, not a query</span>
-</span><span id="__span-21-18"><a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a><span class="go">False</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="gp">... </span>    <span class="n">TinydanticModel</span><span class="p">,</span>
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="gp">... </span>    <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span>
+</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="gp">... </span>    <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;commands&quot;</span><span class="p">,</span>
+</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="gp">... </span>    <span class="n">shadowed_fields</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">,),</span>
+</span><span id="__span-34-6"><a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="gp">... </span><span class="p">):</span>
+</span><span id="__span-34-7"><a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-34-8"><a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="gp">... </span>    <span class="n">search</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-34-9"><a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">commands</span> <span class="o">=</span> <span class="n">Command</span><span class="o">.</span><span class="n">insert_multiple</span><span class="p">(</span>
+</span><span id="__span-34-10"><a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a><span class="gp">... </span>    <span class="p">[</span>
+</span><span id="__span-34-11"><a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;find&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;fuzzy&quot;</span><span class="p">),</span>
+</span><span id="__span-34-12"><a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a><span class="gp">... </span>        <span class="n">Command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;grep&quot;</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="s2">&quot;regex&quot;</span><span class="p">),</span>
+</span><span id="__span-34-13"><a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a><span class="gp">... </span>    <span class="p">]</span>
+</span><span id="__span-34-14"><a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a><span class="gp">... </span><span class="p">)</span>
+</span><span id="__span-34-15"><a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">command</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">command</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">]</span>
+</span><span id="__span-34-16"><a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a><span class="go">[1, 2]</span>
+</span><span id="__span-34-17"><a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span>  <span class="c1"># still the method, not a query</span>
+</span><span id="__span-34-18"><a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a><span class="go">False</span>
 </span></code></pre></div>
 <p>That <code>False</code> is silently wrong: no error, no match, forever. It is also where <a class="autorefs autorefs-internal" title="            q" href="../../reference/api/tinydantic/#tinydantic.q">q()</a> earns its keep for a reason that has nothing to do with type checkers — handed a method instead of a Query, it raises rather than shrugging:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="p">(</span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">)</span>  <span class="c1"># doctest: -IGNORE_EXCEPTION_DETAIL</span>
-</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="gr">TypeError</span>: <span class="n">q() expected a TinyDB Query from class-level field access like Model.field,</span>
-</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="x">got &#39;method&#39;. That resolves to a method, not a field, so the comparison is a plain</span>
-</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="x">False matching nothing. Reach the field by name: field(Command, &#39;search&#39;).</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="p">(</span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">)</span>  <span class="c1"># doctest: -IGNORE_EXCEPTION_DETAIL</span>
+</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-35-3"><a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-35-4"><a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="gr">TypeError</span>: <span class="n">q() expected a TinyDB Query from class-level field access like Model.field,</span>
+</span><span id="__span-35-5"><a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="x">got &#39;method&#39;. That resolves to a method, not a field, so the comparison is a plain</span>
+</span><span id="__span-35-6"><a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a><span class="x">False matching nothing. Reach the field by name: field(Command, &#39;search&#39;).</span>
 </span></code></pre></div>
 <p>The advice names the exact call to make: <code>q()</code> recovers both the attribute's name and the class it was reached through, so it can point at the field rather than describe it.</p>
 <p>Reach the opted-in field by name with <a class="autorefs autorefs-internal" title="            field" href="../../reference/api/tinydantic/#tinydantic.field">field()</a>, which builds a query on that document key:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">field</span><span class="p">(</span><span class="n">Command</span><span class="p">,</span> <span class="s2">&quot;search&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span><span class="p">)</span>
-</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">[Command(id=1, name=&#39;find&#39;, search=&#39;fuzzy&#39;)]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">field</span><span class="p">(</span><span class="n">Command</span><span class="p">,</span> <span class="s2">&quot;search&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span><span class="p">)</span>
+</span><span id="__span-36-2"><a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="go">[Command(id=1, name=&#39;find&#39;, search=&#39;fuzzy&#39;)]</span>
 </span></code></pre></div>
 <p>A raw <a class="autorefs autorefs-external" href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.queries.Query">Query</a> (or <a href="https://tinydb.readthedocs.io/en/latest/usage.html#queries">where()</a>) works the same way:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb</span><span class="w"> </span><span class="kn">import</span> <span class="n">Query</span><span class="p">,</span> <span class="n">where</span>
-</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Query</span><span class="p">()[</span><span class="s2">&quot;search&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span><span class="p">)</span>
-</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="go">[Command(id=1, name=&#39;find&#39;, search=&#39;fuzzy&#39;)]</span>
-</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;regex&quot;</span><span class="p">)</span>
-</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="go">[Command(id=2, name=&#39;grep&#39;, search=&#39;regex&#39;)]</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb</span><span class="w"> </span><span class="kn">import</span> <span class="n">Query</span><span class="p">,</span> <span class="n">where</span>
+</span><span id="__span-37-2"><a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">Query</span><span class="p">()[</span><span class="s2">&quot;search&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;fuzzy&quot;</span><span class="p">)</span>
+</span><span id="__span-37-3"><a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="go">[Command(id=1, name=&#39;find&#39;, search=&#39;fuzzy&#39;)]</span>
+</span><span id="__span-37-4"><a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Command</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;regex&quot;</span><span class="p">)</span>
+</span><span id="__span-37-5"><a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="go">[Command(id=2, name=&#39;grep&#39;, search=&#39;regex&#39;)]</span>
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>

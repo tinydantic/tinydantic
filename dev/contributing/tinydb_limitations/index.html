@@ -1801,6 +1801,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#query-objects-answer-bool-and-in-silently" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query objects answer bool() and in silently
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#private-api-usage-registry" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2067,6 +2078,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#query-objects-answer-bool-and-in-silently" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query objects answer bool() and in silently
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#private-api-usage-registry" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2145,6 +2167,10 @@
 <p><strong>Limitation.</strong> Before table data is handed to the storage layer, document ids are converted to strings (<code>{str(doc_id): doc}</code> in <code>Table._update_table()</code>), because the reference JSON storage requires string keys. Storages and middlewares therefore never see the native int ids, and serialized output sorts ids lexicographically (<code>"10"</code> before <code>"2"</code>). See the upstream discussion <a href="https://github.com/msiemens/tinydb/discussions/466">msiemens/tinydb#466</a>.</p>
 <p><strong>Why it matters.</strong> Human-readable storage output (a design goal of <code>tinydantic</code>'s YAML storage) lists documents in confusing lexicographic order. <code>tinydantic</code> ships <code>SortIntDocIDsMiddleware</code> (<code>src/tinydantic/tinydb/middlewares.py</code>) purely to undo the stringification — it converts keys back to ints, pre-sorted numerically — and that middleware has to pass ints where the <code>Storage</code> protocol declares strings, an acknowledged hack.</p>
 <p><strong>Suggested improvement.</strong> Let storages opt into native id keys (for example, a class attribute on <code>Storage</code> declaring whether keys must be strings), or perform the stringification inside <code>JSONStorage</code> rather than in <code>Table</code>, so key formatting becomes a storage concern.</p>
+<h2 id="query-objects-answer-bool-and-in-silently">Query objects answer <code>bool()</code> and <code>in</code> silently<a class="headerlink" href="#query-objects-answer-bool-and-in-silently" title="Permanent link">¤</a></h2>
+<p><strong>Limitation.</strong> <code>QueryInstance</code> defines no <code>__bool__</code> and no <code>__len__</code>, so every condition is truthy — <code>bool(where("name") == "Alice")</code> is <code>True</code>, and so is the same expression for a value no document holds. <code>Query</code> additionally defines <code>__getitem__</code> (the alternate spelling for nested keys) but no <code>__iter__</code>, so Python's legacy sequence protocol makes <code>x in Query().name</code> iterate the query and report <code>True</code> for any <code>x</code>. A non-string path step is read as a callable to apply (<code>_generate_test</code>'s runner), so <code>Query().tags[0] == "red"</code> raises internally, is swallowed by the runner's <code>except (KeyError, TypeError)</code>, and matches nothing.</p>
+<p><strong>Why it matters.</strong> <code>tinydantic</code> presents these objects as its primary query API, so <code>if User.name == requested:</code> reads like an existence check, passes review, and is permanently true. <code>tinydantic</code> therefore ships <code>GuardedQuery</code>/<code>GuardedCondition</code> (<code>src/tinydantic/_query.py</code>), which raise <code>QueryConditionError</code> for all three. Because TinyDB constructs conditions with <code>QueryInstance(...)</code> directly — a <code>Query</code> subclass cannot change what its own comparisons return — the guard is applied by reassigning <code>__class__</code> on the object TinyDB just built. That uses no private names and preserves the test function and hashval (so guarded conditions still compare, hash, and cache identically), but it does depend on <code>QueryInstance</code> remaining a plain, <code>__slots__</code>-free class. Each of the ~15 public condition builders is overridden to apply it; a builder added by a future TinyDB would return an unguarded condition, degrading to today's behavior rather than breaking.</p>
+<p><strong>Suggested improvement.</strong> Define <code>__bool__</code> on <code>QueryInstance</code> (and <code>__iter__</code> on <code>Query</code>) to raise <code>TypeError</code>, following the numpy/pandas ambiguous-truth precedent; reject non-string path steps in <code>__getitem__</code>. Failing that, a public hook for the condition type a <code>Query</code> subclass builds (for example a <code>condition_class</code> class attribute consulted by <code>_generate_test</code>) would remove the need to retag.</p>
 <h2 id="private-api-usage-registry">Private API usage registry<a class="headerlink" href="#private-api-usage-registry" title="Permanent link">¤</a></h2>
 <p>Every approved use of a TinyDB internal/private API in <code>tinydantic</code> is recorded here. An empty table means the shipped code uses only the public API.</p>
 <table>

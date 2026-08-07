@@ -2747,6 +2747,10 @@
 </span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">doc_id</span><span class="o">=</span><span class="mi">999</span><span class="p">)</span>
 </span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">False</span>
 </span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p><code>contains()</code> is the existence check. A bare condition is not one — <code>if Book.title == "Dune":</code> raises <a class="autorefs autorefs-internal" title="            QueryConditionError" href="../../reference/api/tinydantic/#tinydantic.QueryConditionError">QueryConditionError</a>, because a condition describes a query rather than answering one. See <a href="../queries/#a-condition-is-never-a-boolean">A condition is never a boolean</a>.</p>
+</div>
 <h3 id="count"><code>count</code><a class="headerlink" href="#count" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            count
 
