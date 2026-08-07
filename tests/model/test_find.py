@@ -30,6 +30,7 @@ from tinydantic import (
     TinydanticUserError,
     Unique,
     UnknownUpdateFieldError,
+    field,
     q,
 )
 
@@ -72,7 +73,8 @@ class TestFindConstruction:
     def test_find_returns_find_query(self, user_class: type[User]) -> None:
         """find() with and without cond returns a FindQuery."""
         assert isinstance(user_class.find(), FindQuery)
-        assert isinstance(user_class.find(q("age") >= 18), FindQuery)
+        adults = user_class.find(field(user_class, "age") >= 18)
+        assert isinstance(adults, FindQuery)
 
     def test_find_none_raises_selector_error(
         self, user_class: type[User]
@@ -87,7 +89,7 @@ class TestFindConstruction:
         class Untouched(User, database=db, table_name="untouched"):
             """Bound model whose table must stay untouched."""
 
-        Untouched.find(q("age") >= 18)
+        Untouched.find(field(Untouched, "age") >= 18)
         assert "untouched" not in db.tables()
 
     def test_repr_shows_clauses(self, user_class: type[User]) -> None:
@@ -201,7 +203,7 @@ class TestReadTerminals:
 
     def test_all_matches_search(self, seeded: type[User]) -> None:
         """find(cond).all() equals search(cond)."""
-        cond = q("age") >= 30
+        cond = field(seeded, "age") >= 30
         assert seeded.find(cond).all() == seeded.search(cond)
 
     def test_find_no_args_is_whole_table(self, seeded: type[User]) -> None:
@@ -261,7 +263,7 @@ class TestReadTerminals:
         oldest = seeded.find().sort("-age").first()
         assert oldest is not None
         assert oldest.name == "erin"
-        empty = seeded.find(q("age") > 200)
+        empty = seeded.find(field(seeded, "age") > 200)
         assert empty.first() is None
         with pytest.raises(DocumentNotFoundError):
             empty.first_or_raise()
@@ -273,10 +275,10 @@ class TestReadTerminals:
         """first/count/exists agree with all() on every chain."""
         chains = [
             seeded.find(),
-            seeded.find(q("age") >= 30),
-            seeded.find(q("age") > 200),
+            seeded.find(field(seeded, "age") >= 30),
+            seeded.find(field(seeded, "age") > 200),
             seeded.find().sort("-name").skip(1),
-            seeded.find(q("age") == 25).sort("name").limit(1),
+            seeded.find(field(seeded, "age") == 25).sort("name").limit(1),
             seeded.find().skip(4).limit(3),
         ]
         for chain in chains:
@@ -289,7 +291,7 @@ class TestReadTerminals:
 
     def test_execution_is_fresh_not_cached(self, seeded: type[User]) -> None:
         """A reused chain sees writes made after it was built."""
-        chain = seeded.find(q("age") >= 30)
+        chain = seeded.find(field(seeded, "age") >= 30)
         assert chain.count() == 3
         seeded(name="frank", age=50).insert()
         assert chain.count() == 4
@@ -353,7 +355,7 @@ class TestDelete:
 
     def test_delete_without_modifiers(self, seeded: type[User]) -> None:
         """Condition-only delete removes every match."""
-        removed = seeded.find(q("age") == 25).delete()
+        removed = seeded.find(field(seeded, "age") == 25).delete()
         assert sorted(removed) == [2, 4]
         assert seeded.count() == 3
 
@@ -365,7 +367,7 @@ class TestDelete:
 
     def test_delete_matches_all_set(self, seeded: type[User]) -> None:
         """delete() removes exactly what all() showed."""
-        chain = seeded.find(q("age") >= 30).sort("age").limit(2)
+        chain = seeded.find(field(seeded, "age") >= 30).sort("age").limit(2)
         expected = [u.id for u in chain.all()]
         removed = chain.delete()
         assert removed == expected
@@ -390,7 +392,7 @@ class TestDelete:
 
         Item(name="only").insert()
         writes_before = storage.write_count
-        result = Item.find(q("name") == "missing").limit(3).delete()
+        result = Item.find(field(Item, "name") == "missing").limit(3).delete()
         assert result == []
         assert storage.write_count == writes_before
 
@@ -400,16 +402,17 @@ class TestUpdate:
 
     def test_update_without_modifiers(self, seeded: type[User]) -> None:
         """Condition-only update touches every match."""
-        touched = seeded.find(q("age") == 25).update({"age": 26})
+        touched = seeded.find(field(seeded, "age") == 25).update({"age": 26})
         assert sorted(touched) == [2, 4]
-        assert seeded.count(q("age") == 26) == 2
+        assert seeded.count(field(seeded, "age") == 26) == 2
 
     def test_update_honors_modifiers(self, seeded: type[User]) -> None:
         """Only the sorted window is updated."""
-        seeded.find(q("age") > 0).sort("age").limit(2).update({"age": 99})
-        assert seeded.count(q("age") == 99) == 2
+        window = seeded.find(field(seeded, "age") > 0).sort("age").limit(2)
+        window.update({"age": 99})
+        assert seeded.count(field(seeded, "age") == 99) == 2
         # The two youngest (alice, dave) were selected.
-        assert {u.name for u in seeded.search(q("age") == 99)} == {
+        assert {u.name for u in seeded.search(field(seeded, "age") == 99)} == {
             "alice",
             "dave",
         }
@@ -423,16 +426,16 @@ class TestUpdate:
 
         # TinyDB annotates transforms with Mapping though it
         # passes a mutable dict; match update()'s precedent.
-        seeded.find(q("name") == "erin").update(
+        seeded.find(field(seeded, "name") == "erin").update(
             cast("Callable[[Mapping], None]", bump)
         )
-        erin = seeded.get(q("name") == "erin")
+        erin = seeded.get(field(seeded, "name") == "erin")
         assert erin is not None
         assert erin.age == 41
 
     def test_extra_keys_passthrough(self, seeded: type[User]) -> None:
         """extra_keys forwards; default rejects unknowns."""
-        chain = seeded.find(q("name") == "bob").limit(1)
+        chain = seeded.find(field(seeded, "name") == "bob").limit(1)
         with pytest.raises(UnknownUpdateFieldError):
             chain.update({"nickname": "bobby"})
         chain.update({"nickname": "bobby"}, extra_keys="allow")
@@ -442,7 +445,7 @@ class TestUpdate:
     def test_id_key_rejected_through_chain(self, seeded: type[User]) -> None:
         """The id-key guard fires through both delegation paths."""
         with pytest.raises(DocumentIDUpdateError):
-            seeded.find(q("age") == 25).update({"id": 9})
+            seeded.find(field(seeded, "age") == 25).update({"id": 9})
         with pytest.raises(DocumentIDUpdateError):
             seeded.find().limit(1).update({"id": 9})
 
@@ -462,14 +465,15 @@ class TestUpdate:
 
     def test_empty_window_update_is_noop(self, seeded: type[User]) -> None:
         """Zero matches return [] without touching the verbs."""
-        result = seeded.find(q("age") > 200).limit(2).update({"age": 1})
+        empty = seeded.find(field(seeded, "age") > 200).limit(2)
+        result = empty.update({"age": 1})
         assert result == []
 
     def test_empty_window_still_rejects_bad_payload(
         self, seeded: type[User]
     ) -> None:
         """Payload guards do not depend on the data state."""
-        empty = seeded.find(q("age") > 200).limit(1)
+        empty = seeded.find(field(seeded, "age") > 200).limit(1)
         with pytest.raises(DocumentIDUpdateError):
             empty.update({"id": 9})
         with pytest.raises(UnknownUpdateFieldError):
@@ -487,8 +491,9 @@ class TestUpdate:
         Handle(slug="b").insert()
         # update() deliberately skips Unique enforcement; the
         # chain must not be stricter or looser.
-        Handle.find(q("slug") == "b").limit(1).update({"slug": "a"})
-        assert Handle.count(q("slug") == "a") == 2
+        one = Handle.find(field(Handle, "slug") == "b").limit(1)
+        one.update({"slug": "a"})
+        assert Handle.count(field(Handle, "slug") == "a") == 2
 
     def test_revision_rotates_through_chain(self, db: TinyDB) -> None:
         """use_revision models get fresh tokens via the chain."""
@@ -505,7 +510,7 @@ class TestUpdate:
 
         doc = Doc(body="v1").insert()
         before = doc.revision_id
-        Doc.find(q("body") == "v1").sort("id").update({"body": "v2"})
+        Doc.find(field(Doc, "body") == "v1").sort("id").update({"body": "v2"})
         stored = Doc.get_or_raise(doc_id=cast("int", doc.id))
         assert stored.revision_id != before
 

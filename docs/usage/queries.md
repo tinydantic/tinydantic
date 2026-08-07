@@ -124,7 +124,7 @@ At runtime `User.name` is a Query, so `User.name == 'Alice'` produces a query co
 The [q()][tinydantic.q] helper resolves this. It returns its argument unchanged but typed as a Query, so the comparison types as a query condition. This mirrors SQLModel's [col()](https://sqlmodel.tiangolo.com/tutorial/where/#type-annotations-and-errors) function, which exists for the same reason — and which SQLModel likewise introduces in one section while its examples stay bare.
 
 ```pycon
->>> from tinydantic import q
+>>> from tinydantic import field, q
 >>> User.search(q(User.name) == "Alice")
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))]
 
@@ -134,13 +134,18 @@ The [q()][tinydantic.q] helper resolves this. It returns its argument unchanged 
 >
 > `q()` changes nothing at runtime — it hands back the object you passed it, so `q(User.name) == 'Alice'` and `User.name == 'Alice'` build conditions that compare and hash equal. Not even TinyDB's query cache can tell them apart. Examples throughout these docs use the bare form because it reads more directly; in a project you type-check, `q()` is the form that passes.
 
-`q()` also accepts a field name as a string, building a query on that document key. This form exists for the shadowed-field escape hatch below.
+`q()` is a _cast_, not a constructor. It does not take a field name, because a string is indistinguishable from an instance attribute that happens to hold one — accepting either would make `q(user.name)` quietly build a query on the _value_:
 
 ```pycon
->>> User.search(q("name") == "Alice")
-[User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))]
+>>> alice = User.get_or_raise(q(User.name) == "Alice")
+>>> q(alice.name)
+Traceback (most recent call last):
+  ...
+TypeError: q() expected a TinyDB Query from class-level field access like Model.field, got 'str'. A string is a value, not a field: for a field whose name is shadowed by a method, use field(Model, 'name'); for a raw document key, use tinydb.where('key').
 
 ```
+
+To query a field by name, use [field()][tinydantic.field] — see [Sharp edge: fields that shadow query methods](#sharp-edge-fields-that-shadow-query-methods) below.
 
 ### Prefer `q()` to suppressing the error
 
@@ -219,13 +224,15 @@ TypeError: id conditions require an int document id, got None
 
 ```
 
-`Model.id` and `q("id")` are different things: `q(User.id)` is the typed form of the document-id query, while the string form `q("id")` queries a literal `id` key in the document body — a key tinydantic never writes:
+`q(User.id)` is the typed form of the document-id query. Asking for `id` _by name_ is refused, because a body query on `id` would match nothing forever — tinydantic never writes that key:
 
 ```pycon
 >>> User.search(q(User.id) == 1)
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US'))]
->>> User.search(q("id") == 1)
-[]
+>>> field(User, "id")
+Traceback (most recent call last):
+  ...
+tinydantic._errors.QueryFieldError: 'id' is not a queryable field of 'User': it maps to TinyDB's doc_id and is never written to the document body. Use User.id for document-id queries (q(User.id) == 1).
 
 ```
 
@@ -310,10 +317,10 @@ TypeError: q() expected a TinyDB Query (class-level field access like Model.fiel
 
 ```
 
-Reach the opted-in field by passing its name to [q()][tinydantic.q], which builds a query on that document key:
+Reach the opted-in field by name with [field()][tinydantic.field], which builds a query on that document key:
 
 ```pycon
->>> Command.search(q("search") == "fuzzy")
+>>> Command.search(field(Command, "search") == "fuzzy")
 [Command(id=1, name='find', search='fuzzy')]
 
 ```
@@ -331,8 +338,8 @@ A raw [Query][tinydb.queries.Query] (or [where()](https://tinydb.readthedocs.io/
 
 > [!NOTE]
 >
-> Pydantic also warns about shadowed fields at class definition (`Field name "search" ... shadows an attribute`). For a deliberate opt-in, silence it with `warnings.filterwarnings("ignore", message=r'Field name "search"')` — or treat the warning as a reminder that `q("search")` is the only query path for that field.
+> Pydantic also warns about shadowed fields at class definition (`Field name "search" ... shadows an attribute`). For a deliberate opt-in, silence it with `warnings.filterwarnings("ignore", message=r'Field name "search"')` — or treat the warning as a reminder that `field(Command, "search")` is the only query path for that field.
 
 ## Fluent queries
 
-Every condition on this page — `Model.field` sugar, [q()][tinydantic.q], raw TinyDB queries, `Model.id` conditions — plugs directly into [find()][tinydantic.TinydanticModel.find], which adds sorting, pagination, and lazy, reusable query chains on top. See [Fluent queries](find.md).
+Every condition on this page — `Model.field` sugar, [q()][tinydantic.q], [field()][tinydantic.field], raw TinyDB queries, `Model.id` conditions — plugs directly into [find()][tinydantic.TinydanticModel.find], which adds sorting, pagination, and lazy, reusable query chains on top. See [Fluent queries](find.md).

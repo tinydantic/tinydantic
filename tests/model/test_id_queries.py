@@ -19,8 +19,10 @@ from tests.model.models import UserBase
 from tinydantic import (
     DocumentIDConditionError,
     DocumentIDUpdateError,
+    QueryFieldError,
     SelectorError,
     TinydanticError,
+    field,
     q,
 )
 from tinydantic._query import (
@@ -296,12 +298,28 @@ class TestIdConditionReads:
         with pytest.raises(DocumentIDConditionError, match="doc_id"):
             users.get_table().search(q(users.id) == 1)
 
-    def test_q_string_id_still_queries_body(
+    def test_named_id_field_is_refused(
         self,
         users: type[UserBase],
     ) -> None:
-        """q('id') stays a raw body-key query (escape hatch)."""
-        assert users.search(q("id") == 1) == []
+        """field(Model, 'id') raises instead of matching nothing.
+
+        'id' is in model_fields but maps to doc_id, so a body query
+        on it would silently return [] forever.
+        """
+        with pytest.raises(QueryFieldError, match="doc_id"):
+            field(users, "id")
+
+    def test_raw_id_key_query_still_matches_nothing(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """The raw path is unvalidated, so it stays silently empty.
+
+        Pins why field() refuses 'id': where('id') is legal TinyDB
+        and returns nothing, since tinydantic never writes that key.
+        """
+        assert users.search(where("id") == 1) == []
 
 
 class TestIdConditionWrites:
