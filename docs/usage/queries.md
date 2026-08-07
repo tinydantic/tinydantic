@@ -104,6 +104,70 @@ Chain attribute access to query into a nested model. `User.address.city` builds 
 
 ```
 
+## Computed fields
+
+Pydantic's [`@computed_field`](https://docs.pydantic.dev/latest/concepts/fields/#the-computed_field-decorator) is serialized, so unlike an ordinary property it reaches storage as a real document key — and queries like any other field:
+
+```pycon
+>>> from pydantic import computed_field
+>>> class Product(TinydanticModel, database=db, table_name="products"):
+...     name: str
+...     price_cents: int
+...
+...     @computed_field
+...     @property
+...     def price_band(self) -> str:
+...         return "premium" if self.price_cents >= 5000 else "budget"
+>>> _ = Product.insert_multiple(
+...     [
+...         Product(name="Desk", price_cents=24900),
+...         Product(name="Mug", price_cents=1200),
+...     ]
+... )
+>>> Product.search(Product.price_band == "budget")
+[Product(id=2, name='Mug', price_cents=1200, price_band='budget')]
+
+```
+
+[field()][tinydantic.field] reaches the same key by name, and builds an identical condition:
+
+```pycon
+>>> from tinydantic import field
+>>> (Product.price_band == "budget") == (field(Product, "price_band") == "budget")
+True
+
+```
+
+An ordinary property is _not_ stored, so it is not queryable — and because it is a real class attribute, comparing it produces a silent `False` rather than an error:
+
+```pycon
+>>> class Item(TinydanticModel, database=db, table_name="items"):
+...     name: str
+...
+...     @property
+...     def slug(self) -> str:
+...         return self.name.lower()
+>>> Item.slug == "desk"  # a property, not a query
+False
+
+```
+
+If you want to query on a derived value, that is the distinction that matters: add `@computed_field` and it becomes a stored, matchable key.
+
+> [!WARNING]
+>
+> A computed field's stored value is a snapshot taken at write time. Reading a document re-derives the value from the other fields and ignores the stored one, so if you later change how the value is computed, existing documents keep the old value — and queries match the _stored_ value, not the freshly computed one. Changing the derivation is a schema migration; see [Schema evolution](schema-evolution.md).
+
+Computed fields stay read-only. Assignment raises, exactly as it does on a plain pydantic model:
+
+```pycon
+>>> Product.get(doc_id=2).price_band = "premium"
+Traceback (most recent call last):
+  ...
+AttributeError: can't set attribute 'price_band'
+
+```
+
 ## Escaping to a raw TinyDB query
 
 The field syntax covers the common cases, but TinyDB's [Query][tinydb.queries.Query] has more: `one_of`, `any`, `all`, `fragment`, and friends. Build a raw query and pass it to any read method — `search()`, `get()`, `count()`, and so on all accept it.
@@ -310,12 +374,16 @@ False
 That `False` is silently wrong: no error, no match, forever. It is also where [q()][tinydantic.q] earns its keep for a reason that has nothing to do with type checkers — handed a method instead of a Query, it raises rather than shrugging:
 
 ```pycon
->>> q(Command.search)
+>>> q(Command.search)  # doctest: -IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
   ...
-TypeError: q() expected a TinyDB Query (class-level field access like Model.field) or a field name string, got ...
+TypeError: q() expected a TinyDB Query from class-level field access like Model.field,
+got 'method'. That resolves to a method, not a field, so the comparison is a plain
+False matching nothing. Reach the field by name: field(Command, 'search').
 
 ```
+
+The advice names the exact call to make: `q()` recovers both the attribute's name and the class it was reached through, so it can point at the field rather than describe it.
 
 Reach the opted-in field by name with [field()][tinydantic.field], which builds a query on that document key:
 
