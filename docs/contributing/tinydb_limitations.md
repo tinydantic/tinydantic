@@ -9,7 +9,7 @@ Two project policies anchor this page (see `AGENTS.md`):
 
 This page must be kept current: whenever TinyDB friction is found, worked around, or resolved, update the relevant section here in the same change.
 
-All observations below were verified against TinyDB 4.8.2.
+All observations below were verified against TinyDB 4.9.0 (the minimum version `tinydantic` requires). Limitations that a TinyDB release has since fixed are moved to [Resolved upstream](#resolved-upstream) rather than deleted, so the history of each workaround stays readable.
 
 ## Query conditions never see the document id
 
@@ -36,13 +36,17 @@ Existing queries and third-party `QueryLike` objects pay nothing (the `getattr` 
 - Accept an optional per-pair id selector, e.g. `update_multiple(updates: Iterable[tuple[fields, cond | None, doc_ids | None]])` (or a parallel `update_multiple_by_ids()`), mirroring the `update()`/`remove()` signatures.
 - Ship the `needs_doc_id`/`DocId` improvement above, which subsumes this: id conditions would then work in `update_multiple()`'s existing signature.
 
-## `update()` field mappings are mistyped as callables
+## `update(doc_ids=…)` and `remove(doc_ids=…)` skip missing ids silently
 
-**Limitation.** `Table.update()` and `Table.update_multiple()` annotate their `fields` parameter as `Callable[[Mapping], None]`, but both accept (and the documentation describes) plain mappings as well — the implementation branches on `callable(fields)`. Static type checkers therefore reject the documented mapping form.
+**Limitation.** As of TinyDB 4.9.0 ([#591](https://github.com/msiemens/tinydb/issues/591)), `Table.update(fields, doc_ids=…)` and `Table.remove(doc_ids=…)` filter the requested ids down to those present in the table, operate on that subset, and return only the ids they actually touched. An id that does not exist is not reported in any way. Before 4.9.0 the same call raised a bare `KeyError` partway through the updater — which was its own problem (an uncurated exception, raised after some documents had already been mutated in the working copy).
 
-**Why it matters.** Every `tinydantic` call into these methods carries a `cast("Callable[[Mapping], None]", fields)` band-aid, marked with `TODO @cdwilson: remove this cast once the annotation is fixed in TinyDB` (see `src/tinydantic/_model.py`). The transform parameter is also under-annotated for its actual contract: the callable receives a mutable `dict`, so `Callable[[MutableMapping], None]` would describe it better.
+**Why it matters to an ODM.** The new behavior makes a mixed batch a **partial write that reports success**: `update(fields, doc_ids=[1, 999])` on a table without document 999 updates document 1, returns `[1]`, and leaves the caller to notice that the returned list is shorter than the one they passed. A typo'd id in a batch is silently a different operation than the one requested. That is precisely the silent-wrong failure mode `tinydantic` exists to eliminate, and the returned-list-length check that would catch it is exactly the kind of bookkeeping users do not write.
 
-**Suggested improvement.** Annotate as `fields: Mapping | Callable[[MutableMapping], None]` (and the corresponding tuple type in `update_multiple`).
+`tinydantic` therefore keeps `TinydanticModel._check_doc_ids_exist()` (`src/tinydantic/_model.py`), which reads the table once and raises [`DocumentNotFoundError`][tinydantic.DocumentNotFoundError] for the first id that is absent, **before** any write is attempted. A batch naming a missing id is refused whole rather than applied in part, so `update()`/`remove()` keep all-or-nothing semantics across both the validated and `validate_writes=False` paths. The cost is one extra table read per id-selected write.
+
+Note that this is deliberately _stricter_ than `Table.get(doc_ids=…)`, which has always skipped missing ids and which `tinydantic` mirrors as-is — a read that returns fewer documents than requested is self-describing, whereas a write that silently narrows its own target set is not.
+
+**Suggested improvement.** Return enough information to distinguish "skipped" from "done", or let the caller choose. Either a `strict: bool = False` parameter on `update()`/`remove()` that raises a dedicated `MissingDocumentIDError` naming the absent ids, or a documented guarantee that the returned list can be compared against the requested one (plus a note in the docstring that it _must_ be, to detect partial application).
 
 ## Document ids are stringified before reaching storages
 
@@ -68,3 +72,29 @@ Every approved use of a TinyDB internal/private API in `tinydantic` is recorded 
 | --- | --- | --- | --- | --- |
 | `QueryInstance._hash` (read-only attribute access) | `tinydantic._query.has_id_condition()` — detecting id conditions inside composed queries | **In use** (approved 2026-08-02; shipped with the original id-query work) | Composing queries (`&`/`\|`/`~`) produces plain `QueryInstance` objects, so a custom condition type cannot survive composition — the hashval tree is the only place a marker does. The access is read-only via `getattr(cond, "_hash", None)` and degrades loudly, never silently: if a future TinyDB renames the attribute, bare id conditions are still detected by `isinstance`, and undetected compositions raise `DocumentIDConditionError` when TinyDB's evaluator runs them. | The `needs_doc_id`/`DocId` evaluator improvement above (composition would propagate a public flag); alternatively, a public accessor for a query's hash tree. |
 | `Table._update_table(updater)` | `TinydanticModel._run_write_cycle()` — all `update()`/`update_multiple()` writes (which validate each matched document's merged result unless `validate_writes=False`), plus the id-condition paths of `remove()` and `upsert()` | **In use** (approved 2026-07-13 for id-condition writes; scope extended 2026-08-02 to all validated update writes) | The only way to select write targets by id inside one atomic read-modify-write cycle, and the only way to validate-then-write atomically: `update_multiple()` has no `doc_ids` parameter, conditions cannot see ids (the two limitations above), and a public two-pass validate-then-update has a read-modify-write race between passes. The custom updater evaluates every condition against `Document(body, doc_id)` wrappers inside upstream's own read → mutate → write → cache-clear lifecycle, validates merged bodies before the write, applies mutations copy-on-write (so an aborted or validation-failed cycle leaks nothing, even on `MemoryStorage`, whose `read()` shares body dicts by reference), and skips the storage write entirely when nothing matched. Benchmarked ~23% faster than the two-pass public-API alternative on a 5,000-document JSONStorage table (one full file read saved per write). | Either `update_multiple()` improvement above plus an atomic validate-hook, or the `needs_doc_id`/`DocId` evaluator change combined with a public batched read-modify-write API. |
+
+## Resolved upstream
+
+Limitations recorded here that a later TinyDB release has fixed. They are kept so the history of each workaround stays readable, and so a reader can tell "we never hit this" apart from "we hit it and it is gone now".
+
+### `update()` field mappings were mistyped as callables
+
+**Resolved in TinyDB 4.9.0** ([#621](https://github.com/msiemens/tinydb/pull/621), plus the matching retype of `tinydb.operations`).
+
+`Table.update()` and `Table.update_multiple()` annotated their `fields` parameter as `Mapping | Callable[[Mapping], None]`. The transform they actually invoke is handed a mutable `dict`, so a correctly-typed `Callable[[MutableMapping], None]` transform was _rejected_ by static type checkers under parameter contravariance — the documented, working call was the one that failed to type-check.
+
+Every `tinydantic` call into these methods carried a `cast("Callable[[Mapping], None]", …)` band-aid marked `TODO @cdwilson: remove this cast once the annotation is fixed in TinyDB`. TinyDB 4.9.0 retyped the parameter to `Mapping | Callable[[MutableMapping], None]`, which is exactly the signature `tinydantic.tinydb.operations.replace()` already advertised, so all four casts were deleted (`src/tinydantic/_model.py`) along with an internal `cast("dict[str, Any]", body)` inside `TinydanticModel._rotated()`.
+
+### `Query.test()` raised on unhashable arguments
+
+**Resolved in TinyDB 4.9.0** ([#517](https://github.com/msiemens/tinydb/issues/517)).
+
+`Query.test(func, *args)` built its hashval from the raw `args` tuple, so passing a list or dict produced a condition that raised `TypeError: unhashable type` the first time it reached the query cache. TinyDB 4.9.0 freezes the arguments (and falls back to marking a condition uncacheable rather than crashing when a value cannot be frozen).
+
+This matters to `tinydantic` beyond the raw fix: `has_id_condition()` detects id conditions by walking `QueryInstance._hash` (see the [registry below](#private-api-usage-registry)), so a composed query containing an unhashable `test()` argument previously lost its hashval and degraded to `DocumentIDConditionError`. Such compositions now keep their hashval and resolve normally.
+
+### `touch()` failed on a bare relative filename
+
+**Resolved in TinyDB 4.9.0** ([#619](https://github.com/msiemens/tinydb/pull/619)).
+
+`tinydb.storages.touch()` derived the parent directory with `os.path.dirname(path)` and, for a path with no directory part, called `os.makedirs("")` — raising `FileNotFoundError`. `tinydantic`'s `YAMLStorage` calls that helper directly, so `TinyDB("db.yaml", storage=YAMLStorage, create_dirs=True)` failed for any bare filename; only a path with an explicit directory worked. The fix is inherited with no `tinydantic` change, and both shapes are now covered by `tests/tinydb/storages/test_yaml_storage.py`.

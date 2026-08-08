@@ -13,6 +13,7 @@ import pytest
 from pydantic import ValidationError, model_validator
 
 from tinydantic import (
+    DocumentNotFoundError,
     SelectorError,
     TinydanticModel,
     UnknownUpdateFieldError,
@@ -301,6 +302,71 @@ class TestRemove:
         assert user_class.get_by_id(user.id) is None
 
 
+class TestMissingDocIDsRefuseWholeBatch:
+    """A doc_ids batch naming a missing id writes nothing.
+
+    TinyDB >= 4.9 silently skips ids that are not in the table and
+    reports only the ids it touched (upstream #591), so the raw
+    table applies a mixed batch *partially* and returns success.
+    tinydantic's up-front existence check turns that into a
+    DocumentNotFoundError raised before any write, keeping a batch
+    all-or-nothing. These tests pin both halves: the error, and the
+    untouched table.
+    """
+
+    def test_update_refuses_batch_with_missing_id(
+        self,
+        user_class: type[UserBase],
+    ):
+        """update() leaves the existing id alone as well."""
+        user = user_class(name="Alice", age=37).insert()
+        assert user.id is not None
+        with pytest.raises(DocumentNotFoundError):
+            user_class.update({"age": 99}, doc_ids=[user.id, 12345])
+        fetched = user_class.get_by_id(user.id)
+        assert fetched is not None
+        assert fetched.age == 37
+
+    def test_remove_refuses_batch_with_missing_id(
+        self,
+        user_class: type[UserBase],
+    ):
+        """remove() leaves the existing document in place."""
+        user = user_class(name="Alice", age=37).insert()
+        assert user.id is not None
+        with pytest.raises(DocumentNotFoundError):
+            user_class.remove(doc_ids=[user.id, 12345])
+        assert user_class.get_by_id(user.id) is not None
+
+    def test_update_validate_writes_false_also_refuses(
+        self,
+        db: TinyDB,
+    ):
+        """The unvalidated fast path is guarded too.
+
+        ``validate_writes=False`` hands fields straight to TinyDB,
+        which is exactly where the silent partial write lives.
+        """
+
+        class Item(
+            TinydanticModel,
+            database=db,
+            table_name="items",
+            validate_writes=False,
+        ):
+            """A model that skips write validation."""
+
+            name: str
+
+        item = Item(name="keep").insert()
+        assert item.id is not None
+        with pytest.raises(DocumentNotFoundError):
+            Item.update({"name": "changed"}, doc_ids=[item.id, 12345])
+        fetched = Item.get_by_id(item.id)
+        assert fetched is not None
+        assert fetched.name == "keep"
+
+
 class TestCount:
     """count() with and without a condition."""
 
@@ -349,6 +415,7 @@ class TestUpdateExtraKeys:
         user = User(name="Al").insert()
         with pytest.raises(UnknownUpdateFieldError, match="gadget"):
             User.update({"gadget": 1}, q(User.name) == "Al")
+        assert user.id is not None
         raw = User.get_table().get(doc_id=user.id)
         assert isinstance(raw, dict)
         assert "gadget" not in raw
@@ -367,6 +434,7 @@ class TestUpdateExtraKeys:
             q(User.name) == "Al",
             extra_keys="allow",
         )
+        assert user.id is not None
         raw = User.get_table().get(doc_id=user.id)
         assert isinstance(raw, dict)
         assert raw["gadget"] == 1
@@ -398,6 +466,7 @@ class TestUpdateExtraKeys:
             [({"gadget": 1}, q(User.name) == "Al")],
             extra_keys="allow",
         )
+        assert user.id is not None
         raw = User.get_table().get(doc_id=user.id)
         assert isinstance(raw, dict)
         assert raw["gadget"] == 1
@@ -591,6 +660,7 @@ class TestUpdateMergedValidation:
 
         event = Event(start=10, end=20).insert()
         Event.update({"end": 5}, q(Event.start) == 10)
+        assert event.id is not None
         raw = Event.get_table().get(doc_id=event.id)
         assert isinstance(raw, dict)
         assert raw["end"] == 5

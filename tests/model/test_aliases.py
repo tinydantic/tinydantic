@@ -48,6 +48,7 @@ class TestAliasedModelRoundTrip:
             first_name: str = Field(alias="firstName")
 
         person = Person(firstName="Ada").insert()
+        assert person.id is not None
         stored = db.table("people").get(doc_id=person.id)
         assert stored == {"first_name": "Ada"}
 
@@ -126,6 +127,7 @@ class TestAliasedModelRoundTrip:
             home_city: str
 
         person = Person(firstName="Ada", homeCity="London").insert()
+        assert person.id is not None
         stored = db.table("people").get(doc_id=person.id)
         assert stored == {"first_name": "Ada", "home_city": "London"}
         loaded = Person.get_by_id(person.id)  # type: ignore[arg-type]

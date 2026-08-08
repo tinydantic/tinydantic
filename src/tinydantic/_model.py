@@ -64,6 +64,7 @@ if TYPE_CHECKING:
         Callable,
         Iterable,
         Mapping,
+        MutableMapping,
         Sequence,
     )
     from collections.abc import (
@@ -1174,13 +1175,20 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     def _check_doc_ids_exist(cls, doc_ids: list[int]) -> None:
         """Raise for explicit doc_ids that are not in the table.
 
-        TinyDB raises a bare ``KeyError`` for a missing id in
-        ``update(doc_ids=...)``/``remove(doc_ids=...)``; checking
-        membership up front (one table read via iteration) turns
-        that into the same
+        TinyDB >= 4.9 *silently skips* missing ids in
+        ``update(doc_ids=...)``/``remove(doc_ids=...)``, updating the
+        ids that do exist and returning only those (upstream #591;
+        before 4.9 it raised a bare ``KeyError``). Either way the
+        caller learns nothing useful, and the 4.9 behavior is the
+        more dangerous of the two: a typo'd id in a batch is a
+        partial write that reports success.
+
+        Checking membership up front (one table read via iteration)
+        turns both into the same
         [DocumentNotFoundError][tinydantic.DocumentNotFoundError]
-        that ``replace()`` and ``delete()`` raise, before anything
-        is written.
+        that ``replace()`` and ``delete()`` raise, before anything is
+        written — so a batch naming any missing id is refused whole
+        rather than applied in part.
 
         Raises:
             DocumentNotFoundError: For the first id not present in
@@ -1609,6 +1617,27 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             for doc in cls.get_table().search(cond)
         ]
 
+    @classmethod
+    def _table_get(
+        cls,
+        cond: QueryLike | None,
+        doc_id: int | None,
+        doc_ids: list[int] | None,
+    ) -> Document | list[Document] | None:
+        """Call TinyDB's ``Table.get()`` with a single selector.
+
+        TinyDB >= 4.9 overloads ``Table.get()`` per call shape, and
+        no overload accepts all three selectors as optionals at
+        once. ``get()`` has already established that exactly one is
+        set, so dispatch on it rather than forwarding two ``None``s
+        — which also buys a precise return type per branch.
+        """
+        if doc_ids is not None:
+            return cls.get_table().get(doc_ids=doc_ids)
+        if doc_id is not None:
+            return cls.get_table().get(doc_id=doc_id)
+        return cls.get_table().get(cast("QueryLike", cond))
+
     @overload
     @classmethod
     def get(cls, cond: QueryLike) -> Self | None: ...
@@ -1675,11 +1704,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                     return cls.from_tinydb_document(doc)
             return None
 
-        result = cls.get_table().get(
-            cond=cond,
-            doc_id=doc_id,
-            doc_ids=doc_ids,
-        )
+        result = cls._table_get(cond, doc_id, doc_ids)
 
         if result is None:
             return None
@@ -1987,10 +2012,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         )
         if not validate and not id_cond:
             return cls.get_table().update(
-                # See replace() for why this cast is needed.
-                # TODO @cdwilson: remove this cast once the
-                # annotation is fixed in TinyDB.
-                cast("Callable[[Mapping], None]", cls._rotated(fields)),
+                cls._rotated(fields),
                 cond=cond,
                 doc_ids=doc_ids,
             )
@@ -2000,10 +2022,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         def apply_update(data: dict[int, Any]) -> list[int]:
             """Apply the fields to each selected document."""
             if _doc_ids is not None:
-                # TinyDB's public update(doc_ids=...) raises
-                # KeyError for a missing id; data[target_id] in
-                # _apply_and_validate preserves that contract,
-                # aborting before the storage write.
+                # _check_doc_ids_exist() has already refused any id
+                # missing from the table, so every target resolves;
+                # data[target_id] in _apply_and_validate would abort
+                # before the storage write if one somehow did not.
                 targets = list(_doc_ids)
             else:
                 # The selector checks above guarantee cond is set
@@ -2083,12 +2105,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             )
         validate = get_config_value(cls, "validate_writes", default=True)
         if not validate:
-            return cls.get_table().update(
-                # See replace() for why this cast is needed.
-                # TODO @cdwilson: remove this cast once the
-                # annotation is fixed in TinyDB.
-                cast("Callable[[Mapping], None]", cls._rotated(fields)),
-            )
+            return cls.get_table().update(cls._rotated(fields))
         _fields = fields
 
         def apply_update_all(data: dict[int, Any]) -> list[int]:
@@ -2198,11 +2215,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
             return cls._run_write_cycle(apply_pairs)
         return cls.get_table().update_multiple(
-            # See replace() for why this cast is needed.
-            cast(
-                "Iterable[tuple[Callable[[Mapping], None], QueryLike]]",
-                [(cls._rotated(fields), cond) for fields, cond in prepared],
-            ),
+            [(cls._rotated(fields), cond) for fields, cond in prepared],
         )
 
     @classmethod
@@ -2464,8 +2477,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     @classmethod
     def _rotated(
         cls,
-        fields: Mapping | Callable[[Mapping], None],
-    ) -> Mapping | Callable[[Mapping], None]:
+        fields: Mapping | Callable[[MutableMapping], None],
+    ) -> Mapping | Callable[[MutableMapping], None]:
         """Wrap ``fields`` to also rotate ``revision_id``.
 
         Used by the unvalidated fast paths, which hand ``fields``
@@ -2476,14 +2489,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         if not cls._uses_revision():
             return fields
 
-        def rotate(body: Mapping) -> None:
+        def rotate(body: MutableMapping) -> None:
             """Apply ``fields``, then mint a fresh revision token."""
-            mutable = cast("dict[str, Any]", body)
             if callable(fields):
-                fields(mutable)
+                fields(body)
             else:
-                mutable.update(fields)
-            mutable["revision_id"] = str(uuid4())
+                body.update(fields)
+            body["revision_id"] = str(uuid4())
 
         return rotate
 
@@ -2655,33 +2667,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 )
             token = uuid4()
             replacement["revision_id"] = str(token)
-        try:
-            updated_doc_ids = self.get_table().update(
-                # In TinyDB, the Table.update/update_multiple methods
-                # currently annotate the fields parameter with the type
-                # Callable[[Mapping], None].
-                #
-                # However, the doc parameter that is passed to this
-                # transform function is actually a python dict (which
-                # is a type of MutableMapping).
-                #
-                # This cast is simply a band-aid to keep the type
-                # checker happy.
-                #
-                # TODO @cdwilson: remove this cast once the annotation
-                # is fixed in TinyDB.
-                cast(
-                    "Callable[[Mapping], None]",
-                    replace(replacement),
-                ),
-                doc_ids=[self.id],
-            )
-        except KeyError:
-            raise DocumentNotFoundError(
-                model_name=type(self).__name__,
-                table_name=self.get_table().name,
-                doc_id=self.id,
-            ) from None
+        # TinyDB >= 4.9 skips missing ids and returns only the ids it
+        # actually updated (upstream #591), so an empty result is how a
+        # deleted document reports itself here.
+        updated_doc_ids = self.get_table().update(
+            replace(replacement),
+            doc_ids=[self.id],
+        )
 
         if not updated_doc_ids:
             raise DocumentNotFoundError(
@@ -2727,14 +2719,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 operation="delete",
                 on_missing="not_found",
             )
-        try:
-            removed = self.get_table().remove(doc_ids=[self.id])
-        except KeyError:
-            raise DocumentNotFoundError(
-                model_name=type(self).__name__,
-                table_name=self.get_table().name,
-                doc_id=self.id,
-            ) from None
+        # TinyDB >= 4.9 skips missing ids and returns only the ids it
+        # actually removed (upstream #591), so an empty result is how a
+        # deleted document reports itself here.
+        removed = self.get_table().remove(doc_ids=[self.id])
         if not removed:
             raise DocumentNotFoundError(
                 model_name=type(self).__name__,

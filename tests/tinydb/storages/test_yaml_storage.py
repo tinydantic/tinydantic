@@ -117,3 +117,41 @@ def test_importing_tinydantic_never_needs_pyyaml() -> None:
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "ok"
+
+
+class TestCreateDirs:
+    """``create_dirs=True`` creates the file's parent directories.
+
+    ``YAMLStorage`` delegates to TinyDB's ``storages.touch()``. Before
+    TinyDB 4.9 that helper called ``os.path.exists("")`` for a path
+    with no directory part and then tried to ``makedirs("")``, so a
+    bare relative filename raised ``FileNotFoundError`` (upstream
+    #619). tinydantic requires TinyDB >= 4.9, so both shapes work.
+    """
+
+    def test_creates_missing_parent_directories(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """A nested path has its parents created on demand."""
+        nested = tmp_path / "a" / "b" / "db.yaml"
+        db = TinyDB(str(nested), storage=YAMLStorage, create_dirs=True)
+        try:
+            db.table("t").insert({"a": 1})
+        finally:
+            db.close()
+        assert nested.is_file()
+
+    def test_bare_relative_filename(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A filename with no directory part needs no parents."""
+        monkeypatch.chdir(tmp_path)
+        db = TinyDB("db.yaml", storage=YAMLStorage, create_dirs=True)
+        try:
+            db.table("t").insert({"a": 1})
+        finally:
+            db.close()
+        assert (tmp_path / "db.yaml").is_file()
