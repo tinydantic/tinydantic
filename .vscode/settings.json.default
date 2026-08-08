@@ -39,7 +39,8 @@
     "https://json.schemastore.org/github-action.json": [
       "action.yaml",
       "action.yml"
-    ]
+    ],
+    "https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/main/schema/markdownlint-cli2-config-schema.json": ".markdownlint-cli2.yaml"
   },
   "yaml.customTags": [
     "!ENV scalar",
