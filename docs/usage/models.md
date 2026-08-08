@@ -273,6 +273,7 @@ The contract, in full:
 - `None` values are exempt — several documents may all leave a unique field unset, mirroring SQL's `NULL` under `UNIQUE`.
 - The table-level bulk path (`update()`/`update_all()`/`update_multiple()`) deliberately does **not** enforce uniqueness — it is the documented loose escape, like `extra_keys="allow"`.
 - The check is check-then-write within one process. That is sound under tinydantic's documented single-process, serialized-writes scope, but it is not a database constraint: another process writing the same file concurrently can still create duplicates.
+- Enforcement costs a table scan. TinyDB has no indexes, so an enforcing write reads the whole table and compares it document by document — O(documents), on top of the read the write itself performs. `insert_multiple()` scans once for the entire batch rather than once per document, so a bulk load stays linear in the batch size; a loop of `insert()` calls does not. If a single write is slow, the table has outgrown what TinyDB is for.
 
 ## Composite constraints
 

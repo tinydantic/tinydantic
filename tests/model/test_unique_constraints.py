@@ -8,9 +8,12 @@ from __future__ import annotations
 
 import datetime
 
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated, cast
 
 import pytest
+
+from tinydb import TinyDB
+from tinydb.storages import MemoryStorage
 
 from tinydantic import (
     ConstraintFieldError,
@@ -20,9 +23,6 @@ from tinydantic import (
     UniqueConstraintError,
     q,
 )
-
-if TYPE_CHECKING:
-    from tinydb import TinyDB
 
 
 class TestUniqueConstraintConstruction:
@@ -697,3 +697,139 @@ class TestPatch:
         calls.clear()
         doc.patch(note="hi")
         assert calls == []
+
+
+class TestBatchScanCost:
+    """``insert_multiple`` checks the batch against one table scan."""
+
+    @staticmethod
+    def _reads_for_batch(batch_size: int) -> int:
+        """Count storage reads for one constrained batch insert."""
+
+        class CountingStorage(MemoryStorage):
+            """A MemoryStorage that counts ``read()`` calls."""
+
+            def __init__(self) -> None:
+                """Start with a zeroed counter."""
+                super().__init__()
+                self.reads = 0
+
+            def read(self) -> dict | None:
+                """Count the call, then read as usual."""
+                self.reads += 1
+                return super().read()
+
+        with TinyDB(storage=CountingStorage) as db:
+
+            class M(TinydanticModel, database=db):
+                """Test model with one unique field."""
+
+                email: Annotated[str, Unique()]
+
+            M.insert_multiple([M(email=f"seed{i}") for i in range(20)])
+            batch = [M(email=f"new{i}") for i in range(batch_size)]
+            storage = cast("CountingStorage", db.storage)
+            storage.reads = 0
+            M.insert_multiple(batch)
+            return storage.reads
+
+    def test_reads_do_not_grow_with_batch_size(self) -> None:
+        """A batch of 40 costs the same reads as a batch of 2.
+
+        The check used to run per document, so a batch of N cost N
+        full storage reads — the O(N x M) behavior this pins shut.
+        """
+        assert self._reads_for_batch(40) == self._reads_for_batch(2)
+
+
+class TestBatchClashReporting:
+    """Which clash a batch reports, and how it names the holder."""
+
+    def test_stored_clash_wins_over_intra_batch_clash(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """A body clashing with both names the stored document."""
+
+        class M(TinydanticModel, database=db):
+            """Test model with one unique field."""
+
+            email: Annotated[str, Unique()]
+
+        stored = M(email="dup").insert()
+        with pytest.raises(UniqueConstraintError) as exc:
+            M.insert_multiple([M(email="dup"), M(email="dup")])
+        assert f"document {stored.id}" in str(exc.value)
+        assert "same batch" not in str(exc.value)
+        assert M.count() == 1
+
+    def test_lowest_stored_id_is_reported(self, db: TinyDB) -> None:
+        """Pre-existing duplicates report the first stored holder."""
+
+        class M(TinydanticModel, database=db):
+            """Test model with one unique field."""
+
+            email: Annotated[str, Unique()]
+
+        # Seeded through the raw table, which does not enforce.
+        M.get_table().insert_multiple([{"email": "dup"}, {"email": "dup"}])
+        with pytest.raises(UniqueConstraintError) as exc:
+            M.insert_multiple([M(email="dup")])
+        assert "document 1" in str(exc.value)
+
+    def test_every_constraint_enforces_across_a_batch(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """A second constraint still catches its own duplicate."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a"), UniqueConstraint("b")),
+        ):
+            """Test model with two single-field constraints."""
+
+            a: int
+            b: int
+
+        M(a=1, b=1).insert()
+        with pytest.raises(UniqueConstraintError) as exc:
+            M.insert_multiple([M(a=2, b=2), M(a=3, b=1)])
+        assert "'b'" in str(exc.value)
+        assert M.count() == 1
+
+    def test_none_members_never_clash_within_a_batch(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """Exempt bodies do not collapse onto one another."""
+
+        class M(
+            TinydanticModel,
+            database=db,
+            constraints=(UniqueConstraint("a", "b"),),
+        ):
+            """Test model with a nullable pair constraint."""
+
+            a: int | None = None
+            b: int | None = None
+
+        M.insert_multiple([M(a=1), M(a=1), M(b=2), M()])
+        assert M.count() == 4
+
+    def test_preset_id_still_checks_stored_documents(
+        self,
+        db: TinyDB,
+    ) -> None:
+        """Presetting an unused id does not skip the scan."""
+
+        class M(TinydanticModel, database=db):
+            """Test model with one unique field."""
+
+            email: Annotated[str, Unique()]
+
+        M(email="taken").insert()
+        with pytest.raises(UniqueConstraintError):
+            M.insert_multiple([M(id=99, email="taken")])
+        assert M.count() == 1

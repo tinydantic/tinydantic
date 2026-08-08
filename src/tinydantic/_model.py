@@ -64,6 +64,7 @@ if TYPE_CHECKING:
         Callable,
         Iterable,
         Mapping,
+        Sequence,
     )
     from collections.abc import (
         Set as AbstractSet,
@@ -949,33 +950,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         # ValueError and must never be mistaken for a duplicate id.
         serialized = [doc.to_tinydb_document() for doc in docs]
         table = cls.get_table()
-        constraints = cls._unique_constraints()
-        if constraints:
-            preset_ids = {doc.id for doc in docs if doc.id is not None}
-            seen: dict[int, set[object]] = {
-                index: set() for index in range(len(constraints))
-            }
-            for body in serialized:
-                cls._check_unique(body, exclude_doc_ids=preset_ids)
-                for index, constraint in enumerate(constraints):
-                    participation = cls._participating(constraint, body)
-                    if participation is None:
-                        continue
-                    values, comparison = participation
-                    if comparison in seen[index]:
-                        raise UniqueConstraintError(
-                            model_name=cls.__name__,
-                            table_name=table.name,
-                            fields=constraint.fields,
-                            values=values,
-                            comparison_key=(
-                                comparison
-                                if constraint.key is not None
-                                else None
-                            ),
-                            doc_id=None,
-                        )
-                    seen[index].add(comparison)
+        # One scan for the whole batch: checking each body against
+        # the table separately cost a full storage read per
+        # document, turning a bulk load into O(batch x table).
+        cls._check_unique_batch(
+            serialized,
+            exclude_doc_ids={doc.id for doc in docs if doc.id is not None},
+        )
         try:
             doc_ids = table.insert_multiple(serialized)
         except ValueError as exc:
@@ -1157,6 +1138,132 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         return values, comparison
 
     @classmethod
+    def _unique_error(
+        cls,
+        constraint: UniqueConstraint,
+        values: tuple[object, ...],
+        comparison: object,
+        doc_id: int | None,
+    ) -> UniqueConstraintError:
+        """Build the error for one constraint violation.
+
+        The comparison key is shown only when a ``key`` callable
+        produced it — for a key-less constraint it is the raw
+        value tuple, and repeating it would say nothing.
+
+        Args:
+            constraint: The constraint that was violated.
+            values: The raw serialized values from the new body.
+            comparison: The comparison key those values produced.
+            doc_id: The stored id already holding the key, or
+                ``None`` when the holder is another document in
+                the same batch.
+
+        Returns:
+            The error to raise.
+        """
+        return UniqueConstraintError(
+            model_name=cls.__name__,
+            table_name=cls.get_table().name,
+            fields=constraint.fields,
+            values=values,
+            comparison_key=(
+                comparison if constraint.key is not None else None
+            ),
+            doc_id=doc_id,
+        )
+
+    @classmethod
+    def _unique_index(
+        cls,
+        constraints: Sequence[UniqueConstraint],
+        *,
+        exclude_doc_ids: AbstractSet[int] = frozenset(),
+    ) -> list[dict[object, int | None]]:
+        """Index the stored table by each constraint's key.
+
+        One pass over the table builds one ``{comparison key:
+        doc_id}`` mapping per constraint, so a batch can test each
+        of its documents with a dict lookup instead of its own
+        scan. The first stored document to claim a key keeps it,
+        matching the id a table scan would have reported.
+
+        Args:
+            constraints: The constraints to index, in order; the
+                result is positionally aligned with this sequence.
+            exclude_doc_ids: Stored ids to leave out of the index.
+
+        Returns:
+            One mapping per constraint, aligned by position.
+        """
+        index: list[dict[object, int | None]] = [{} for _ in constraints]
+        for stored in iter(cls.get_table()):
+            if stored.doc_id in exclude_doc_ids:
+                continue
+            for slot, constraint in zip(index, constraints, strict=True):
+                participation = cls._participating(constraint, stored)
+                if participation is None:
+                    continue
+                slot.setdefault(participation[1], stored.doc_id)
+        return index
+
+    @classmethod
+    def _check_unique_batch(
+        cls,
+        bodies: Sequence[Mapping],
+        *,
+        exclude_doc_ids: AbstractSet[int] = frozenset(),
+    ) -> None:
+        """Check a whole batch against one table scan.
+
+        Equivalent to calling
+        [_check_unique][tinydantic.TinydanticModel._check_unique]
+        for every body and additionally rejecting duplicates
+        *within* the batch, but at O(bodies + documents) and one
+        storage read instead of one read per body.
+
+        Each accepted body's key is recorded in the same index, so
+        it also guards the rest of the batch. Stored ids are
+        indexed first, so a body clashing with both a stored
+        document and an earlier batch member names the stored one
+        — the order a per-body scan produced.
+
+        Args:
+            bodies: The serialized documents to test, in batch
+                order.
+            exclude_doc_ids: Stored ids that must not count as
+                clashes.
+
+        Raises:
+            UniqueConstraintError: For the first body whose
+                comparison key is already held, by a stored
+                document or by an earlier body in the batch.
+        """
+        constraints = cls._unique_constraints()
+        if not constraints:
+            return
+        index = cls._unique_index(
+            constraints,
+            exclude_doc_ids=exclude_doc_ids,
+        )
+        for body in bodies:
+            for slot, constraint in zip(index, constraints, strict=True):
+                participation = cls._participating(constraint, body)
+                if participation is None:
+                    continue
+                values, comparison = participation
+                if comparison in slot:
+                    raise cls._unique_error(
+                        constraint,
+                        values,
+                        comparison,
+                        slot[comparison],
+                    )
+                # A None holder marks a batch member, which is
+                # exactly the id the error omits.
+                slot[comparison] = None
+
+    @classmethod
     def _check_unique(
         cls,
         body: Mapping,
@@ -1212,15 +1319,11 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 if stored_participation is None:
                     continue
                 if stored_participation[1] == comparison:
-                    raise UniqueConstraintError(
-                        model_name=cls.__name__,
-                        table_name=table.name,
-                        fields=constraint.fields,
-                        values=values,
-                        comparison_key=(
-                            comparison if constraint.key is not None else None
-                        ),
-                        doc_id=stored.doc_id,
+                    raise cls._unique_error(
+                        constraint,
+                        values,
+                        comparison,
+                        stored.doc_id,
                     )
 
     @classmethod
@@ -1262,15 +1365,11 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             # (tuple): the payload would fan the same comparison
             # key out to every match.
             constraint, (values, comparison) = touched[0]
-            raise UniqueConstraintError(
-                model_name=cls.__name__,
-                table_name=cls.get_table().name,
-                fields=constraint.fields,
-                values=values,
-                comparison_key=(
-                    comparison if constraint.key is not None else None
-                ),
-                doc_id=matched[0],
+            raise cls._unique_error(
+                constraint,
+                values,
+                comparison,
+                matched[0],
             )
         cls._check_unique(payload, exclude_doc_ids=set(matched))
 
