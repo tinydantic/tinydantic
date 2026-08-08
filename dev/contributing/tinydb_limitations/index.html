@@ -2237,7 +2237,7 @@
 <p>Two project policies anchor this page (see <code>AGENTS.md</code>):</p>
 <ul>
 <li><code>tinydantic</code> prefers TinyDB's public API. An internal/private TinyDB API (underscore-prefixed) may be used only when the needed behavior is impossible through the public API, only with explicit approval during planning/review, and every such use must be documented in the <a href="#private-api-usage-registry">registry below</a> with its reason and the upstream change that would make it unnecessary.</li>
-<li>Proposals to TinyDB are drafted in <code>upstream/</code> (at the repository root) and are never filed on the TinyDB issue tracker without explicit approval.</li>
+<li>Proposals to TinyDB are drafted in <code>untracked/upstream/</code> (git-ignored scratch space at the repository root) and are never filed on the TinyDB issue tracker without explicit approval.</li>
 </ul>
 <p>This page must be kept current: whenever TinyDB friction is found, worked around, or resolved, update the relevant section here in the same change.</p>
 <p>All observations below were verified against TinyDB 4.9.0 (the minimum version <code>tinydantic</code> requires). Limitations that a TinyDB release has since fixed are moved to <a href="#resolved-upstream">Resolved upstream</a> rather than deleted, so the history of each workaround stays readable.</p>

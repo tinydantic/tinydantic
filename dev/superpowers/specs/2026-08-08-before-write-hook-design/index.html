@@ -2065,7 +2065,7 @@
 
 
 <h1 id="before_write-after_read-lifecycle-hooks">before_write / after_read lifecycle hooks<a class="headerlink" href="#before_write-after_read-lifecycle-hooks" title="Permanent link">¤</a></h1>
-<p>Design for review finding H4 (<code>reviews/2026-08-06_CLAUDE_REVIEW.md</code>): <code>before_save()</code> never fires on <code>patch()</code>, and the documentation recommends both.</p>
+<p>Design for review finding H4 (<code>untracked/reviews/2026-08-06_CLAUDE_REVIEW.md</code>): <code>before_save()</code> never fires on <code>patch()</code>, and the documentation recommends both.</p>
 <h2 id="problem">Problem<a class="headerlink" href="#problem" title="Permanent link">¤</a></h2>
 <p>models.md teaches audit timestamps via <code>before_save()</code>. fastapi.md recommends <code>patch()</code> for partial updates. Follow both and <code>updated_at</code> silently stops moving, because field-level writes fire no hook.</p>
 <p>The exclusion is correct in principle — <code>patch()</code> writes only the fields it was given, so a field set by mutating <code>self</code> inside a hook would be dropped on the way to storage. The defect is that the hook has no way to contribute a field to the write, so the two documented features cancel each other with no error and no output.</p>
