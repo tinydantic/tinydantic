@@ -119,6 +119,7 @@ noqa
 nosetests
 numprocesses
 numpy
+onupdate
 opname
 optionflags
 pathlib
