@@ -89,6 +89,11 @@ else:
 # (built lazily by _field_adapter for update() serialization).
 _FIELD_ADAPTERS_ATTR = "__tinydantic_field_adapters__"
 
+# Fields tinydantic manages itself, so they are never offered to
+# before_write() and never accepted back from it: `id` is the
+# TinyDB document id, `revision_id` rotates on every write.
+_MANAGED_FIELDS = frozenset({"id", "revision_id"})
+
 # Sentinel distinguishing "find() called with no condition" (the
 # explicit whole-table spelling) from an accidental None value.
 _FIND_NOT_GIVEN = object()
@@ -607,21 +612,36 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
     # --- lifecycle hooks ---
 
-    def before_save(self) -> None:
-        """Run before any whole-model write of ``self``.
+    def before_write(
+        self,
+        fields: Mapping[str, Any],  # noqa: ARG002
+    ) -> Mapping[str, Any] | None:
+        """Contribute fields to any instance-level write of ``self``.
 
         Fires once at the start of ``insert()``, ``save()``,
-        ``replace()``, ``upsert()``, and for each document of
-        ``insert_multiple()`` — before serialization, so changes
-        made here (audit timestamps are the classic case) are
-        validated and persisted with the write. Raising aborts the
-        write. Field-level writes (``update()``, ``patch()``) do
-        not call it: they never write the whole model, so fields
-        set here would be silently dropped. The default does
-        nothing; overrides can chain with ``super().before_save()``.
-        """
+        ``replace()``, ``upsert()``, ``patch()``, and for each
+        document of ``insert_multiple()``. ``fields`` is the
+        model-field mapping about to be written, as validated
+        Python values — every field on a whole-model write, only
+        the caller's fields on ``patch()`` — and never contains
+        ``id`` or ``revision_id``.
 
-    def after_load(self) -> None:
+        Return a mapping of fields to add or override (audit
+        timestamps are the classic case), or ``None`` to
+        contribute nothing. Returned values are validated,
+        persisted with the write, and set on this instance.
+
+        Always *return* the fields you want written — assigning to
+        ``self`` here is silently dropped by ``patch()``, which
+        writes only named fields. Raising aborts the write with
+        nothing written. The table-level ``update()`` and
+        ``update_all()`` write by condition with no instance, so
+        they never call this. The default does nothing; overrides
+        can chain with ``super().before_write(fields)``.
+        """
+        return None
+
+    def after_read(self) -> None:
         """Run after a document is validated into a model.
 
         Fires at the end of
@@ -631,8 +651,101 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         construction, and changes made here affect only the
         in-memory instance (reads persist nothing). The default
         does nothing; overrides can chain with
-        ``super().after_load()``.
+        ``super().after_read()``.
         """
+
+    # --- hook plumbing ---
+
+    def _write_fields(self) -> dict[str, Any]:
+        """Every field a whole-model write will persist.
+
+        The mapping handed to
+        [before_write][tinydantic.TinydanticModel.before_write] for
+        writes that persist the entire model, as validated Python
+        values with the fields tinydantic manages removed.
+        """
+        return {
+            name: getattr(self, name)
+            for name in type(self).model_fields
+            if name not in _MANAGED_FIELDS
+        }
+
+    def _run_before_write(
+        self,
+        fields: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Call ``before_write()`` and apply what it contributed.
+
+        Validates the hook's returned mapping under the same rules
+        ``patch()`` applies to caller input and hands it back for
+        the caller to merge into the write. Returns an empty
+        mapping when the hook contributed nothing.
+
+        Applying the result to the instance is a separate step
+        (``_apply_write_fields()``) so each caller can choose when
+        the instance changes: ``patch()`` applies only after its
+        write succeeds, while whole-model writes must apply first
+        because they serialize from ``self``.
+
+        Raises:
+            DocumentIDUpdateError: If the hook returned ``id``.
+            RevisionUpdateError: If the hook returned
+                ``revision_id`` on a ``use_revision=True`` model.
+            UnknownUpdateFieldError: If the hook returned a key
+                that is not a model field.
+        """
+        cls = type(self)
+        contributed = self.before_write(fields)
+        if not contributed:
+            return {}
+        unknown: list[str] = []
+        validated: dict[str, Any] = {}
+        for key, value in contributed.items():
+            if key == "id":
+                raise DocumentIDUpdateError(model_name=cls.__name__)
+            if key == "revision_id" and cls._uses_revision():
+                raise RevisionUpdateError(model_name=cls.__name__)
+            if key not in cls.model_fields:
+                unknown.append(key)
+                continue
+            validated[key] = cls._field_adapter(key).validate_python(value)
+        if unknown:
+            raise UnknownUpdateFieldError(
+                model_name=cls.__name__,
+                keys=unknown,
+            )
+        return validated
+
+    def _apply_write_fields(self, validated: Mapping[str, Any]) -> None:
+        """Set already-validated field values on this instance.
+
+        Direct ``__dict__`` assignment, NOT ``setattr``: with
+        ``validate_assignment`` on, per-field assignment can trip a
+        cross-field invariant on a transient state even though the
+        final state is valid. The write path validates the result.
+        """
+        if not validated:
+            return
+        # The cast is for pyright; see _set_revision().
+        cast("dict[str, Any]", self.__dict__).update(validated)
+        self.__pydantic_fields_set__.update(validated)
+
+    def _before_write_whole_model(self) -> None:
+        """Run the write hook for a write that persists everything.
+
+        Whole-model writes serialize from ``self``, so the hook's
+        contribution has to land on the instance before
+        serialization rather than after the write succeeds.
+
+        Models that never override the hook skip the whole thing:
+        building the field mapping is pure waste when the default
+        no-op is all it would be handed.
+        """
+        if type(self).before_write is TinydanticModel.before_write:
+            return
+        self._apply_write_fields(
+            self._run_before_write(self._write_fields()),
+        )
 
     # --- configuration ---
 
@@ -915,7 +1028,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             )
         else:
             instance = cls.model_validate(document, by_name=True)
-        instance.after_load()
+        instance.after_read()
         return instance
 
     @classmethod
@@ -943,7 +1056,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         """
         docs = list(documents)
         for doc in docs:
-            doc.before_save()
+            doc._before_write_whole_model()  # noqa: SLF001
             if cls._uses_revision():
                 doc._set_revision_token(uuid4())  # noqa: SLF001
         # Serialize before the try: pydantic.ValidationError is a
@@ -2128,7 +2241,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 "first, or pass a query condition"
             )
             raise SelectorError(msg)
-        document.before_save()
+        document._before_write_whole_model()
         cls._check_upsert_unique(document, cond)
         # upsert() cannot check revisions (its contract is
         # "regardless of current state") but must still rotate, so
@@ -2465,7 +2578,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             DocumentAlreadyExistsError: If ``id`` is set to an id
                 that already exists in the table.
         """
-        self.before_save()
+        self._before_write_whole_model()
         cls = type(self)
         if cls._uses_revision():
             self._set_revision_token(uuid4())
@@ -2526,7 +2639,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 operation="replace",
             )
 
-        self.before_save()
+        self._before_write_whole_model()
         replacement = self.to_tinydb_document(force_dict=True)
         cls = type(self)
         cls._check_unique(
@@ -2648,6 +2761,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         but the document's existence is still checked, so the
         error contract does not depend on the payload.
 
+        Being instance-level, ``patch()`` fires
+        [before_write][tinydantic.TinydanticModel.before_write]
+        with the caller's fields, and whatever the hook returns
+        joins the write — an audit timestamp stamped there keeps
+        working here. An empty ``patch()`` writes nothing and so
+        calls no hook.
+
         Like ``update()``, values land in storage as serialized
         inputs: a ``model_validator`` that rewrites values applies
         on the next read.
@@ -2707,6 +2827,14 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 model_name=cls.__name__,
                 keys=unknown,
             )
+        # Unlike whole-model writes, the hook's contribution is not
+        # applied to self here — patch() promises an untouched
+        # instance if anything below raises, so the sync waits for
+        # the write to succeed.
+        contributed = self._run_before_write(validated)
+        if contributed:
+            validated = {**validated, **contributed}
+            fields = {**fields, **contributed}
         serialized_patch = {
             key: cls._field_adapter(key).dump_python(
                 value,
@@ -2733,15 +2861,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             touched_fields=set(serialized_patch),
         )
         cls.update(fields, doc_ids=[self.id])
-        # Sync only after the write succeeded. Direct __dict__
-        # assignment, NOT setattr: with validate_assignment on,
-        # per-field assignment can trip a cross-field invariant on
-        # a transient state (start moved before end) even though
-        # the final state — already checked by the merged-result
-        # validation above — is valid.
-        # The cast is for pyright; see _set_revision().
-        cast("dict[str, Any]", self.__dict__).update(validated)
-        self.__pydantic_fields_set__.update(validated)
+        # Sync only after the write succeeded — the merged result
+        # was already validated above.
+        self._apply_write_fields(validated)
         if cls._uses_revision():
             # patch() rotates without checking (it is the
             # field-merge tool — see the Concurrency docs), so the
@@ -2791,7 +2913,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         """
         if self.id is None:
             return self.insert()
-        self.before_save()
+        self._before_write_whole_model()
         doc = self.to_tinydb_document()
         cls = type(self)
         cls._check_unique(doc, exclude_doc_ids={self.id})
