@@ -35,11 +35,11 @@ jobs:
       # Check JSON & YAML files
       - name: Install check-jsonschema
         run: uv tool install check-jsonschema --with jsonschema[format]
-      - name: Check .markdownlint.yaml
+      - name: Check .markdownlint-cli2.yaml
         run: >-
           check-jsonschema
-          --schemafile=https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json
-          .markdownlint.yaml
+          --schemafile=https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/main/schema/markdownlint-cli2-config-schema.json
+          .markdownlint-cli2.yaml
       - name: Check .pre-commit-config.yaml
         run: >-
           check-jsonschema
