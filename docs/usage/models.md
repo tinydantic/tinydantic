@@ -211,7 +211,7 @@ tinydantic._errors.QueryFieldError: 'firstName' is not a queryable field of 'Pro
 
 ## Lifecycle hooks
 
-Two overridable no-op methods mark the storage boundary. [before_save()][tinydantic.TinydanticModel.before_save] runs once at the start of every whole-model write (`insert()`, each document of `insert_multiple()`, `save()`, `replace()`, `upsert()`) — before serialization, so anything it sets is validated and persisted with the write. The classic use is audit timestamps:
+Two overridable no-op methods mark the storage boundary. [before_write()][tinydantic.TinydanticModel.before_write] runs once at the start of every instance-level write — `insert()`, each document of `insert_multiple()`, `save()`, `replace()`, `upsert()`, and `patch()`. It receives `fields`, the model-field mapping about to be written, and **returns** the fields it wants to add or override. The classic use is audit timestamps:
 
 ```pycon
 >>> import datetime
@@ -220,34 +220,48 @@ Two overridable no-op methods mark the storage boundary. [before_save()][tinydan
 ...     created_at: datetime.datetime | None = None
 ...     updated_at: datetime.datetime | None = None
 ...
-...     def before_save(self) -> None:
+...     def before_write(self, fields):
 ...         """Stamp audit timestamps."""
 ...         now = datetime.datetime.now(tz=datetime.timezone.utc)
 ...         if self.id is None:
-...             self.created_at = now
-...         self.updated_at = now
+...             return {"created_at": now, "updated_at": now}
+...         return {"updated_at": now}
 >>> note = Note(text="draft").insert()
 >>> note.created_at == note.updated_at
-True
->>> note.text = "final"
->>> _ = note.save()
->>> note.updated_at >= note.created_at
 True
 
 ```
 
-[after_load()][tinydantic.TinydanticModel.after_load] runs after a stored document is validated into an instance — on every materializing read, with the real `id` set. Changes made there affect only the in-memory instance; reads never write. A sketch:
+Returned values are validated like any other write, persisted, and set on the instance. Returning `None` contributes nothing.
+
+!!! warning "Return your fields — never assign to `self`"
+
+    Assigning to `self` inside `before_write()` happens to work on whole-model writes, because they serialize from the instance. `patch()` writes **only** the fields it was given, so anything you set on `self` there is silently dropped. Always return the mapping.
+
+`fields` holds every model field on a whole-model write and only the caller's fields on `patch()`; it never contains `id` or `revision_id`, and returning either of those raises. Because the hook is instance-level, the table-level [update()][tinydantic.TinydanticModel.update] and [update_all()][tinydantic.TinydanticModel.update_all] do **not** fire it — they write by condition, with no model instance to hook. A mass write will not bump your `updated_at`:
+
+```pycon
+>>> _ = Note.update({"updated_at": None}, doc_ids=[note.id])
+>>> Note.get_by_id(note.id).updated_at is None  # update(): no hook
+True
+>>> _ = note.patch(text="final")
+>>> Note.get_by_id(note.id).updated_at is None  # patch(): hook fired
+False
+
+```
+
+[after_read()][tinydantic.TinydanticModel.after_read] runs after a stored document is validated into an instance — on every materializing read, with the real `id` set. Changes made there affect only the in-memory instance; reads never write. A sketch:
 
 ```python
 class Session(TinydanticModel, database=db):
     token: str
 
-    def after_load(self) -> None:
+    def after_read(self) -> None:
         """Track which sessions this process touched."""
         SEEN_SESSION_IDS.add(self.id)
 ```
 
-Three rules worth remembering: field-level writes (`update()`, `patch()`) fire **neither** hook — they never write the whole model, so fields set in `before_save()` would be silently dropped; a raising hook **aborts the write** with nothing written; and hooks are ordinary methods, so mixins can cooperate via `super().before_save()`. Prefer hooks over `model_validator` for side effects: validators also fire on construction, on every read, and on every assignment — a timestamp bumped there is stamped by reads too.
+Two more rules worth remembering: a raising hook **aborts the write** with nothing written, and hooks are ordinary methods, so mixins can cooperate via `super().before_write(fields)`. Prefer hooks over `model_validator` for side effects: validators also fire on construction, on every read, and on every assignment — a timestamp bumped there is stamped by reads too.
 
 ## Unique fields
 

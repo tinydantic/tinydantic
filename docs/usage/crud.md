@@ -425,7 +425,7 @@ tinydantic._errors.UnknownUpdateFieldError: update() mapping ...
 
 ```
 
-An empty `patch()` writes nothing but still verifies the document exists, so its error behavior does not depend on the payload — handy for HTTP PATCH endpoints fed `model_dump(exclude_unset=True)`.
+An empty `patch()` writes nothing but still verifies the document exists, so its error behavior does not depend on the payload — handy for HTTP PATCH endpoints fed `model_dump(exclude_unset=True)`. Being instance-level, `patch()` fires [before_write()][tinydantic.TinydanticModel.before_write], so a model that stamps `updated_at` in the hook keeps stamping it here — an empty patch writes nothing and so hooks nothing. The table-level `update()` and `update_all()` below have no instance and fire no hook; see [Lifecycle hooks](models.md#lifecycle-hooks).
 
 ### Choosing a write verb
 

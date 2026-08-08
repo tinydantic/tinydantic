@@ -2,66 +2,128 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""before_save/after_load lifecycle hooks."""
+"""before_write/after_read lifecycle hooks."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
+from uuid import uuid4
 
 import pytest
 
-from tinydantic import TinydanticModel, q
+from tinydantic import (
+    DocumentIDUpdateError,
+    RevisionUpdateError,
+    TinydanticModel,
+    UnknownUpdateFieldError,
+    q,
+)
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from tinydb import TinyDB
 
 
 class Hooked(TinydanticModel):
-    """Test model counting hook invocations."""
+    """Test model recording hook invocations."""
 
     name: str
     stamped: int = 0
 
-    saves: ClassVar[list[str]] = []
-    loads: ClassVar[list[int | None]] = []
+    writes: ClassVar[list[str]] = []
+    seen: ClassVar[list[Mapping[str, Any]]] = []
 
-    def before_save(self) -> None:
-        """Count the write and stamp a field."""
-        type(self).saves.append(self.name)
-        self.stamped += 1
-
-    def after_load(self) -> None:
-        """Record the id visible at load time."""
-        type(self).loads.append(self.id)
+    def before_write(
+        self,
+        fields: Mapping[str, Any],
+    ) -> Mapping[str, Any] | None:
+        """Record the write and stamp a field."""
+        type(self).writes.append(self.name)
+        type(self).seen.append(dict(fields))
+        return {"stamped": self.stamped + 1}
 
 
 @pytest.fixture
 def hooked(db: TinyDB) -> type[Hooked]:
-    """Hooked bound to the test database, counters reset."""
+    """Hooked bound to the test database, recorders reset."""
 
     class Bound(Hooked, database=db):
         """Bound test model."""
 
-    Bound.saves = []
-    Bound.loads = []
+    Bound.writes = []
+    Bound.seen = []
     return Bound
 
 
-class TestBeforeSave:
-    """before_save() fires once per whole-model write."""
+class TestBeforeWriteContract:
+    """before_write() contributes fields to the write."""
 
-    def test_insert_fires_once_and_persists_mutation(
+    def test_insert_fires_once_and_persists_returned_field(
         self,
         hooked: type[Hooked],
     ):
-        """insert() calls the hook; its mutation is stored."""
+        """insert() calls the hook; its return value is stored."""
         doc = hooked(name="a").insert()
-        assert hooked.saves == ["a"]
+        assert hooked.writes == ["a"]
         assert doc.stamped == 1
         assert doc.id is not None
         loaded = hooked.get_by_id(doc.id)
         assert loaded is not None
         assert loaded.stamped == 1
+
+    def test_whole_model_write_sees_every_field(
+        self,
+        hooked: type[Hooked],
+    ):
+        """Fields holds all model fields, never id."""
+        hooked(name="a").insert()
+        assert hooked.seen == [{"name": "a", "stamped": 0}]
+
+
+class TestBeforeWriteOnPatch:
+    """patch() fires the hook — the H4 regression."""
+
+    def test_patch_fires_once(self, hooked: type[Hooked]):
+        """patch() calls the hook."""
+        doc = hooked(name="a").insert()
+        hooked.writes.clear()
+        doc.patch(name="b")
+        assert hooked.writes == ["a"]
+
+    def test_patch_sees_only_the_caller_fields(
+        self,
+        hooked: type[Hooked],
+    ):
+        """Fields holds the patched fields, not the whole model."""
+        doc = hooked(name="a").insert()
+        hooked.seen.clear()
+        doc.patch(name="b")
+        assert hooked.seen == [{"name": "b"}]
+
+    def test_patch_persists_returned_field(self, hooked: type[Hooked]):
+        """A field the hook returns is written by patch()."""
+        doc = hooked(name="a").insert()
+        assert doc.stamped == 1
+        doc.patch(name="b")
+        assert doc.stamped == 2
+        assert doc.id is not None
+        loaded = hooked.get_by_id(doc.id)
+        assert loaded is not None
+        assert loaded.stamped == 2
+        assert loaded.name == "b"
+
+    def test_empty_patch_does_not_fire(self, hooked: type[Hooked]):
+        """An empty patch() writes nothing, so it hooks nothing."""
+        doc = hooked(name="a").insert()
+        hooked.writes.clear()
+        doc.patch()
+        assert hooked.writes == []
+        assert doc.stamped == 1
+
+
+class TestBeforeWriteCoverage:
+    """Which write paths fire the hook, and which do not."""
 
     def test_save_of_new_instance_fires_exactly_once(
         self,
@@ -69,52 +131,153 @@ class TestBeforeSave:
     ):
         """save() delegating to insert() never double-fires."""
         hooked(name="a").save()
-        assert hooked.saves == ["a"]
+        assert hooked.writes == ["a"]
 
-    def test_save_of_existing_fires_once(self, hooked: type[Hooked]):
+    def test_save_of_existing_fires(self, hooked: type[Hooked]):
         """save() on a persisted instance fires the hook."""
         doc = hooked(name="a").insert()
         doc.save()
-        assert hooked.saves == ["a", "a"]
+        assert hooked.writes == ["a", "a"]
         assert doc.stamped == 2
 
     def test_replace_fires(self, hooked: type[Hooked]):
         """replace() fires the hook."""
         doc = hooked(name="a").insert()
         doc.replace()
-        assert hooked.saves == ["a", "a"]
+        assert hooked.writes == ["a", "a"]
+        assert doc.stamped == 2
 
     def test_upsert_fires(self, hooked: type[Hooked]):
         """upsert() fires the hook on the passed document."""
         hooked.upsert(hooked(name="a"), q(hooked.name) == "a")
-        assert hooked.saves == ["a"]
+        assert hooked.writes == ["a"]
 
     def test_insert_multiple_fires_per_document(
         self,
         hooked: type[Hooked],
     ):
         """insert_multiple() fires once per document."""
-        hooked.insert_multiple([hooked(name="a"), hooked(name="b")])
-        assert hooked.saves == ["a", "b"]
+        docs = hooked.insert_multiple([hooked(name="a"), hooked(name="b")])
+        assert hooked.writes == ["a", "b"]
+        assert [doc.stamped for doc in docs] == [1, 1]
 
-    def test_update_and_patch_do_not_fire(self, hooked: type[Hooked]):
-        """Field-level writes never call before_save()."""
+    def test_update_does_not_fire(self, hooked: type[Hooked]):
+        """Table-level update() has no instance, so no hook."""
         doc = hooked(name="a").insert()
-        hooked.saves.clear()
+        hooked.writes.clear()
         assert doc.id is not None
         hooked.update({"name": "b"}, doc_ids=[doc.id])
-        doc.patch(name="c")
-        assert hooked.saves == []
+        assert hooked.writes == []
 
-    def test_raising_hook_aborts_write(self, db: TinyDB):
-        """An exception in before_save() writes nothing."""
+    def test_update_all_does_not_fire(self, hooked: type[Hooked]):
+        """Table-level update_all() has no instance, so no hook."""
+        hooked(name="a").insert()
+        hooked.writes.clear()
+        hooked.update_all({"name": "b"})
+        assert hooked.writes == []
+
+
+class TestBeforeWriteReturnValue:
+    """Rules applied to what the hook hands back."""
+
+    def test_returning_none_writes_normally(self, db: TinyDB):
+        """A hook contributing nothing does not disturb the write."""
+
+        class Quiet(TinydanticModel, database=db):
+            """Test model whose hook contributes nothing."""
+
+            name: str
+
+            def before_write(
+                self,
+                fields: Mapping[str, Any],  # noqa: ARG002
+            ) -> Mapping[str, Any] | None:
+                """Contribute nothing."""
+                return None
+
+        doc = Quiet(name="a").insert()
+        assert doc.id is not None
+        loaded = Quiet.get_by_id(doc.id)
+        assert loaded is not None
+        assert loaded.name == "a"
+
+    def test_returning_id_raises(self, db: TinyDB):
+        """The hook may not set the document id."""
+
+        class Forger(TinydanticModel, database=db):
+            """Test model whose hook returns id."""
+
+            name: str
+
+            def before_write(
+                self,
+                fields: Mapping[str, Any],  # noqa: ARG002
+            ) -> Mapping[str, Any] | None:
+                """Try to set the document id."""
+                return {"id": 99}
+
+        with pytest.raises(DocumentIDUpdateError):
+            Forger(name="a").insert()
+        assert Forger.count() == 0
+
+    def test_returning_revision_id_raises(self, db: TinyDB):
+        """The hook may not set the revision token."""
+
+        class Rotator(
+            TinydanticModel,
+            database=db,
+            use_revision=True,
+        ):
+            """Test model whose hook returns revision_id."""
+
+            name: str
+
+            def before_write(
+                self,
+                fields: Mapping[str, Any],  # noqa: ARG002
+            ) -> Mapping[str, Any] | None:
+                """Try to set the revision token."""
+                return {"revision_id": uuid4()}
+
+        with pytest.raises(RevisionUpdateError):
+            Rotator(name="a").insert()
+        assert Rotator.count() == 0
+
+    def test_returning_unknown_field_raises(self, db: TinyDB):
+        """The hook may only contribute model fields."""
+
+        class Stray(TinydanticModel, database=db):
+            """Test model whose hook returns a stray key."""
+
+            name: str
+
+            def before_write(
+                self,
+                fields: Mapping[str, Any],  # noqa: ARG002
+            ) -> Mapping[str, Any] | None:
+                """Contribute a field the model does not have."""
+                return {"nope": 1}
+
+        with pytest.raises(UnknownUpdateFieldError):
+            Stray(name="a").insert()
+        assert Stray.count() == 0
+
+
+class TestBeforeWriteAborts:
+    """A raising hook leaves storage untouched."""
+
+    def test_raising_hook_aborts_insert(self, db: TinyDB):
+        """An exception in before_write() writes nothing."""
 
         class Guarded(TinydanticModel, database=db):
             """Test model whose hook refuses."""
 
             name: str
 
-            def before_save(self) -> None:
+            def before_write(
+                self,
+                fields: Mapping[str, Any],  # noqa: ARG002
+            ) -> Mapping[str, Any] | None:
                 """Refuse every write."""
                 msg = "nope"
                 raise RuntimeError(msg)
@@ -123,37 +286,103 @@ class TestBeforeSave:
             Guarded(name="a").insert()
         assert Guarded.count() == 0
 
+    def test_raising_hook_aborts_patch(self, db: TinyDB):
+        """A hook that refuses on patch() writes nothing."""
 
-class TestAfterLoad:
-    """after_load() fires on reads, with the real id."""
+        class Fussy(TinydanticModel, database=db):
+            """Test model whose hook refuses updates only."""
 
-    def test_get_and_search_and_all_fire(self, hooked: type[Hooked]):
-        """Every materializing read calls the hook once per doc."""
-        doc = hooked(name="a").insert()
-        hooked.loads.clear()
+            name: str
+
+            def before_write(
+                self,
+                fields: Mapping[str, Any],  # noqa: ARG002
+            ) -> Mapping[str, Any] | None:
+                """Refuse once the model is persisted."""
+                if self.id is not None:
+                    msg = "nope"
+                    raise RuntimeError(msg)
+                return None
+
+        doc = Fussy(name="a").insert()
+        with pytest.raises(RuntimeError, match="nope"):
+            doc.patch(name="b")
+        assert doc.name == "a"
         assert doc.id is not None
-        hooked.get_by_id(doc.id)
-        hooked.search(q(hooked.name) == "a")
-        hooked.all()
-        assert hooked.loads == [doc.id, doc.id, doc.id]
+        stored = Fussy.get_by_id(doc.id)
+        assert stored is not None
+        assert stored.name == "a"
 
-    def test_not_called_on_construction_or_insert(
-        self,
-        hooked: type[Hooked],
-    ):
-        """Constructing and inserting never call after_load()."""
-        hooked(name="a").insert()
-        assert hooked.loads == []
+
+class TestUnhookedModelsSkipTheMachinery:
+    """Models without an override pay nothing for the hook."""
+
+    def test_write_fields_is_not_built(self, db: TinyDB):
+        """A model with no override never builds the mapping."""
+
+        class Plain(TinydanticModel, database=db):
+            """Test model that does not override the hook."""
+
+            name: str
+
+            def _write_fields(self) -> dict[str, Any]:
+                """Explode if the machinery runs at all."""
+                msg = "should not be called"
+                raise AssertionError(msg)
+
+        doc = Plain(name="a").insert()
+        assert doc.id is not None
+
+
+class TestAfterRead:
+    """after_read() fires on reads, with the real id."""
+
+    def test_get_and_search_and_all_fire(self, db: TinyDB):
+        """Every materializing read calls the hook once per doc."""
+        loads: list[int | None] = []
+
+        class Watched(TinydanticModel, database=db):
+            """Test model recording load-time ids."""
+
+            name: str
+
+            def after_read(self) -> None:
+                """Record the id visible at load time."""
+                loads.append(self.id)
+
+        doc = Watched(name="a").insert()
+        loads.clear()
+        assert doc.id is not None
+        Watched.get_by_id(doc.id)
+        Watched.search(q(Watched.name) == "a")
+        Watched.all()
+        assert loads == [doc.id, doc.id, doc.id]
+
+    def test_not_called_on_construction_or_insert(self, db: TinyDB):
+        """Constructing and inserting never call after_read()."""
+        loads: list[int | None] = []
+
+        class Quiet(TinydanticModel, database=db):
+            """Test model recording load-time ids."""
+
+            name: str
+
+            def after_read(self) -> None:
+                """Record the id visible at load time."""
+                loads.append(self.id)
+
+        Quiet(name="a").insert()
+        assert loads == []
 
     def test_mutations_are_not_persisted(self, db: TinyDB):
-        """after_load() changes affect the instance only."""
+        """after_read() changes affect the instance only."""
 
         class Shouter(TinydanticModel, database=db):
             """Test model rewriting a field at load."""
 
             name: str
 
-            def after_load(self) -> None:
+            def after_read(self) -> None:
                 """Uppercase the name on the loaded instance."""
                 self.name = self.name.upper()
 
@@ -179,17 +408,24 @@ class TestSuperChaining:
 
             name: str
 
-            def before_save(self) -> None:
+            def before_write(
+                self,
+                fields: Mapping[str, Any],  # noqa: ARG002
+            ) -> Mapping[str, Any] | None:
                 """Record the base call."""
                 calls.append("base")
+                return None
 
         class Child(Base, table_name="children"):
             """Child chaining to the base hook."""
 
-            def before_save(self) -> None:
+            def before_write(
+                self,
+                fields: Mapping[str, Any],
+            ) -> Mapping[str, Any] | None:
                 """Record the child call, then chain."""
                 calls.append("child")
-                super().before_save()
+                return super().before_write(fields)
 
         Child(name="a").insert()
         assert calls == ["child", "base"]
