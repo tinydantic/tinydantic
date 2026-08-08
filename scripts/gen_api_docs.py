@@ -51,7 +51,7 @@ API_DOC_TITLE = "API Documentation"
 # Control the display of the "mod" (module) symbol in the nav.
 #
 # Note: these options provide additional control over the display of
-# the mod symbol beyond the config options built into mkdostrings:
+# the mod symbol beyond the config options built into mkdocstrings:
 # https://mkdocstrings.github.io/python/usage/configuration/headings/
 show_mod_symbol_left_nav = True
 show_mod_symbol_footer_nav = True
