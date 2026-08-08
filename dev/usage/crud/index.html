@@ -2936,7 +2936,7 @@
 </span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="w">  </span><span class="c">...</span>
 </span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="gr">tinydantic._errors.UnknownUpdateFieldError</span>: <span class="n">update() mapping ...</span>
 </span></code></pre></div>
-<p>An empty <code>patch()</code> writes nothing but still verifies the document exists, so its error behavior does not depend on the payload — handy for HTTP PATCH endpoints fed <code>model_dump(exclude_unset=True)</code>.</p>
+<p>An empty <code>patch()</code> writes nothing but still verifies the document exists, so its error behavior does not depend on the payload — handy for HTTP PATCH endpoints fed <code>model_dump(exclude_unset=True)</code>. Being instance-level, <code>patch()</code> fires <a class="autorefs autorefs-internal" title="            before_write" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.before_write">before_write()</a>, so a model that stamps <code>updated_at</code> in the hook keeps stamping it here — an empty patch writes nothing and so hooks nothing. The table-level <code>update()</code> and <code>update_all()</code> below have no instance and fire no hook; see <a href="../models/#lifecycle-hooks">Lifecycle hooks</a>.</p>
 <h3 id="choosing-a-write-verb">Choosing a write verb<a class="headerlink" href="#choosing-a-write-verb" title="Permanent link">¤</a></h3>
 <p>Five verbs, five different contracts — in HTTP terms:</p>
 <table>

@@ -76,6 +76,11 @@
         <changefreq>daily</changefreq>
     </url>
     <url>
+        <loc>https://tinydantic.dev/latest/superpowers/specs/2026-08-08-before-write-hook-design/</loc>
+        <lastmod>2020-02-02</lastmod>
+        <changefreq>daily</changefreq>
+    </url>
+    <url>
         <loc>https://tinydantic.dev/latest/usage/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
