@@ -1,6 +1,6 @@
 # before_write / after_read lifecycle hooks
 
-Design for review finding H4 (`reviews/2026-08-06_CLAUDE_REVIEW.md`): `before_save()` never fires on `patch()`, and the documentation recommends both.
+Design for review finding H4 (`untracked/reviews/2026-08-06_CLAUDE_REVIEW.md`): `before_save()` never fires on `patch()`, and the documentation recommends both.
 
 ## Problem
 

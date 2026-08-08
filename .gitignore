@@ -172,3 +172,10 @@ cython_debug/
 # Node
 node_modules/
 .clearance-rendered-preview-*/
+
+# Local scratch space
+# Working notes, upstream issue drafts, and review collateral that is
+# deliberately never committed. Linters and formatters are configured
+# to skip it too (cspell.config.yaml, ruff.toml, tombi.toml); the tools
+# that read this file (prettier, yamllint) get it for free.
+/untracked/

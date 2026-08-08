@@ -12,6 +12,7 @@ dictionaries:
   - project-words
 ignorePaths:
   - /project-words.txt
+  - /untracked
   - .git
   - node_modules
   - site
