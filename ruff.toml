@@ -4,6 +4,12 @@
 
 line-length = 79
 target-version = "py310"
+# `untracked/` is local scratch space (see .gitignore). Ruff already
+# honors .gitignore inside a work tree; this keeps it excluded when
+# ruff runs without git (e.g. from a source archive or an editor).
+extend-exclude = [
+  "untracked",
+]
 
 [format]
 docstring-code-format = true
