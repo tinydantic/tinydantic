@@ -2434,6 +2434,7 @@
 <li><code>None</code> values are exempt — several documents may all leave a unique field unset, mirroring SQL's <code>NULL</code> under <code>UNIQUE</code>.</li>
 <li>The table-level bulk path (<code>update()</code>/<code>update_all()</code>/<code>update_multiple()</code>) deliberately does <strong>not</strong> enforce uniqueness — it is the documented loose escape, like <code>extra_keys="allow"</code>.</li>
 <li>The check is check-then-write within one process. That is sound under tinydantic's documented single-process, serialized-writes scope, but it is not a database constraint: another process writing the same file concurrently can still create duplicates.</li>
+<li>Enforcement costs a table scan. TinyDB has no indexes, so an enforcing write reads the whole table and compares it document by document — O(documents), on top of the read the write itself performs. <code>insert_multiple()</code> scans once for the entire batch rather than once per document, so a bulk load stays linear in the batch size; a loop of <code>insert()</code> calls does not. If a single write is slow, the table has outgrown what TinyDB is for.</li>
 </ul>
 <h2 id="composite-constraints">Composite constraints<a class="headerlink" href="#composite-constraints" title="Permanent link">¤</a></h2>
 <p>Uniqueness over <em>several</em> fields — a join model's pair, a slug per author — is a property of the model, not of any single field, so it is declared with <a class="autorefs autorefs-internal" title="            UniqueConstraint
