@@ -1779,10 +1779,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#update-field-mappings-are-mistyped-as-callables" class="md-nav__link">
+  <a href="#updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently" class="md-nav__link">
     <span class="md-ellipsis">
       
-        update() field mappings are mistyped as callables
+        update(doc_ids=…) and remove(doc_ids=…) skip missing ids silently
       
     </span>
   </a>
@@ -1819,6 +1819,56 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resolved-upstream" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolved upstream
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resolved upstream">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#update-field-mappings-were-mistyped-as-callables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update() field mappings were mistyped as callables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#querytest-raised-on-unhashable-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query.test() raised on unhashable arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#touch-failed-on-a-bare-relative-filename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        touch() failed on a bare relative filename
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2056,10 +2106,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#update-field-mappings-are-mistyped-as-callables" class="md-nav__link">
+  <a href="#updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently" class="md-nav__link">
     <span class="md-ellipsis">
       
-        update() field mappings are mistyped as callables
+        update(doc_ids=…) and remove(doc_ids=…) skip missing ids silently
       
     </span>
   </a>
@@ -2096,6 +2146,56 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resolved-upstream" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolved upstream
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resolved upstream">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#update-field-mappings-were-mistyped-as-callables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update() field mappings were mistyped as callables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#querytest-raised-on-unhashable-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query.test() raised on unhashable arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#touch-failed-on-a-bare-relative-filename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        touch() failed on a bare relative filename
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2140,7 +2240,7 @@
 <li>Proposals to TinyDB are drafted in <code>upstream/</code> (at the repository root) and are never filed on the TinyDB issue tracker without explicit approval.</li>
 </ul>
 <p>This page must be kept current: whenever TinyDB friction is found, worked around, or resolved, update the relevant section here in the same change.</p>
-<p>All observations below were verified against TinyDB 4.8.2.</p>
+<p>All observations below were verified against TinyDB 4.9.0 (the minimum version <code>tinydantic</code> requires). Limitations that a TinyDB release has since fixed are moved to <a href="#resolved-upstream">Resolved upstream</a> rather than deleted, so the history of each workaround stays readable.</p>
 <h2 id="query-conditions-never-see-the-document-id">Query conditions never see the document id<a class="headerlink" href="#query-conditions-never-see-the-document-id" title="Permanent link">¤</a></h2>
 <p><strong>Limitation.</strong> TinyDB evaluates every query condition against the raw document <em>body</em> mapping — the value in the <code>{doc_id: body}</code> table dict — never against a <a href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.table.Document"><code>Document</code></a> carrying <code>doc_id</code>. All five evaluation sites behave this way: <code>Table.search()</code>, <code>Table.get(cond=...)</code>, and the updater loops inside <code>Table.update(cond=...)</code>, <code>Table.update_multiple()</code>, and <code>Table.remove(cond=...)</code>. (<code>Table._update_table()</code>'s docstring notes that skipping the <code>Document</code> wrap is a deliberate optimization.) Only <code>Table.__iter__</code> yields <code>Document</code> instances. Consequently, no query object — however it is constructed — can express "document id equals 1": the id is structurally invisible to the condition, even though it sits right there as the dict key in every evaluation loop.</p>
 <p><strong>Why it matters to an ODM.</strong> Every mainstream document ODM lets users query by the model's id attribute (Beanie and ODMantic translate <code>Model.id</code> to MongoDB's <code>_id</code>; Firestore special-cases <code>FieldPath.documentId()</code> because — exactly like TinyDB — its document key is not a body field). <code>tinydantic</code> maps its <code>id</code> field to <code>doc_id</code>, so supporting <code>User.get(User.id == 1)</code> required a translation layer: id-bearing conditions are detected in every model method and executed via <code>doc_id=</code>/<code>doc_ids=</code> operations or by iterating the table (the one API that yields <code>Document</code>s). See <code>src/tinydantic/_query.py</code> and the id-condition branches in <code>src/tinydantic/_model.py</code>.</p>
@@ -2159,10 +2259,12 @@
 <li>Accept an optional per-pair id selector, e.g. <code>update_multiple(updates: Iterable[tuple[fields, cond | None, doc_ids | None]])</code> (or a parallel <code>update_multiple_by_ids()</code>), mirroring the <code>update()</code>/<code>remove()</code> signatures.</li>
 <li>Ship the <code>needs_doc_id</code>/<code>DocId</code> improvement above, which subsumes this: id conditions would then work in <code>update_multiple()</code>'s existing signature.</li>
 </ul>
-<h2 id="update-field-mappings-are-mistyped-as-callables"><code>update()</code> field mappings are mistyped as callables<a class="headerlink" href="#update-field-mappings-are-mistyped-as-callables" title="Permanent link">¤</a></h2>
-<p><strong>Limitation.</strong> <code>Table.update()</code> and <code>Table.update_multiple()</code> annotate their <code>fields</code> parameter as <code>Callable[[Mapping], None]</code>, but both accept (and the documentation describes) plain mappings as well — the implementation branches on <code>callable(fields)</code>. Static type checkers therefore reject the documented mapping form.</p>
-<p><strong>Why it matters.</strong> Every <code>tinydantic</code> call into these methods carries a <code>cast("Callable[[Mapping], None]", fields)</code> band-aid, marked with <code>TODO @cdwilson: remove this cast once the annotation is fixed in TinyDB</code> (see <code>src/tinydantic/_model.py</code>). The transform parameter is also under-annotated for its actual contract: the callable receives a mutable <code>dict</code>, so <code>Callable[[MutableMapping], None]</code> would describe it better.</p>
-<p><strong>Suggested improvement.</strong> Annotate as <code>fields: Mapping | Callable[[MutableMapping], None]</code> (and the corresponding tuple type in <code>update_multiple</code>).</p>
+<h2 id="updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently"><code>update(doc_ids=…)</code> and <code>remove(doc_ids=…)</code> skip missing ids silently<a class="headerlink" href="#updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently" title="Permanent link">¤</a></h2>
+<p><strong>Limitation.</strong> As of TinyDB 4.9.0 (<a href="https://github.com/msiemens/tinydb/issues/591">#591</a>), <code>Table.update(fields, doc_ids=…)</code> and <code>Table.remove(doc_ids=…)</code> filter the requested ids down to those present in the table, operate on that subset, and return only the ids they actually touched. An id that does not exist is not reported in any way. Before 4.9.0 the same call raised a bare <code>KeyError</code> partway through the updater — which was its own problem (an uncurated exception, raised after some documents had already been mutated in the working copy).</p>
+<p><strong>Why it matters to an ODM.</strong> The new behavior makes a mixed batch a <strong>partial write that reports success</strong>: <code>update(fields, doc_ids=[1, 999])</code> on a table without document 999 updates document 1, returns <code>[1]</code>, and leaves the caller to notice that the returned list is shorter than the one they passed. A typo'd id in a batch is silently a different operation than the one requested. That is precisely the silent-wrong failure mode <code>tinydantic</code> exists to eliminate, and the returned-list-length check that would catch it is exactly the kind of bookkeeping users do not write.</p>
+<p><code>tinydantic</code> therefore keeps <code>TinydanticModel._check_doc_ids_exist()</code> (<code>src/tinydantic/_model.py</code>), which reads the table once and raises <a class="autorefs autorefs-internal" title="            DocumentNotFoundError" href="../../reference/api/tinydantic/#tinydantic.DocumentNotFoundError"><code>DocumentNotFoundError</code></a> for the first id that is absent, <strong>before</strong> any write is attempted. A batch naming a missing id is refused whole rather than applied in part, so <code>update()</code>/<code>remove()</code> keep all-or-nothing semantics across both the validated and <code>validate_writes=False</code> paths. The cost is one extra table read per id-selected write.</p>
+<p>Note that this is deliberately <em>stricter</em> than <code>Table.get(doc_ids=…)</code>, which has always skipped missing ids and which <code>tinydantic</code> mirrors as-is — a read that returns fewer documents than requested is self-describing, whereas a write that silently narrows its own target set is not.</p>
+<p><strong>Suggested improvement.</strong> Return enough information to distinguish "skipped" from "done", or let the caller choose. Either a <code>strict: bool = False</code> parameter on <code>update()</code>/<code>remove()</code> that raises a dedicated <code>MissingDocumentIDError</code> naming the absent ids, or a documented guarantee that the returned list can be compared against the requested one (plus a note in the docstring that it <em>must</em> be, to detect partial application).</p>
 <h2 id="document-ids-are-stringified-before-reaching-storages">Document ids are stringified before reaching storages<a class="headerlink" href="#document-ids-are-stringified-before-reaching-storages" title="Permanent link">¤</a></h2>
 <p><strong>Limitation.</strong> Before table data is handed to the storage layer, document ids are converted to strings (<code>{str(doc_id): doc}</code> in <code>Table._update_table()</code>), because the reference JSON storage requires string keys. Storages and middlewares therefore never see the native int ids, and serialized output sorts ids lexicographically (<code>"10"</code> before <code>"2"</code>). See the upstream discussion <a href="https://github.com/msiemens/tinydb/discussions/466">msiemens/tinydb#466</a>.</p>
 <p><strong>Why it matters.</strong> Human-readable storage output (a design goal of <code>tinydantic</code>'s YAML storage) lists documents in confusing lexicographic order. <code>tinydantic</code> ships <code>SortIntDocIDsMiddleware</code> (<code>src/tinydantic/tinydb/middlewares.py</code>) purely to undo the stringification — it converts keys back to ints, pre-sorted numerically — and that middleware has to pass ints where the <code>Storage</code> protocol declares strings, an acknowledged hack.</p>
@@ -2200,6 +2302,19 @@
 </tr>
 </tbody>
 </table>
+<h2 id="resolved-upstream">Resolved upstream<a class="headerlink" href="#resolved-upstream" title="Permanent link">¤</a></h2>
+<p>Limitations recorded here that a later TinyDB release has fixed. They are kept so the history of each workaround stays readable, and so a reader can tell "we never hit this" apart from "we hit it and it is gone now".</p>
+<h3 id="update-field-mappings-were-mistyped-as-callables"><code>update()</code> field mappings were mistyped as callables<a class="headerlink" href="#update-field-mappings-were-mistyped-as-callables" title="Permanent link">¤</a></h3>
+<p><strong>Resolved in TinyDB 4.9.0</strong> (<a href="https://github.com/msiemens/tinydb/pull/621">#621</a>, plus the matching retype of <code>tinydb.operations</code>).</p>
+<p><code>Table.update()</code> and <code>Table.update_multiple()</code> annotated their <code>fields</code> parameter as <code>Mapping | Callable[[Mapping], None]</code>. The transform they actually invoke is handed a mutable <code>dict</code>, so a correctly-typed <code>Callable[[MutableMapping], None]</code> transform was <em>rejected</em> by static type checkers under parameter contravariance — the documented, working call was the one that failed to type-check.</p>
+<p>Every <code>tinydantic</code> call into these methods carried a <code>cast("Callable[[Mapping], None]", …)</code> band-aid marked <code>TODO @cdwilson: remove this cast once the annotation is fixed in TinyDB</code>. TinyDB 4.9.0 retyped the parameter to <code>Mapping | Callable[[MutableMapping], None]</code>, which is exactly the signature <code>tinydantic.tinydb.operations.replace()</code> already advertised, so all four casts were deleted (<code>src/tinydantic/_model.py</code>) along with an internal <code>cast("dict[str, Any]", body)</code> inside <code>TinydanticModel._rotated()</code>.</p>
+<h3 id="querytest-raised-on-unhashable-arguments"><code>Query.test()</code> raised on unhashable arguments<a class="headerlink" href="#querytest-raised-on-unhashable-arguments" title="Permanent link">¤</a></h3>
+<p><strong>Resolved in TinyDB 4.9.0</strong> (<a href="https://github.com/msiemens/tinydb/issues/517">#517</a>).</p>
+<p><code>Query.test(func, *args)</code> built its hashval from the raw <code>args</code> tuple, so passing a list or dict produced a condition that raised <code>TypeError: unhashable type</code> the first time it reached the query cache. TinyDB 4.9.0 freezes the arguments (and falls back to marking a condition uncacheable rather than crashing when a value cannot be frozen).</p>
+<p>This matters to <code>tinydantic</code> beyond the raw fix: <code>has_id_condition()</code> detects id conditions by walking <code>QueryInstance._hash</code> (see the <a href="#private-api-usage-registry">registry below</a>), so a composed query containing an unhashable <code>test()</code> argument previously lost its hashval and degraded to <code>DocumentIDConditionError</code>. Such compositions now keep their hashval and resolve normally.</p>
+<h3 id="touch-failed-on-a-bare-relative-filename"><code>touch()</code> failed on a bare relative filename<a class="headerlink" href="#touch-failed-on-a-bare-relative-filename" title="Permanent link">¤</a></h3>
+<p><strong>Resolved in TinyDB 4.9.0</strong> (<a href="https://github.com/msiemens/tinydb/pull/619">#619</a>).</p>
+<p><code>tinydb.storages.touch()</code> derived the parent directory with <code>os.path.dirname(path)</code> and, for a path with no directory part, called <code>os.makedirs("")</code> — raising <code>FileNotFoundError</code>. <code>tinydantic</code>'s <code>YAMLStorage</code> calls that helper directly, so <code>TinyDB("db.yaml", storage=YAMLStorage, create_dirs=True)</code> failed for any bare filename; only a path with an explicit directory worked. The fix is inherited with no <code>tinydantic</code> change, and both shapes are now covered by <code>tests/tinydb/storages/test_yaml_storage.py</code>.</p>
 
 
 
