@@ -42,7 +42,7 @@ classifiers = [
 ]
 dependencies = [
   "pydantic>=2.11",
-  "tinydb>=4.8",
+  "tinydb>=4.9",
 ]
 
 [project.urls]

@@ -92,6 +92,7 @@ class TestPatchWrites:
         book = Book(year=1965).insert()
         book.patch(year="1966")  # type: ignore[arg-type]
         assert book.year == 1966
+        assert book.id is not None
         raw = Book.get_table().get(doc_id=book.id)
         assert isinstance(raw, dict)
         assert raw["year"] == 1966
@@ -114,6 +115,7 @@ class TestPatchWrites:
         )
         event.patch(when=when)
         assert event.when == when
+        assert event.id is not None
         raw = Event.get_table().get(doc_id=event.id)
         assert isinstance(raw, dict)
         assert isinstance(raw["when"], str)
@@ -219,6 +221,7 @@ class TestPatchErrors:
         book = Book(title="Dune").insert()
         with pytest.raises(UnknownUpdateFieldError, match="shelf"):
             book.patch(shelf="A3")
+        assert book.id is not None
         raw = Book.get_table().get(doc_id=book.id)
         assert isinstance(raw, dict)
         assert "shelf" not in raw
@@ -285,6 +288,7 @@ class TestPatchErrors:
 
         span = Span(start=10, end=20).insert()
         span.patch(end=5)
+        assert span.id is not None
         raw = Span.get_table().get(doc_id=span.id)
         assert isinstance(raw, dict)
         assert raw["end"] == 5

@@ -72,6 +72,7 @@ class TestIDSerialization:
     def test_stored_document_has_no_id_field(self, user_class: type[UserBase]):
         """The id lives in TinyDB's doc_id, not inside the document."""
         user = user_class(name="Alice", age=37).insert()
+        assert user.id is not None
         raw = user_class.get_table().get(doc_id=user.id)
         assert raw is not None
         assert "id" not in raw
@@ -115,6 +116,7 @@ class TestRoundTrip:
             address=Address(city="Oakland", zip_code="94601"),
         )
         original.insert()
+        assert original.id is not None
         raw = rich_class.get_table().get(doc_id=original.id)
         assert isinstance(raw, Document)
         assert isinstance(raw["created_at"], str)
@@ -213,6 +215,7 @@ class TestUpdateSerialization:
         rich_class.update_multiple(
             [({"created_at": new_time}, field(rich_class, "name") == "Alice")],
         )
+        assert original.id is not None
         raw = rich_class.get_table().get(doc_id=original.id)
         assert isinstance(raw, Document)
         assert isinstance(raw["created_at"], str)
@@ -421,6 +424,7 @@ class TestWriteBoundaryValidation:
         loose = Loose(tags=[1]).insert()
         loose.tags.append("junk")  # type: ignore[arg-type]
         loose.save()
+        assert loose.id is not None
         raw = Loose.get_table().get(doc_id=loose.id)
         assert isinstance(raw, dict)
         assert raw["tags"] == [1, "junk"]

@@ -27,6 +27,7 @@ commitizen
 conds
 conftest
 connor
+contravariance
 CREAT
 crossref
 crossrefs
@@ -98,6 +99,7 @@ linkchecker
 linkcheckerrc
 lockfiles
 lseek
+makedirs
 makefiles
 markdownlint
 markus
@@ -209,7 +211,10 @@ trond
 twemoji
 typechecks
 typora
+uncacheable
+uncurated
 unflushed
+unhashable
 uninspected
 UNLCK
 unmigrated
