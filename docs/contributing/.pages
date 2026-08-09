@@ -7,4 +7,4 @@ nav:
   - index.md
   - development_guide.md
   - static_typing.md
-  - tinydb_limitations.md
+  - upstream_limitations.md

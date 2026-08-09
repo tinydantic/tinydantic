@@ -191,11 +191,11 @@ True
 
 Pydantic merges `model_config` across multiple base classes in "last wins" order — the _opposite_ of Python's MRO ([pydantic#9992](https://github.com/pydantic/pydantic/issues/9992)). Community fixes were rejected as breaking changes, and the behavior may yet change in Pydantic v3. Storing `tinydantic`'s keys there would inherit those surprising semantics, risk future key collisions with Pydantic's own [ConfigDict][pydantic.ConfigDict], and couple binding resolution to behavior Pydantic itself may flip.
 
-Using a separate attribute with plain MRO lookup sidesteps all three problems. There is no scenario where "our order versus Pydantic's order" silently matters: a single inheritance chain resolves identically under both orderings, and the only case where they _could_ disagree — two unrelated bases with conflicting values — is turned into a loud `AmbiguousConfigError` rather than a quiet guess. This matches the rationale documented in the `tinydantic._config` module docstring.
+Using a separate attribute with plain MRO lookup sidesteps all three problems. There is no scenario where "our order versus Pydantic's order" silently matters: a single inheritance chain resolves identically under both orderings, and the only case where they _could_ disagree — two unrelated bases with conflicting values — is turned into a loud `AmbiguousConfigError` rather than a quiet guess. This matches the rationale documented in the `tinydantic._config` module docstring, and is written up for a Pydantic maintainer on the [Upstream Limitations](../contributing/upstream_limitations.md#model_config-merges-across-bases-in-last-wins-order-not-mro) page.
 
 > [!NOTE]
 >
-> `tinydantic` keeps one legitimate key in `model_config`: `protected_namespaces=("tinydantic_",)`, which reserves the `tinydantic_` prefix so future methods cannot collide with your field names. That is a genuine Pydantic setting, so it belongs there.
+> `tinydantic` keeps one legitimate key in `model_config`: `protected_namespaces=("tinydantic_", "model_validate", "model_dump")`. The first entry reserves the `tinydantic_` prefix so future methods cannot collide with your field names; the other two restate Pydantic's own default, which setting the key would otherwise replace. That is a genuine Pydantic setting, so it belongs there — see [Upstream Limitations](../contributing/upstream_limitations.md#protected_namespaces-replaces-the-default-instead-of-extending-it).
 
 ## Where next
 

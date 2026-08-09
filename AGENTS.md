@@ -23,7 +23,7 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 - interrogate demands 100% docstring coverage.
 - NEVER file issues on external repositories without explicit approval — draft collateral in `untracked/upstream/` instead.
 - `untracked/` (repo root) is git-ignored scratch space for drafts, notes, and review collateral; linters and formatters are configured to skip it. Never put anything there that the repo should keep.
-- Prefer TinyDB's public API. Internal/private TinyDB APIs (underscore-prefixed) may be used ONLY when the needed behavior is impossible through the public API; every such use must be explicitly called out and approved during planning/review, and documented — reason plus proposed upstream fix — on `docs/contributing/tinydb_limitations.md`. Keep that page current whenever TinyDB friction is found, worked around, or resolved. Forking or vendoring TinyDB was considered and rejected (2026-07-13) — don't propose it as a fallback.
+- Prefer the public API of every upstream dependency (TinyDB, pydantic). Internal/private APIs (underscore-prefixed, or in a private module) may be used ONLY when the needed behavior is impossible through the public API; every such use must be explicitly called out and approved during planning/review, and documented — reason plus proposed upstream fix — in that project's registry on `docs/contributing/upstream_limitations.md`. Keep that page current whenever upstream friction is found, worked around, or resolved. Forking or vendoring TinyDB was considered and rejected (2026-07-13) — don't propose it as a fallback.
 - Do not store tinydantic config in pydantic's `model_config` (pydantic#9992) — see the `src/tinydantic/_config.py` module docstring.
 
 ## Docs
