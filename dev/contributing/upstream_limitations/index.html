@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://tinydantic.dev/latest/contributing/tinydb_limitations/">
+        <link rel="canonical" href="https://tinydantic.dev/latest/contributing/upstream_limitations/">
       
       
         <link rel="prev" href="../static_typing/">
@@ -34,7 +34,7 @@
     
     
       
-        <title>TinyDB Limitations - tinydantic</title>
+        <title>Upstream Limitations - tinydantic</title>
       
     
     
@@ -96,7 +96,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tinydb-limitations" class="md-skip">
+        <a href="#upstream-limitations" class="md-skip">
           Skip to content
         </a>
       
@@ -135,7 +135,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              TinyDB Limitations
+              Upstream Limitations
             
           </span>
         </div>
@@ -1713,7 +1713,7 @@
   <span class="md-ellipsis">
     
   
-    TinyDB Limitations
+    Upstream Limitations
   
 
     
@@ -1731,7 +1731,7 @@
   <span class="md-ellipsis">
     
   
-    TinyDB Limitations
+    Upstream Limitations
   
 
     
@@ -1757,6 +1757,18 @@
     <ul class="md-nav__list" data-md-component="toc">
       
         <li class="md-nav__item">
+  <a href="#tinydb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TinyDB
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TinyDB">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#query-conditions-never-see-the-document-id" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1766,8 +1778,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#update_multiple-cannot-select-documents-by-id" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1777,8 +1789,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1788,8 +1800,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#document-ids-are-stringified-before-reaching-storages" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1799,8 +1811,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#query-objects-answer-bool-and-in-silently" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1810,28 +1822,28 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#private-api-usage-registry" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#tinydb-private-api-usage-registry" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Private API usage registry
+        TinyDB private API usage registry
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#resolved-upstream" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#resolved-upstream-in-tinydb" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Resolved upstream
+        Resolved upstream in TinyDB
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Resolved upstream">
+    <nav class="md-nav" aria-label="Resolved upstream in TinyDB">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1864,6 +1876,89 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pydantic
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pydantic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model_config-merges-across-bases-in-last-wins-order-not-mro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        model_config merges across bases in "last wins" order, not MRO
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#protected_namespaces-replaces-the-default-instead-of-extending-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        protected_namespaces replaces the default instead of extending it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic-private-api-usage-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pydantic private API usage registry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolved-upstream-in-pydantic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolved upstream in Pydantic
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resolved upstream in Pydantic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-whole-model_-prefix-was-reserved-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The whole model_ prefix was reserved by default
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -2084,6 +2179,18 @@
     <ul class="md-nav__list" data-md-component="toc">
       
         <li class="md-nav__item">
+  <a href="#tinydb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TinyDB
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TinyDB">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#query-conditions-never-see-the-document-id" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2093,8 +2200,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#update_multiple-cannot-select-documents-by-id" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2104,8 +2211,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2115,8 +2222,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#document-ids-are-stringified-before-reaching-storages" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2126,8 +2233,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#query-objects-answer-bool-and-in-silently" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2137,28 +2244,28 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#private-api-usage-registry" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#tinydb-private-api-usage-registry" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Private API usage registry
+        TinyDB private API usage registry
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#resolved-upstream" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#resolved-upstream-in-tinydb" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Resolved upstream
+        Resolved upstream in TinyDB
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Resolved upstream">
+    <nav class="md-nav" aria-label="Resolved upstream in TinyDB">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2198,6 +2305,89 @@
     </nav>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pydantic
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pydantic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model_config-merges-across-bases-in-last-wins-order-not-mro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        model_config merges across bases in "last wins" order, not MRO
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#protected_namespaces-replaces-the-default-instead-of-extending-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        protected_namespaces replaces the default instead of extending it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic-private-api-usage-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pydantic private API usage registry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolved-upstream-in-pydantic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolved upstream in Pydantic
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resolved upstream in Pydantic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-whole-model_-prefix-was-reserved-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The whole model_ prefix was reserved by default
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
     </ul>
   
@@ -2216,7 +2406,7 @@
                 
                   
   
-    <a href="https://github.com/tinydantic/tinydantic/edit/main/docs/contributing/tinydb_limitations.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/tinydantic/tinydantic/edit/main/docs/contributing/upstream_limitations.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75z"/></svg>
     </a>
@@ -2225,23 +2415,26 @@
     
       
     
-    <a href="https://github.com/tinydantic/tinydantic/raw/main/docs/contributing/tinydb_limitations.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/tinydantic/tinydantic/raw/main/docs/contributing/upstream_limitations.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5 5 5 0 0 1 5-5 5 5 0 0 1 5 5 5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5"/></svg>
     </a>
   
 
 
-<h1 id="tinydb-limitations">TinyDB Limitations<a class="headerlink" href="#tinydb-limitations" title="Permanent link">¤</a></h1>
-<p>This page documents the places where TinyDB's current implementation causes friction for <code>tinydantic</code>, the workarounds we carry because of them, and the improvements we would suggest upstream. It is written so that a TinyDB maintainer can read any section standalone and understand the limitation, why it matters to an ODM layered on top, and what change would resolve it.</p>
+<h1 id="upstream-limitations">Upstream Limitations<a class="headerlink" href="#upstream-limitations" title="Permanent link">¤</a></h1>
+<p><code>tinydantic</code> is a thin layer over two upstream projects: <a href="https://github.com/msiemens/tinydb">TinyDB</a> supplies the storage and query engine, <a href="https://github.com/pydantic/pydantic">Pydantic</a> supplies the model and validation machinery. This page documents the places where those projects' current implementations cause friction for <code>tinydantic</code>, the workarounds we carry because of them, and the improvements we would suggest upstream. Each section is written so that a maintainer of the project in question can read it standalone and understand the limitation, why it matters to an ODM layered on top, and what change would resolve it.</p>
+<p>There is one section per upstream project — <a href="#tinydb">TinyDB</a> and <a href="#pydantic">Pydantic</a> — and each carries its own private-API registry and its own resolved-upstream log.</p>
 <p>Two project policies anchor this page (see <code>AGENTS.md</code>):</p>
 <ul>
-<li><code>tinydantic</code> prefers TinyDB's public API. An internal/private TinyDB API (underscore-prefixed) may be used only when the needed behavior is impossible through the public API, only with explicit approval during planning/review, and every such use must be documented in the <a href="#private-api-usage-registry">registry below</a> with its reason and the upstream change that would make it unnecessary.</li>
-<li>Proposals to TinyDB are drafted in <code>untracked/upstream/</code> (git-ignored scratch space at the repository root) and are never filed on the TinyDB issue tracker without explicit approval.</li>
+<li><code>tinydantic</code> prefers each upstream project's public API. An internal/private API (underscore-prefixed, or living in a module marked private) may be used only when the needed behavior is impossible through the public API, only with explicit approval during planning/review, and every such use must be documented in that project's registry (<a href="#tinydb-private-api-usage-registry">TinyDB</a>, <a href="#pydantic-private-api-usage-registry">Pydantic</a>) with its reason and the upstream change that would make it unnecessary.</li>
+<li>Proposals to an upstream project are drafted in <code>untracked/upstream/</code> (git-ignored scratch space at the repository root) and are never filed on that project's issue tracker without explicit approval.</li>
 </ul>
-<p>This page must be kept current: whenever TinyDB friction is found, worked around, or resolved, update the relevant section here in the same change.</p>
-<p>All observations below were verified against TinyDB 4.9.0 (the minimum version <code>tinydantic</code> requires). Limitations that a TinyDB release has since fixed are moved to <a href="#resolved-upstream">Resolved upstream</a> rather than deleted, so the history of each workaround stays readable.</p>
-<h2 id="query-conditions-never-see-the-document-id">Query conditions never see the document id<a class="headerlink" href="#query-conditions-never-see-the-document-id" title="Permanent link">¤</a></h2>
+<p>This page must be kept current: whenever upstream friction is found, worked around, or resolved, update the relevant section here in the same change.</p>
+<p>Limitations that an upstream release has since fixed are moved to that project's resolved-upstream log (<a href="#resolved-upstream-in-tinydb">TinyDB</a>, <a href="#resolved-upstream-in-pydantic">Pydantic</a>) rather than deleted, so the history of each workaround stays readable.</p>
+<h2 id="tinydb">TinyDB<a class="headerlink" href="#tinydb" title="Permanent link">¤</a></h2>
+<p>All observations in this section were verified against TinyDB 4.9.0 (the minimum version <code>tinydantic</code> requires).</p>
+<h3 id="query-conditions-never-see-the-document-id">Query conditions never see the document id<a class="headerlink" href="#query-conditions-never-see-the-document-id" title="Permanent link">¤</a></h3>
 <p><strong>Limitation.</strong> TinyDB evaluates every query condition against the raw document <em>body</em> mapping — the value in the <code>{doc_id: body}</code> table dict — never against a <a href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.table.Document"><code>Document</code></a> carrying <code>doc_id</code>. All five evaluation sites behave this way: <code>Table.search()</code>, <code>Table.get(cond=...)</code>, and the updater loops inside <code>Table.update(cond=...)</code>, <code>Table.update_multiple()</code>, and <code>Table.remove(cond=...)</code>. (<code>Table._update_table()</code>'s docstring notes that skipping the <code>Document</code> wrap is a deliberate optimization.) Only <code>Table.__iter__</code> yields <code>Document</code> instances. Consequently, no query object — however it is constructed — can express "document id equals 1": the id is structurally invisible to the condition, even though it sits right there as the dict key in every evaluation loop.</p>
 <p><strong>Why it matters to an ODM.</strong> Every mainstream document ODM lets users query by the model's id attribute (Beanie and ODMantic translate <code>Model.id</code> to MongoDB's <code>_id</code>; Firestore special-cases <code>FieldPath.documentId()</code> because — exactly like TinyDB — its document key is not a body field). <code>tinydantic</code> maps its <code>id</code> field to <code>doc_id</code>, so supporting <code>User.get(User.id == 1)</code> required a translation layer: id-bearing conditions are detected in every model method and executed via <code>doc_id=</code>/<code>doc_ids=</code> operations or by iterating the table (the one API that yields <code>Document</code>s). See <code>src/tinydantic/_query.py</code> and the id-condition branches in <code>src/tinydantic/_model.py</code>.</p>
 <p><strong>Suggested improvement.</strong> An opt-in protocol that keeps the existing fast path free:</p>
@@ -2251,29 +2444,29 @@
 <li>At each of the five evaluation sites: <code>if getattr(cond, "needs_doc_id", False)</code>, wrap the body in <code>self.document_class(doc, self.document_id_class(doc_id))</code> before calling the condition; otherwise call it with the raw body exactly as today.</li>
 </ol>
 <p>Existing queries and third-party <code>QueryLike</code> objects pay nothing (the <code>getattr</code> default preserves current behavior); id queries work in every API including <code>update_multiple()</code>; the storage format is untouched. This would let <code>tinydantic</code> delete its entire translation layer.</p>
-<h2 id="update_multiple-cannot-select-documents-by-id"><code>update_multiple()</code> cannot select documents by id<a class="headerlink" href="#update_multiple-cannot-select-documents-by-id" title="Permanent link">¤</a></h2>
+<h3 id="update_multiple-cannot-select-documents-by-id"><code>update_multiple()</code> cannot select documents by id<a class="headerlink" href="#update_multiple-cannot-select-documents-by-id" title="Permanent link">¤</a></h3>
 <p><strong>Limitation.</strong> <code>Table.update(fields, cond, doc_ids)</code> and <code>Table.remove(cond, doc_ids)</code> both accept a <code>doc_ids</code> selector, but <code>Table.update_multiple(updates)</code> accepts only <code>(fields, cond)</code> pairs. Combined with the evaluation limitation above, there is no way to run a batched update that targets documents by id — neither via a condition (conditions cannot see ids) nor via an explicit selector (the parameter does not exist).</p>
-<p><strong>Why it matters to an ODM.</strong> <code>update_multiple()</code> is TinyDB's only batched write — the whole batch runs in one atomic read-modify-write cycle (<code>Table._update_table()</code>), which is the reason to use it over looping <code>update()</code>. <code>tinydantic</code> translates id conditions to <code>doc_ids=</code> operations where a public landing spot exists, but <code>update_multiple()</code> offers none, so supporting id conditions there (without sacrificing the batch's single-write atomicity) required the private-API use recorded in the <a href="#private-api-usage-registry">registry below</a>.</p>
+<p><strong>Why it matters to an ODM.</strong> <code>update_multiple()</code> is TinyDB's only batched write — the whole batch runs in one atomic read-modify-write cycle (<code>Table._update_table()</code>), which is the reason to use it over looping <code>update()</code>. <code>tinydantic</code> translates id conditions to <code>doc_ids=</code> operations where a public landing spot exists, but <code>update_multiple()</code> offers none, so supporting id conditions there (without sacrificing the batch's single-write atomicity) required the private-API use recorded in the <a href="#tinydb-private-api-usage-registry">registry below</a>.</p>
 <p><strong>Suggested improvement.</strong> Either of:</p>
 <ul>
 <li>Accept an optional per-pair id selector, e.g. <code>update_multiple(updates: Iterable[tuple[fields, cond | None, doc_ids | None]])</code> (or a parallel <code>update_multiple_by_ids()</code>), mirroring the <code>update()</code>/<code>remove()</code> signatures.</li>
 <li>Ship the <code>needs_doc_id</code>/<code>DocId</code> improvement above, which subsumes this: id conditions would then work in <code>update_multiple()</code>'s existing signature.</li>
 </ul>
-<h2 id="updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently"><code>update(doc_ids=…)</code> and <code>remove(doc_ids=…)</code> skip missing ids silently<a class="headerlink" href="#updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently" title="Permanent link">¤</a></h2>
+<h3 id="updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently"><code>update(doc_ids=…)</code> and <code>remove(doc_ids=…)</code> skip missing ids silently<a class="headerlink" href="#updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently" title="Permanent link">¤</a></h3>
 <p><strong>Limitation.</strong> As of TinyDB 4.9.0 (<a href="https://github.com/msiemens/tinydb/issues/591">#591</a>), <code>Table.update(fields, doc_ids=…)</code> and <code>Table.remove(doc_ids=…)</code> filter the requested ids down to those present in the table, operate on that subset, and return only the ids they actually touched. An id that does not exist is not reported in any way. Before 4.9.0 the same call raised a bare <code>KeyError</code> partway through the updater — which was its own problem (an uncurated exception, raised after some documents had already been mutated in the working copy).</p>
 <p><strong>Why it matters to an ODM.</strong> The new behavior makes a mixed batch a <strong>partial write that reports success</strong>: <code>update(fields, doc_ids=[1, 999])</code> on a table without document 999 updates document 1, returns <code>[1]</code>, and leaves the caller to notice that the returned list is shorter than the one they passed. A typo'd id in a batch is silently a different operation than the one requested. That is precisely the silent-wrong failure mode <code>tinydantic</code> exists to eliminate, and the returned-list-length check that would catch it is exactly the kind of bookkeeping users do not write.</p>
 <p><code>tinydantic</code> therefore keeps <code>TinydanticModel._check_doc_ids_exist()</code> (<code>src/tinydantic/_model.py</code>), which reads the table once and raises <a class="autorefs autorefs-internal" title="            DocumentNotFoundError" href="../../reference/api/tinydantic/#tinydantic.DocumentNotFoundError"><code>DocumentNotFoundError</code></a> for the first id that is absent, <strong>before</strong> any write is attempted. A batch naming a missing id is refused whole rather than applied in part, so <code>update()</code>/<code>remove()</code> keep all-or-nothing semantics across both the validated and <code>validate_writes=False</code> paths. The cost is one extra table read per id-selected write.</p>
 <p>Note that this is deliberately <em>stricter</em> than <code>Table.get(doc_ids=…)</code>, which has always skipped missing ids and which <code>tinydantic</code> mirrors as-is — a read that returns fewer documents than requested is self-describing, whereas a write that silently narrows its own target set is not.</p>
 <p><strong>Suggested improvement.</strong> Return enough information to distinguish "skipped" from "done", or let the caller choose. Either a <code>strict: bool = False</code> parameter on <code>update()</code>/<code>remove()</code> that raises a dedicated <code>MissingDocumentIDError</code> naming the absent ids, or a documented guarantee that the returned list can be compared against the requested one (plus a note in the docstring that it <em>must</em> be, to detect partial application).</p>
-<h2 id="document-ids-are-stringified-before-reaching-storages">Document ids are stringified before reaching storages<a class="headerlink" href="#document-ids-are-stringified-before-reaching-storages" title="Permanent link">¤</a></h2>
+<h3 id="document-ids-are-stringified-before-reaching-storages">Document ids are stringified before reaching storages<a class="headerlink" href="#document-ids-are-stringified-before-reaching-storages" title="Permanent link">¤</a></h3>
 <p><strong>Limitation.</strong> Before table data is handed to the storage layer, document ids are converted to strings (<code>{str(doc_id): doc}</code> in <code>Table._update_table()</code>), because the reference JSON storage requires string keys. Storages and middlewares therefore never see the native int ids, and serialized output sorts ids lexicographically (<code>"10"</code> before <code>"2"</code>). See the upstream discussion <a href="https://github.com/msiemens/tinydb/discussions/466">msiemens/tinydb#466</a>.</p>
 <p><strong>Why it matters.</strong> Human-readable storage output (a design goal of <code>tinydantic</code>'s YAML storage) lists documents in confusing lexicographic order. <code>tinydantic</code> ships <code>SortIntDocIDsMiddleware</code> (<code>src/tinydantic/tinydb/middlewares.py</code>) purely to undo the stringification — it converts keys back to ints, pre-sorted numerically — and that middleware has to pass ints where the <code>Storage</code> protocol declares strings, an acknowledged hack.</p>
 <p><strong>Suggested improvement.</strong> Let storages opt into native id keys (for example, a class attribute on <code>Storage</code> declaring whether keys must be strings), or perform the stringification inside <code>JSONStorage</code> rather than in <code>Table</code>, so key formatting becomes a storage concern.</p>
-<h2 id="query-objects-answer-bool-and-in-silently">Query objects answer <code>bool()</code> and <code>in</code> silently<a class="headerlink" href="#query-objects-answer-bool-and-in-silently" title="Permanent link">¤</a></h2>
+<h3 id="query-objects-answer-bool-and-in-silently">Query objects answer <code>bool()</code> and <code>in</code> silently<a class="headerlink" href="#query-objects-answer-bool-and-in-silently" title="Permanent link">¤</a></h3>
 <p><strong>Limitation.</strong> <code>QueryInstance</code> defines no <code>__bool__</code> and no <code>__len__</code>, so every condition is truthy — <code>bool(where("name") == "Alice")</code> is <code>True</code>, and so is the same expression for a value no document holds. <code>Query</code> additionally defines <code>__getitem__</code> (the alternate spelling for nested keys) but no <code>__iter__</code>, so Python's legacy sequence protocol makes <code>x in Query().name</code> iterate the query and report <code>True</code> for any <code>x</code>. A non-string path step is read as a callable to apply (<code>_generate_test</code>'s runner), so <code>Query().tags[0] == "red"</code> raises internally, is swallowed by the runner's <code>except (KeyError, TypeError)</code>, and matches nothing.</p>
 <p><strong>Why it matters.</strong> <code>tinydantic</code> presents these objects as its primary query API, so <code>if User.name == requested:</code> reads like an existence check, passes review, and is permanently true. <code>tinydantic</code> therefore ships <code>GuardedQuery</code>/<code>GuardedCondition</code> (<code>src/tinydantic/_query.py</code>), which raise <code>QueryConditionError</code> for all three. Because TinyDB constructs conditions with <code>QueryInstance(...)</code> directly — a <code>Query</code> subclass cannot change what its own comparisons return — the guard is applied by reassigning <code>__class__</code> on the object TinyDB just built. That uses no private names and preserves the test function and hashval (so guarded conditions still compare, hash, and cache identically), but it does depend on <code>QueryInstance</code> remaining a plain, <code>__slots__</code>-free class. Each of the ~15 public condition builders is overridden to apply it; a builder added by a future TinyDB would return an unguarded condition, degrading to today's behavior rather than breaking.</p>
 <p><strong>Suggested improvement.</strong> Define <code>__bool__</code> on <code>QueryInstance</code> (and <code>__iter__</code> on <code>Query</code>) to raise <code>TypeError</code>, following the numpy/pandas ambiguous-truth precedent; reject non-string path steps in <code>__getitem__</code>. Failing that, a public hook for the condition type a <code>Query</code> subclass builds (for example a <code>condition_class</code> class attribute consulted by <code>_generate_test</code>) would remove the need to retag.</p>
-<h2 id="private-api-usage-registry">Private API usage registry<a class="headerlink" href="#private-api-usage-registry" title="Permanent link">¤</a></h2>
+<h3 id="tinydb-private-api-usage-registry">TinyDB private API usage registry<a class="headerlink" href="#tinydb-private-api-usage-registry" title="Permanent link">¤</a></h3>
 <p>Every approved use of a TinyDB internal/private API in <code>tinydantic</code> is recorded here. An empty table means the shipped code uses only the public API.</p>
 <table>
 <thead>
@@ -2302,19 +2495,97 @@
 </tr>
 </tbody>
 </table>
-<h2 id="resolved-upstream">Resolved upstream<a class="headerlink" href="#resolved-upstream" title="Permanent link">¤</a></h2>
+<h3 id="resolved-upstream-in-tinydb">Resolved upstream in TinyDB<a class="headerlink" href="#resolved-upstream-in-tinydb" title="Permanent link">¤</a></h3>
 <p>Limitations recorded here that a later TinyDB release has fixed. They are kept so the history of each workaround stays readable, and so a reader can tell "we never hit this" apart from "we hit it and it is gone now".</p>
-<h3 id="update-field-mappings-were-mistyped-as-callables"><code>update()</code> field mappings were mistyped as callables<a class="headerlink" href="#update-field-mappings-were-mistyped-as-callables" title="Permanent link">¤</a></h3>
+<h4 id="update-field-mappings-were-mistyped-as-callables"><code>update()</code> field mappings were mistyped as callables<a class="headerlink" href="#update-field-mappings-were-mistyped-as-callables" title="Permanent link">¤</a></h4>
 <p><strong>Resolved in TinyDB 4.9.0</strong> (<a href="https://github.com/msiemens/tinydb/pull/621">#621</a>, plus the matching retype of <code>tinydb.operations</code>).</p>
 <p><code>Table.update()</code> and <code>Table.update_multiple()</code> annotated their <code>fields</code> parameter as <code>Mapping | Callable[[Mapping], None]</code>. The transform they actually invoke is handed a mutable <code>dict</code>, so a correctly-typed <code>Callable[[MutableMapping], None]</code> transform was <em>rejected</em> by static type checkers under parameter contravariance — the documented, working call was the one that failed to type-check.</p>
 <p>Every <code>tinydantic</code> call into these methods carried a <code>cast("Callable[[Mapping], None]", …)</code> band-aid marked <code>TODO @cdwilson: remove this cast once the annotation is fixed in TinyDB</code>. TinyDB 4.9.0 retyped the parameter to <code>Mapping | Callable[[MutableMapping], None]</code>, which is exactly the signature <code>tinydantic.tinydb.operations.replace()</code> already advertised, so all four casts were deleted (<code>src/tinydantic/_model.py</code>) along with an internal <code>cast("dict[str, Any]", body)</code> inside <code>TinydanticModel._rotated()</code>.</p>
-<h3 id="querytest-raised-on-unhashable-arguments"><code>Query.test()</code> raised on unhashable arguments<a class="headerlink" href="#querytest-raised-on-unhashable-arguments" title="Permanent link">¤</a></h3>
+<h4 id="querytest-raised-on-unhashable-arguments"><code>Query.test()</code> raised on unhashable arguments<a class="headerlink" href="#querytest-raised-on-unhashable-arguments" title="Permanent link">¤</a></h4>
 <p><strong>Resolved in TinyDB 4.9.0</strong> (<a href="https://github.com/msiemens/tinydb/issues/517">#517</a>).</p>
 <p><code>Query.test(func, *args)</code> built its hashval from the raw <code>args</code> tuple, so passing a list or dict produced a condition that raised <code>TypeError: unhashable type</code> the first time it reached the query cache. TinyDB 4.9.0 freezes the arguments (and falls back to marking a condition uncacheable rather than crashing when a value cannot be frozen).</p>
-<p>This matters to <code>tinydantic</code> beyond the raw fix: <code>has_id_condition()</code> detects id conditions by walking <code>QueryInstance._hash</code> (see the <a href="#private-api-usage-registry">registry below</a>), so a composed query containing an unhashable <code>test()</code> argument previously lost its hashval and degraded to <code>DocumentIDConditionError</code>. Such compositions now keep their hashval and resolve normally.</p>
-<h3 id="touch-failed-on-a-bare-relative-filename"><code>touch()</code> failed on a bare relative filename<a class="headerlink" href="#touch-failed-on-a-bare-relative-filename" title="Permanent link">¤</a></h3>
+<p>This matters to <code>tinydantic</code> beyond the raw fix: <code>has_id_condition()</code> detects id conditions by walking <code>QueryInstance._hash</code> (see the <a href="#tinydb-private-api-usage-registry">registry above</a>), so a composed query containing an unhashable <code>test()</code> argument previously lost its hashval and degraded to <code>DocumentIDConditionError</code>. Such compositions now keep their hashval and resolve normally.</p>
+<h4 id="touch-failed-on-a-bare-relative-filename"><code>touch()</code> failed on a bare relative filename<a class="headerlink" href="#touch-failed-on-a-bare-relative-filename" title="Permanent link">¤</a></h4>
 <p><strong>Resolved in TinyDB 4.9.0</strong> (<a href="https://github.com/msiemens/tinydb/pull/619">#619</a>).</p>
 <p><code>tinydb.storages.touch()</code> derived the parent directory with <code>os.path.dirname(path)</code> and, for a path with no directory part, called <code>os.makedirs("")</code> — raising <code>FileNotFoundError</code>. <code>tinydantic</code>'s <code>YAMLStorage</code> calls that helper directly, so <code>TinyDB("db.yaml", storage=YAMLStorage, create_dirs=True)</code> failed for any bare filename; only a path with an explicit directory worked. The fix is inherited with no <code>tinydantic</code> change, and both shapes are now covered by <code>tests/tinydb/storages/test_yaml_storage.py</code>.</p>
+<h2 id="pydantic">Pydantic<a class="headerlink" href="#pydantic" title="Permanent link">¤</a></h2>
+<p>All observations in this section were verified against Pydantic 2.11 (the minimum version <code>tinydantic</code> requires) and re-checked against 2.13.</p>
+<h3 id="model_config-merges-across-bases-in-last-wins-order-not-mro"><code>model_config</code> merges across bases in "last wins" order, not MRO<a class="headerlink" href="#model_config-merges-across-bases-in-last-wins-order-not-mro" title="Permanent link">¤</a></h3>
+<p><strong>Limitation.</strong> Pydantic builds a model's effective <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/latest/api/pydantic/base_model/#pydantic.BaseModel.model_config"><code>model_config</code></a> by walking the bases left to right and letting each one overwrite what came before, so the <em>last</em> base to set a key wins. Python's MRO says the <em>first</em> one does. The two orderings are exact opposites, and nothing warns when they disagree (<a href="https://github.com/pydantic/pydantic/issues/9992">pydantic#9992</a>, open, carrying the v3 milestone):</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">A</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">B</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="k">class</span><span class="w"> </span><span class="nc">C</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="k">pass</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">C</span><span class="o">.</span><span class="vm">__mro__</span>  <span class="c1"># (C, A, B, BaseModel, object) — A wins under Python&#39;s rules</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">C</span><span class="o">.</span><span class="n">model_config</span><span class="p">[</span><span class="s2">&quot;strict&quot;</span><span class="p">]</span>  <span class="c1"># False — B wins under Pydantic&#39;s</span>
+</span></code></pre></div>
+<p>Every other attribute on <code>C</code> — methods, class variables, <code>__tinydantic_config__</code> — resolves through <code>A</code>. Only <code>model_config</code> resolves through <code>B</code>.</p>
+<p><strong>Why it matters to an ODM.</strong> An ODM's configuration decides <em>where writes land</em>. <code>tinydantic</code> models are bound to a database and a table (<code>database=</code>, <code>table_name=</code>), and mixin-plus-base composition is the normal way to build them: a <code>Timestamped</code> mixin combined with a base class that carries the binding, or two bases that each bind a different database. Under "last wins", <code>class Report(ProductionBase, ScratchBase)</code> would read its binding from <code>ScratchBase</code> while every reader of the code — and every other attribute on the class — says <code>ProductionBase</code>. That is not a misconfigured flag; it is documents silently written to the wrong table, discovered later or never.</p>
+<p><code>tinydantic</code> therefore keeps its configuration out of <code>model_config</code> entirely. Each class stores only the keys explicitly set on it in its own <code>__tinydantic_config__</code> attribute, and lookup walks <code>cls.__mro__</code> for the first class that provides the key — plain Python attribute semantics, which is what a reader already expects. For the one case where the two orderings could genuinely disagree (two <em>unrelated</em> bases providing conflicting values for the same key), <code>tinydantic</code> refuses to guess and raises <a class="autorefs autorefs-internal" title="            AmbiguousConfigError" href="../../reference/api/tinydantic/#tinydantic.AmbiguousConfigError"><code>AmbiguousConfigError</code></a> at class-definition time. See <code>src/tinydantic/_config.py</code> and the <a href="../../usage/configuration/#design-notes-why-config-is-not-in-model_config">Configuration</a> page.</p>
+<p>The cost of the workaround is real but small: <code>tinydantic</code> config does not show up in <code>model_config</code>, and users who expect one config dict have two to learn.</p>
+<p><strong>Suggested improvement.</strong> Merge <code>model_config</code> in MRO order — <code>for base in reversed(cls.__mro__)</code> rather than left-to-right over <code>bases</code> — so config resolution matches every other attribute on the class. That is a breaking change for models that today depend on the inverted order, which is presumably why it carries the v3 milestone. A non-breaking interim step would help downstream libraries regardless: warn at class-creation time when two bases set the same <code>model_config</code> key to different values, which is exactly the case where the current order is doing something the reader did not ask for.</p>
+<h3 id="protected_namespaces-replaces-the-default-instead-of-extending-it"><code>protected_namespaces</code> replaces the default instead of extending it<a class="headerlink" href="#protected_namespaces-replaces-the-default-instead-of-extending-it" title="Permanent link">¤</a></h3>
+<p><strong>Limitation.</strong> <code>protected_namespaces</code> is an ordinary <code>ConfigDict</code> key, so setting it on a subclass <em>replaces</em> the inherited value rather than adding to it. A library that wants to reserve its own prefix has to restate Pydantic's defaults alongside it, and there is no public constant to restate them from — the value lives in <code>pydantic._internal._config.config_defaults</code>. Forgetting to restate them is silent: nothing warns that a model just gave up namespace protection.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Plain</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="c1"># UserWarning: conflicts with protected namespace &#39;model_dump&#39;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">model_dump_toml</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="k">class</span><span class="w"> </span><span class="nc">Own</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">protected_namespaces</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;app_&quot;</span><span class="p">,))</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="c1"># no warning at all — Pydantic&#39;s default is gone, not extended</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">model_dump_toml</span><span class="p">:</span> <span class="nb">str</span>
+</span></code></pre></div>
+<p><strong>Why it matters to an ODM.</strong> <code>tinydantic</code> reserves the <code>tinydantic_</code> prefix so that a method added in a future release cannot collide with a field name a user has already stored — the use case Samuel Colvin described in <a href="https://github.com/pydantic/pydantic/issues/10315">pydantic#10315</a> when the <code>model_</code> default was narrowed. Setting <code>protected_namespaces=("tinydantic_",)</code> did exactly that, and silently dropped Pydantic's own forward-compat protection for <code>model_validate*</code>/<code>model_dump*</code> names.</p>
+<p>That gap is narrower than it first looks, because <code>tinydantic</code> already refuses field names that collide with an attribute that exists <em>today</em>: <code>ShadowedFieldError</code> covers every attribute on the class, where Pydantic's namespaces cover two prefixes. A field named <code>model_dump_json</code> is refused by <code>tinydantic</code> either way. What the dropped default cost was protection against names Pydantic might claim <em>tomorrow</em> — a field named <code>model_dump_toml</code> was accepted with no warning, and would start raising <code>ShadowedFieldError</code> at import time the day a Pydantic release adds that method, with the name already baked into stored documents.</p>
+<p><code>tinydantic</code> now restates the defaults explicitly (<code>src/tinydantic/_model.py</code>):</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">protected_namespaces</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;tinydantic_&quot;</span><span class="p">,</span> <span class="s2">&quot;model_validate&quot;</span><span class="p">,</span> <span class="s2">&quot;model_dump&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>so a <code>tinydantic</code> model is never <em>less</em> protected than the plain <code>BaseModel</code> a user would otherwise have written. The literal is a copy of a private default, so it needs re-checking whenever the Pydantic floor moves — <code>tests/model/test_model_config.py</code> reads the default out of Pydantic and asserts <code>tinydantic</code>'s tuple still covers it, so a Pydantic release that reserves a new prefix fails the suite rather than quietly losing the protection.</p>
+<p><strong>Suggested improvement.</strong> Either export the default as a public constant (<code>pydantic.config.DEFAULT_PROTECTED_NAMESPACES</code>) so downstream libraries can extend rather than copy it, or make <code>protected_namespaces</code> accumulate across the MRO the way a set of reservations naturally should — a subclass reserving its own prefix almost never means "and drop the ones my base reserved". The second is the smaller change for users and removes the failure mode entirely.</p>
+<h3 id="pydantic-private-api-usage-registry">Pydantic private API usage registry<a class="headerlink" href="#pydantic-private-api-usage-registry" title="Permanent link">¤</a></h3>
+<p>Every approved use of a Pydantic internal/private API in <code>tinydantic</code> is recorded here.</p>
+<table>
+<thead>
+<tr>
+<th>Pydantic internal</th>
+<th>Used by</th>
+<th>Status</th>
+<th>Reason</th>
+<th>Upstream change that would remove it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pydantic._internal._model_construction.ModelMetaclass</code> (name only, under <code>TYPE_CHECKING</code>)</td>
+<td><code>TinydanticModelMetaclass</code>, the metaclass of <code>TinydanticModel</code> (<code>src/tinydantic/_model.py</code>)</td>
+<td><strong>In use</strong> (shipped with the original model work; recorded here 2026-08-08)</td>
+<td><code>tinydantic</code> must run at class-creation time — to capture <code>database=</code>/<code>table_name=</code> class keywords, resolve <code>__tinydantic_config__</code>, and detect shadowed fields — which requires subclassing <code>BaseModel</code>'s metaclass. Pydantic exports no public name for it. The exposure is limited to type-checking: the import sits in an <code>if TYPE_CHECKING</code> block and the runtime branch resolves the same class as <code>type(BaseModel)</code>, so no Pydantic internal is imported at runtime and moving the module would not break an installed <code>tinydantic</code>.</td>
+<td>A public re-export, e.g. <code>pydantic.ModelMetaclass</code>, so the type-checking import can name a supported path.</td>
+</tr>
+<tr>
+<td><code>pydantic._internal._config.config_defaults["protected_namespaces"]</code> (test-only)</td>
+<td><code>tests/model/test_model_config.py</code> — asserting <code>tinydantic</code>'s reservations still cover Pydantic's defaults</td>
+<td><strong>In use</strong> (added with the <code>protected_namespaces</code> fix above)</td>
+<td>The default has no public accessor, and the alternative to reading it is hard-coding the same tuple in the test that is supposed to catch it drifting. Test-only, so no shipped code depends on it; if Pydantic moves the attribute the test fails loudly rather than silently passing.</td>
+<td>The <code>DEFAULT_PROTECTED_NAMESPACES</code> constant suggested above.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="resolved-upstream-in-pydantic">Resolved upstream in Pydantic<a class="headerlink" href="#resolved-upstream-in-pydantic" title="Permanent link">¤</a></h3>
+<p>Limitations recorded here that a later Pydantic release has fixed.</p>
+<h4 id="the-whole-model_-prefix-was-reserved-by-default">The whole <code>model_</code> prefix was reserved by default<a class="headerlink" href="#the-whole-model_-prefix-was-reserved-by-default" title="Permanent link">¤</a></h4>
+<p><strong>Resolved in Pydantic 2.10</strong> (<a href="https://github.com/pydantic/pydantic/issues/10315">#10315</a>, <a href="https://github.com/pydantic/pydantic/pull/10441">PR #10441</a>).</p>
+<p><code>protected_namespaces</code> defaulted to <code>("model_",)</code>, so any field beginning with <code>model_</code> drew a <code>UserWarning</code> — including ordinary domain vocabulary such as <code>model_id</code>, <code>model_name</code>, or <code>model_version</code>, none of which collide with anything Pydantic defines. The advertised escape (<code>model_config["protected_namespaces"] = ()</code>) turned the protection off wholesale, which is a poor trade for a false positive. Pydantic 2.10 narrowed the default to <code>("model_validate", "model_dump")</code>, so only names that plausibly shadow a real method are flagged.</p>
+<p><code>tinydantic</code>'s floor is Pydantic 2.11, so this is inherited with no <code>tinydantic</code> change and no advice for users to work around. It also made restating the defaults cheap enough to be the right fix for the <a href="#protected_namespaces-replaces-the-default-instead-of-extending-it">limitation above</a>: copying a two-entry list of method-name prefixes is defensible, where copying a blanket <code>model_</code> reservation would not have been.</p>
 
 
 
