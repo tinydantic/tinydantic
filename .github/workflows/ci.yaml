@@ -17,6 +17,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Default the GITHUB_TOKEN to no scopes at all; the jobs that check the
+# repository out opt back into `contents: read` individually.
+permissions: {}
+
 env:
   PYTHONUNBUFFERED: "1"
   FORCE_COLOR: "1"
@@ -27,6 +31,8 @@ jobs:
   # access at runtime (e.g. to download schema files).
   online-checks:
     name: Checks that require network access
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -75,6 +81,8 @@ jobs:
 
   types:
     name: Type checkers (mypy and pyright)
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -90,6 +98,8 @@ jobs:
       Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-')
       && 'macOS' || startsWith(matrix.os, 'windows-')
       && 'Windows' || 'Linux' }}
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
