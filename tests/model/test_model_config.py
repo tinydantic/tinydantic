@@ -89,6 +89,32 @@ class TestClassKwargsConfig:
             "protected_namespaces", ()
         )
 
+    def test_pydantic_default_namespaces_are_kept(self):
+        """Reserving tinydantic_ does not drop pydantic's defaults.
+
+        ``protected_namespaces`` replaces the inherited value rather
+        than extending it, so tinydantic restates pydantic's default
+        alongside its own prefix (see the Upstream Limitations page).
+        Read the default from pydantic itself, so this fails loudly
+        if a future release changes it.
+        """
+        from pydantic._internal._config import (  # noqa: PLC0415
+            config_defaults,
+        )
+
+        default = config_defaults.get("protected_namespaces", ())
+        reserved = TinydanticModel.model_config.get("protected_namespaces", ())
+        assert set(default) <= set(reserved)
+
+    def test_future_pydantic_method_name_warns(self, memory_db: TinyDB):
+        """A model_dump_* field warns as it would on a BaseModel."""
+        with pytest.warns(UserWarning, match="model_dump"):
+
+            class Report(TinydanticModel, database=memory_db):
+                """Test model naming a method pydantic may add."""
+
+                model_dump_toml: str
+
 
 class TestUnboundModel:
     """Behavior of models with no database anywhere."""
