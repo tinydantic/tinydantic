@@ -555,8 +555,17 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     model_config: ClassVar[ConfigDict] = ConfigDict(
         # Reserve the tinydantic_ prefix so future tinydantic methods
         # cannot collide with user-defined fields (the use case Samuel
-        # Colvin described in pydantic#10315).
-        protected_namespaces=("tinydantic_",),
+        # Colvin described in pydantic#10315). protected_namespaces
+        # REPLACES the inherited value rather than extending it, so
+        # pydantic's own defaults are restated here — otherwise a
+        # tinydantic model would be less protected than the plain
+        # BaseModel the user would have written. Keep in sync with
+        # pydantic's default (test_model_config.py asserts it).
+        protected_namespaces=(
+            "tinydantic_",
+            "model_validate",
+            "model_dump",
+        ),
         # Assignment must not silently corrupt an instance that will
         # later be persisted; subclasses may opt out via their own
         # model_config.
@@ -1556,8 +1565,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         read-modify-write race between passes). Every sanctioned
         private-API dependency (including the read-only
         ``QueryInstance._hash`` walk in ``has_id_condition``) is
-        recorded in the registry on the TinyDB Limitations page,
-        with the upstream changes that would remove it.
+        recorded in the TinyDB registry on the Upstream
+        Limitations page, with the upstream changes that would
+        remove it.
 
         Raises:
             TinydanticError: If the installed TinyDB does not
@@ -1571,8 +1581,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 "id-condition writes, but "
                 f"tinydb {metadata.version('tinydb')} does not "
                 "provide it. Pin an older tinydb or upgrade "
-                "tinydantic (see the TinyDB Limitations page in "
-                "the tinydantic docs)."
+                "tinydantic (see the Upstream Limitations page "
+                "in the tinydantic docs)."
             )
             raise TinydanticError(msg)
         matched: list[int] = []
@@ -1585,7 +1595,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         try:
             # Private-API use approved per the AGENTS.md policy;
-            # documented on docs/contributing/tinydb_limitations.md.
+            # documented on
+            # docs/contributing/upstream_limitations.md.
             table._update_table(run)  # noqa: SLF001
         except _NothingMatchedError:
             return []
