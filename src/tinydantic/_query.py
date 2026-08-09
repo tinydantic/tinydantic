@@ -434,7 +434,7 @@ def has_id_condition(cond: object) -> bool:
     # QueryInstance keeps its hash tree in the private ``_hash``
     # attribute; TinyDB offers no public accessor. This read-only
     # dependency is recorded in the private-API registry on the
-    # TinyDB Limitations docs page. getattr keeps it tolerant of
+    # Upstream Limitations docs page. getattr keeps it tolerant of
     # arbitrary QueryLike objects — and if a future TinyDB renames
     # the attribute, detection degrades loudly, not silently:
     # bare DocIdConditions are still caught by the isinstance
