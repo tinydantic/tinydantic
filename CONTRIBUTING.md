@@ -15,7 +15,7 @@ Thanks for your interest in contributing to `tinydantic`!
 
 ## I have a question
 
-If you have a question about how to _use_ `tinydantic`, first check out the [documentation](https://tinydantic.dev).
+If you have a question about how to _use_ `tinydantic`, first check out the [documentation](https://tinydantic.github.io/tinydantic/).
 
 If you still need help, feel free to [start a discussion](https://github.com/tinydantic/tinydantic/discussions/new/choose)!
 

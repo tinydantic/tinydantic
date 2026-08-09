@@ -4,7 +4,7 @@
 
 site_name: tinydantic
 site_description: A simple Python object-document mapper (ODM) for TinyDB
-site_url: https://tinydantic.dev
+site_url: https://tinydantic.github.io/tinydantic/
 repo_url: https://github.com/tinydantic/tinydantic
 repo_name: tinydantic/tinydantic
 edit_uri: edit/main/docs/

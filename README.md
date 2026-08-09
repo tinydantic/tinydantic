@@ -30,7 +30,7 @@
 
 <!-- overview-end -->
 
-Full documentation — including a CRUD tour, query guide, storage backends, and FastAPI integration — is available at [tinydantic.dev](https://tinydantic.dev).
+Full documentation — including a CRUD tour, query guide, storage backends, and FastAPI integration — is available at [tinydantic.github.io/tinydantic](https://tinydantic.github.io/tinydantic/).
 
 ## Table of Contents
 
@@ -89,7 +89,7 @@ Every `tinydantic` model stores its documents in a [TinyDB](https://tinydb.readt
 
 ### Define a model
 
-A document model is a subclass of [TinydanticModel](https://tinydantic.dev/latest/reference/api/tinydantic/#tinydantic.TinydanticModel). Pass the `database` and `table_name` as class keyword arguments, then declare fields with ordinary type annotations.
+A document model is a subclass of [TinydanticModel](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel). Pass the `database` and `table_name` as class keyword arguments, then declare fields with ordinary type annotations.
 
 ```pycon
 >>> from tinydantic import TinydanticModel
@@ -101,11 +101,11 @@ A document model is a subclass of [TinydanticModel](https://tinydantic.dev/lates
 
 > [!TIP]
 >
-> Because `User` is a subclass of [TinydanticModel](https://tinydantic.dev/latest/reference/api/tinydantic/#tinydantic.TinydanticModel) (itself a subclass of [pydantic.BaseModel](https://docs.pydantic.dev/latest/api/base_model/#pydantic.BaseModel)), it is a full Pydantic model. Everything you know about Pydantic — validators, computed fields, JSON schema, rich types — works here.
+> Because `User` is a subclass of [TinydanticModel](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel) (itself a subclass of [pydantic.BaseModel](https://docs.pydantic.dev/latest/api/base_model/#pydantic.BaseModel)), it is a full Pydantic model. Everything you know about Pydantic — validators, computed fields, JSON schema, rich types — works here.
 
 ### Insert a document
 
-Create an instance and call [insert()](https://tinydantic.dev/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.insert). Before insertion the model's `id` is `None`; afterwards it carries the document id TinyDB assigned.
+Create an instance and call [insert()](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.insert). Before insertion the model's `id` is `None`; afterwards it carries the document id TinyDB assigned.
 
 ```pycon
 >>> alice = User(name="Alice", age=37)
@@ -118,7 +118,7 @@ User(id=1, name='Alice', age=37)
 
 ### Read it back
 
-Query the table by building a condition from a model field. [get()](https://tinydantic.dev/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.get) returns a single validated model instance (or `None`).
+Query the table by building a condition from a model field. [get()](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.get) returns a single validated model instance (or `None`).
 
 ```pycon
 >>> User.get(User.name == "Alice")
@@ -134,7 +134,7 @@ That query runs correctly, but `mypy` or `pyright` will flag it. On the _class_,
 error: Argument 1 to "get" has incompatible type "bool"; expected "QueryLike"
 ```
 
-Wrap the field in [q()](https://tinydantic.dev/latest/reference/api/tinydantic/#tinydantic.q) to tell the checker what actually happens at runtime:
+Wrap the field in [q()](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.q) to tell the checker what actually happens at runtime:
 
 ```pycon
 >>> from tinydantic import q
@@ -149,11 +149,11 @@ User(id=1, name='Alice', age=37)
 >
 > Reach for `q()` rather than silencing the error. `get()`, `get_or_raise()`, and `find()` are overloaded, and when no overload matches, `mypy` gives up on the whole call and types the result `Any` — so a `# type: ignore` hides the message and leaves you with an unchecked value where a `User` should be.
 
-See [Queries → Static type checking](https://tinydantic.dev/latest/usage/queries/#static-type-checking) for what `q()` does and does not fix.
+See [Queries → Static type checking](https://tinydantic.github.io/tinydantic/latest/usage/queries/#static-type-checking) for what `q()` does and does not fix.
 
 ### Update it
 
-Mutate the instance and call [save()](https://tinydantic.dev/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.save). Because the model already has an `id`, `save()` updates the stored document in place.
+Mutate the instance and call [save()](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.save). Because the model already has an `id`, `save()` updates the stored document in place.
 
 ```pycon
 >>> alice.age = 38
@@ -166,7 +166,7 @@ User(id=1, name='Alice', age=38)
 
 ### Delete it
 
-Call [delete()](https://tinydantic.dev/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.delete) to remove the document. Querying for it afterwards returns `None`.
+Call [delete()](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.delete) to remove the document. Querying for it afterwards returns `None`.
 
 ```pycon
 >>> alice.delete()
@@ -211,7 +211,7 @@ Pydantic refuses to hand you a `User` that does not satisfy the model, so data p
 
 <!-- quickstart-end -->
 
-From here, the [CRUD tour](https://tinydantic.dev/latest/usage/crud/) covers every create, read, update, and delete method with the sharp edges spelled out, and [Queries](https://tinydantic.dev/latest/usage/queries/) covers comparisons, logical composition, and nested fields.
+From here, the [CRUD tour](https://tinydantic.github.io/tinydantic/latest/usage/crud/) covers every create, read, update, and delete method with the sharp edges spelled out, and [Queries](https://tinydantic.github.io/tinydantic/latest/usage/queries/) covers comparisons, logical composition, and nested fields.
 
 ## License
 
