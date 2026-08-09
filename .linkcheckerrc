@@ -4,6 +4,17 @@
 
 # https://linkchecker.github.io/linkchecker/man/linkcheckerrc.html
 [filtering]
-ignore=sitemap.xml.gz
+# Without checkextern, external URLs are only syntax-checked, which
+# left every absolute link in the docs outside the gate this job
+# exists to be — including the ones pointing back at the docs site,
+# where a stale version segment 404s silently.
+checkextern=1
+# The ignores below are all artifacts of checking a local build over
+# file://, not links a reader can follow. Each one is only checkable
+# against the deployed site, which this job does not have.
+ignore=
+  sitemap\.xml\.gz$
+  /404\.html$
+  ^https://tinydantic\.github\.io/tinydantic/.*\.html$
 
 [AnchorCheck]
