@@ -1,157 +1,157 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://tinydantic.dev/latest/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/FAQ/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/FAQ/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/changelog/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/changelog/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/contributing/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/contributing/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/contributing/development_guide/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/contributing/development_guide/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/contributing/static_typing/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/contributing/static_typing/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/contributing/upstream_limitations/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/contributing/upstream_limitations/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/license/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/license/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/reference/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/reference/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/reference/api/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/reference/api/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/reference/api/tinydantic/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/reference/api/tinydantic/tinydb/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/tinydb/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/reference/api/tinydantic/tinydb/middlewares/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/tinydb/middlewares/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/reference/api/tinydantic/tinydb/operations/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/tinydb/operations/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/reference/api/tinydantic/tinydb/storages/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/tinydb/storages/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/superpowers/specs/2026-08-08-before-write-hook-design/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/superpowers/specs/2026-08-08-before-write-hook-design/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/concurrency/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/concurrency/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/configuration/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/configuration/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/crud/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/crud/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/fastapi/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/fastapi/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/find/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/find/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/installation/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/installation/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/introduction/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/introduction/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/models/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/models/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/queries/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/queries/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/quickstart/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/quickstart/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/schema-evolution/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/schema-evolution/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/security/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/security/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/storage/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/storage/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
     <url>
-        <loc>https://tinydantic.dev/latest/usage/testing/</loc>
+        <loc>https://tinydantic.github.io/tinydantic/latest/usage/testing/</loc>
         <lastmod>2020-02-02</lastmod>
         <changefreq>daily</changefreq>
     </url>
