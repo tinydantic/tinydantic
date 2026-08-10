@@ -19,10 +19,11 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 - Tests run shuffled (pytest-randomly) and parallel (pytest-xdist) — don't write order-dependent tests.
 - Markdown: prettier enforces `proseWrap: never` (don't hard-wrap prose); markdownlint requires an H1 on line 1.
 - REUSE licensing: new code files need SPDX headers; `**.md` and listed files are covered by `REUSE.toml` aggregates.
-- cspell gates commits: new legit words go in `project-words.txt` (case-insensitive sorted).
+- cspell gates commits: new legit words go in `project-words.txt` (case-insensitive sorted). Only words that appear in checked-in files belong there — cspell skips `untracked/`, so never add a word for scratch or agent collateral.
 - interrogate demands 100% docstring coverage.
 - NEVER file issues on external repositories without explicit approval — draft collateral in `untracked/upstream/` instead.
 - `untracked/` (repo root) is git-ignored scratch space for drafts, notes, and review collateral; linters and formatters are configured to skip it. Never put anything there that the repo should keep.
+- Agent-workflow collateral (superpowers specs and plans, review reports, scratch analysis) is NEVER committed — it lives in `untracked/` only. Superpowers specs go in `untracked/superpowers/specs/`, plans in `untracked/superpowers/plans/`. Committing them drags their vocabulary into `project-words.txt`, which is meant to cover the shipped repo. If a decision in a spec matters to the project, restate it where the project keeps decisions: a module or method docstring, `docs/contributing/`, or the changelog.
 - Prefer the public API of every upstream dependency (TinyDB, pydantic). Internal/private APIs (underscore-prefixed, or in a private module) may be used ONLY when the needed behavior is impossible through the public API; every such use must be explicitly called out and approved during planning/review, and documented — reason plus proposed upstream fix — in that project's registry on `docs/contributing/upstream_limitations.md`. Keep that page current whenever upstream friction is found, worked around, or resolved. Forking or vendoring TinyDB was considered and rejected (2026-07-13) — don't propose it as a fallback.
 - Do not store tinydantic config in pydantic's `model_config` (pydantic#9992) — see the `src/tinydantic/_config.py` module docstring.
 
