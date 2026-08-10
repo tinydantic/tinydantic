@@ -120,6 +120,42 @@ email
 
 ```
 
+### Cross-field validators and mutate-then-save
+
+`validate_assignment` re-runs your `model_validator(mode="after")` on **every** attribute assignment. For a model with an invariant spanning two fields, that makes the ordinary mutate-then-save flow impossible to complete one field at a time — the _intermediate_ state is invalid even when the destination is fine:
+
+```pycon
+>>> from pydantic import model_validator
+>>> class Booking(TinydanticModel, database=db, table_name="bookings"):
+...     start: int
+...     end: int
+...
+...     @model_validator(mode="after")
+...     def _ends_after_start(self):
+...         if self.start >= self.end:
+...             msg = "start must be before end"
+...             raise ValueError(msg)
+...         return self
+>>> booking = Booking(start=1, end=5).insert()
+>>> booking.start = 10  # 10..5 is invalid, though 10..20 would not be
+Traceback (most recent call last):
+  ...
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Booking
+  ...
+
+```
+
+Move both fields in one step instead. [patch()][tinydantic.TinydanticModel.patch] applies the whole mapping and validates the result once:
+
+```pycon
+>>> booking = booking.patch(start=10, end=20)
+>>> (booking.start, booking.end)
+(10, 20)
+
+```
+
+[model_copy(update=...)][pydantic.BaseModel.model_copy] followed by `save()` works the same way, and a model that genuinely wants unchecked assignment can opt out with `model_config = ConfigDict(validate_assignment=False)` — at the cost of the guarantee described above. Whole-model writes still validate, so an instance corrupted by assignment is refused at the storage boundary rather than persisted.
+
 ## Defaults and `default_factory`
 
 Ordinary Pydantic defaults and [default factories][pydantic.fields.Field] work as usual. Fields you omit are filled in at construction time and then stored:
