@@ -172,6 +172,14 @@ verbose = 2
 [tool.mypy]
 python_version = "3.10"
 
+# The static-typing contract pins rejections as well as inferences,
+# and it can only do that if an ignore that stops being needed is
+# itself an error. Scoped to that package: elsewhere an ignore is
+# a workaround, here it is the assertion.
+[[tool.mypy.overrides]]
+module = "tests.static_typing.*"
+warn_unused_ignores = true
+
 [tool.poe.tasks]
 clean = "pyclean . --debris --verbose"
 fmt = [
