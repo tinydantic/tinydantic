@@ -66,6 +66,8 @@ tinydantic._errors.UnknownUpdateFieldError: ...
 
 That default is what stands between a quick CRUD endpoint and a mass-assignment hole: without it, `User.update(payload, cond)` would persist every attacker-chosen key verbatim. The `extra_keys="allow"` escape hatch exists for databases legitimately shared with other tools — but it writes unknown keys **unvalidated**, so never feed a raw request payload through it. The same reasoning applies to `extra='allow'` models: do not construct them directly from untrusted request bodies. [Schema evolution](schema-evolution.md) covers the legitimate uses of both.
 
+One field deserves its own mention: on a [use_revision](concurrency.md#optimistic-concurrency-use_revision) model, `revision_id` is client-settable through the constructor. That is by design — the `If-Match` flow works by adopting the token the client sent — but it means a model built straight from an untrusted request body lets the caller choose its own concurrency token and defeat the conflict check. Build such models from an explicit request schema (`UserUpdate`, not `User`) and set `revision_id` yourself from the header. The token is excluded from `model_dump()` and from the JSON Schema, so it will not leak _outward_ on its own.
+
 ## YAML files
 
 `YAMLStorage` reads with `yaml.safe_load`, so a hostile database file cannot execute code. It can still take the process down: YAML anchors and aliases expand recursively, and a hand-crafted file a few hundred bytes long can expand to gigabytes in memory (the "billion laughs" attack). `safe_load` does not prevent that — so **YAML database files must be trusted input**. Human-edited by people you trust is the use case; uploaded or user-supplied files are not.

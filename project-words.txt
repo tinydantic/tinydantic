@@ -108,6 +108,7 @@ PYTHONUNBUFFERED
 pytype
 pyupgrade
 RDWR
+repr
 representer
 rerunfailures
 retag

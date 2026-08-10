@@ -22,6 +22,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from pydantic.alias_generators import to_snake
+from pydantic.json_schema import SkipJsonSchema
 from tinydb.queries import Query, QueryInstance
 from tinydb.table import Document, Table
 
@@ -174,14 +175,22 @@ def _inject_revision_annotation(namespace: dict[str, Any]) -> None:
             fmt = Format(format_value)
             merged = dict(call_annotate_function(prior, fmt))
             merged["revision_id"] = (
-                "UUID | None" if fmt is Format.STRING else UUID | None
+                "SkipJsonSchema[UUID | None]"
+                if fmt is Format.STRING
+                else SkipJsonSchema[UUID | None]  # type: ignore[misc]
             )
             return merged
 
         namespace[key] = annotate
         return
     annotations = dict(namespace.get("__annotations__", {}))
-    annotations["revision_id"] = UUID | None
+    # SkipJsonSchema is a class at runtime and an Annotated alias
+    # to the type checkers, so the documented subscript form is the
+    # only spelling both accept — mypy just needs telling that this
+    # value position is deliberate.
+    annotations["revision_id"] = SkipJsonSchema[  # type: ignore[misc]
+        UUID | None
+    ]
     namespace["__annotations__"] = annotations
 
 
@@ -520,6 +529,16 @@ class TinydanticModelMetaclass(ModelMetaclass):
             namespace["revision_id"] = Field(
                 default=None,
                 description="Optimistic-concurrency token",
+                # The token is tinydantic's bookkeeping, not part
+                # of the caller's document: excluding it keeps it
+                # out of model_dump() and out of every FastAPI
+                # response built from the model, where it would
+                # otherwise appear as an unexplained field the
+                # ETag flow already carries in a header.
+                # SkipJsonSchema (on the annotation) is what keeps
+                # it out of the JSON Schema — field-level exclude
+                # does not.
+                exclude=True,
             )
         model = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
         _install_computed_field_queries(model)
@@ -641,7 +660,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         # ``book.revision_id`` (ETag flows) type-checks. The block
         # never runs, so pydantic sees no field here and models
         # without use_revision raise AttributeError at runtime.
-        revision_id: UUID | None = None
+        revision_id: SkipJsonSchema[UUID | None] = None
 
     # --- lifecycle hooks ---
 
@@ -2543,6 +2562,15 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 it can reach storage.
         """
         doc = self.model_dump(mode="json", exclude={"id"})
+        if type(self)._uses_revision():  # noqa: SLF001
+            # revision_id is Field(exclude=True) so it stays out of
+            # model_dump() and every response built from it, but it
+            # is the one excluded field storage genuinely needs.
+            # Field-level exclude cannot be undone by include=, so
+            # the token is re-added here, JSON-encoded like the
+            # rest of the body.
+            token = self.revision_id
+            doc["revision_id"] = None if token is None else str(token)
 
         if get_config_value(type(self), "validate_writes", default=True):
             type(self).model_validate({**doc, "id": self.id}, by_name=True)
