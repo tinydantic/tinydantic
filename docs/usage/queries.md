@@ -337,13 +337,13 @@ Draft(id=1, text='newest, after the reset')
 
 ## A condition is never a boolean
 
-`User.name == "Alice"` does not compare anything. It builds a description of a test — an object TinyDB runs later, once per document. In raw TinyDB such an object is truthy, and truthy _always_: the field, the operator, the value, and the contents of the table make no difference, so `if User.name == requested:` is a check that always passes. tinydantic raises [QueryConditionError][tinydantic.QueryConditionError] instead:
+`User.name == "Alice"` does not compare anything. It builds a description of a test — an object TinyDB runs later, once per document. In raw TinyDB such an object is truthy, and truthy _always_: the field, the operator, the value, and the contents of the table make no difference, so `if User.name == requested:` is a check that always passes. tinydantic raises [QueryTypeError][tinydantic.QueryTypeError] instead:
 
 ```pycon
 >>> bool(User.name == "Alice")  # doctest: -IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
   ...
-tinydantic._errors.QueryConditionError: A query condition has no truth value
+tinydantic._errors.QueryTypeError: A query condition has no truth value
 (it is a lazy description of a test, not a comparison). For an existence check
 use Model.contains(cond), Model.get(cond) is not None, or
 Model.find(cond).exists(). To combine conditions use & | ~ — and/or/not
@@ -365,7 +365,7 @@ A condition reads like a check, so it gets written as one. It is not a check: at
 ...     print("unreachable")
 Traceback (most recent call last):
   ...
-tinydantic._errors.QueryConditionError: A query condition has no truth value ...
+tinydantic._errors.QueryTypeError: A query condition has no truth value ...
 
 ```
 
@@ -391,11 +391,11 @@ False
 >>> (User.age >= 30) and (User.address.country == "DE")
 Traceback (most recent call last):
   ...
-tinydantic._errors.QueryConditionError: A query condition has no truth value ...
+tinydantic._errors.QueryTypeError: A query condition has no truth value ...
 >>> not (User.age >= 30)
 Traceback (most recent call last):
   ...
-tinydantic._errors.QueryConditionError: A query condition has no truth value ...
+tinydantic._errors.QueryTypeError: A query condition has no truth value ...
 
 ```
 
@@ -408,7 +408,7 @@ Composition keeps the guard, so a composed condition cannot leak into boolean co
 >>> bool(combined)
 Traceback (most recent call last):
   ...
-tinydantic._errors.QueryConditionError: A query condition has no truth value ...
+tinydantic._errors.QueryTypeError: A query condition has no truth value ...
 
 ```
 
@@ -431,7 +431,7 @@ Building a condition from a list needs the same care. `any()` and `all()` reduce
 >>> "Ali" in User.name
 Traceback (most recent call last):
   ...
-tinydantic._errors.QueryConditionError: A field query is not iterable ...
+tinydantic._errors.QueryTypeError: A field query is not iterable ...
 
 ```
 
@@ -468,7 +468,7 @@ Indexing a list field by position is refused too. A query path is a sequence of 
 >>> Post.tags[0] == "python"
 Traceback (most recent call last):
   ...
-tinydantic._errors.QueryConditionError: Query paths are document keys ...
+tinydantic._errors.QueryTypeError: Query paths are document keys ...
 
 ```
 
@@ -499,7 +499,7 @@ The distinction bites hardest when filtering documents you have already loaded �
 >>> [user.name for user in User.all() if User.age > 30]
 Traceback (most recent call last):
   ...
-tinydantic._errors.QueryConditionError: A query condition has no truth value ...
+tinydantic._errors.QueryTypeError: A query condition has no truth value ...
 >>> [user.name for user in User.all() if user.age > 30]
 ['Carol']
 

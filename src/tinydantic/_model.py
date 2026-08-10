@@ -40,6 +40,7 @@ from tinydantic._errors import (
     DocumentIDUpdateError,
     DocumentNotFoundError,
     QueryFieldError,
+    QueryTypeError,
     RevisionFieldError,
     RevisionUpdateError,
     SelectorError,
@@ -95,9 +96,129 @@ _FIELD_ADAPTERS_ATTR = "__tinydantic_field_adapters__"
 # TinyDB document id, `revision_id` rotates on every write.
 _MANAGED_FIELDS = frozenset({"id", "revision_id"})
 
-# Sentinel distinguishing "find() called with no condition" (the
-# explicit whole-table spelling) from an accidental None value.
-_FIND_NOT_GIVEN = object()
+
+# Sentinel distinguishing "no condition was passed" from an
+# accidental None value. Every optional-``cond`` method defaults to
+# it, so an explicitly passed None is always reported as the wrong
+# kind of object rather than as a missing selector.
+class _CondNotGiven:
+    """The type of the "no condition was passed" sentinel.
+
+    Structurally a TinyDB ``QueryLike`` (callable and hashable) so
+    it can be the default of a ``QueryLike | None`` parameter
+    without weakening that annotation for callers. It is compared
+    by identity and never called; the public signatures are the
+    reason it exists.
+    """
+
+    def __call__(self, value: Mapping[Any, Any]) -> bool:  # noqa: ARG002
+        """Never invoked — the sentinel is identity-checked.
+
+        Present only so the sentinel satisfies ``QueryLike``
+        structurally; ``value`` is deliberately unused.
+        """
+        raise AssertionError(self.__doc__)
+
+
+_COND_NOT_GIVEN: QueryLike = _CondNotGiven()
+
+_NONE_HINT = (
+    "If the condition is optional, guard it with 'cond is not "
+    "None' before calling."
+)
+
+
+def _require_condition(
+    cond: object,
+    *,
+    method: str,
+    none_hint: str = _NONE_HINT,
+) -> None:
+    """Refuse anything TinyDB cannot evaluate as a condition.
+
+    TinyDB's ``QueryLike`` is a protocol, not a class: any
+    hashable callable is a valid condition, and plain lambdas are
+    a documented spelling. The check is therefore duck-typed —
+    an ``isinstance`` test against ``QueryInstance`` would reject
+    working code.
+
+    Without this, a non-condition reaches TinyDB and fails as
+    ``'str' object is not callable`` or ``unhashable type:
+    'dict'`` — or, on an empty table, does not fail at all and
+    quietly returns nothing.
+
+    Args:
+        cond: The candidate condition.
+        method: The public method name, for the message.
+        none_hint: Recovery advice appended to the ``None``
+            message, overridden where a whole-table spelling
+            exists.
+
+    Raises:
+        QueryTypeError: If ``cond`` is ``None``, a bare query
+            builder, or not a hashable callable.
+    """
+    if cond is None:
+        msg = (
+            f"{method}() got None instead of a query condition — "
+            f"a condition variable is unexpectedly None. {none_hint}"
+        )
+        raise QueryTypeError(msg)
+    if isinstance(cond, Query):
+        msg = (
+            f"{method}() got a query builder, not a query "
+            "condition. Model.field names a field; compare it to "
+            "build a condition (Model.field == <value>) and pass "
+            "that."
+        )
+        raise QueryTypeError(msg)
+    if isinstance(cond, dict):
+        msg = (
+            f"{method}() takes a query condition, not a dict. "
+            f"{cond!r} is MongoDB syntax; in tinydantic compare a "
+            "field instead — Model.field == <value>, or "
+            "field(Model, 'name') == <value> for a name the model "
+            "shadows."
+        )
+        raise QueryTypeError(msg)
+    if not callable(cond):
+        msg = (
+            f"{method}() takes a query condition, got "
+            f"{type(cond).__name__}: {cond!r}. A value is not a "
+            "condition — compare a field to it, as in "
+            f"Model.field == {cond!r}."
+        )
+        raise QueryTypeError(msg)
+    try:
+        hash(cond)
+    except TypeError:
+        msg = (
+            f"{method}() takes a hashable query condition (TinyDB "
+            f"caches on it), got an unhashable "
+            f"{type(cond).__name__}."
+        )
+        raise QueryTypeError(msg) from None
+
+
+def _checked_cond(
+    cond: object,
+    *,
+    method: str,
+    none_hint: str = _NONE_HINT,
+) -> QueryLike | None:
+    """Validate an optional condition, mapping the sentinel to None.
+
+    Call sites keep their ``cond is None`` selector logic; only
+    the default changes, so absence stays a
+    [SelectorError][tinydantic.SelectorError] while an explicit
+    ``None`` becomes a
+    [QueryTypeError][tinydantic.QueryTypeError].
+    """
+    if cond is _COND_NOT_GIVEN:
+        return None
+    _require_condition(cond, method=method, none_hint=none_hint)
+    return cast("QueryLike", cond)
+
 
 # Name of the per-class attribute caching unique field names
 # (computed once in __pydantic_init_subclass__).
@@ -296,6 +417,23 @@ def _queryable_field_names(model: type[TinydanticModel]) -> list[str]:
     return sorted(names - {"id"})
 
 
+def _unknown_field_msg(model: type[Any], name: str) -> str:
+    """Build the message for a name the model cannot query.
+
+    Shared by [field()][tinydantic.field] and the metaclass
+    ``__getattr__``, so a typo reports the same way whether it
+    was written as a string or as an attribute.
+    """
+    return (
+        f"{name!r} is not a queryable field of "
+        f"{model.__name__!r}. Names are Python field names (not "
+        f"storage aliases); queryable fields: "
+        f"{_queryable_field_names(model)}. For keys your model "
+        f"does not declare (extra='allow' documents, legacy "
+        f"keys), use tinydb.where({name!r})."
+    )
+
+
 def field(model: type[TinydanticModel], name: str) -> Query:
     """Build a TinyDB Query on a model field by name.
 
@@ -359,15 +497,7 @@ def field(model: type[TinydanticModel], name: str) -> Query:
     if name not in model.model_fields and (
         name not in model.model_computed_fields
     ):
-        msg = (
-            f"{name!r} is not a queryable field of "
-            f"{model.__name__!r}. Names are Python field names (not "
-            f"storage aliases); queryable fields: "
-            f"{_queryable_field_names(model)}. For keys your model "
-            f"does not declare (extra='allow' documents, legacy "
-            f"keys), use tinydb.where({name!r})."
-        )
-        raise QueryFieldError(msg)
+        raise QueryFieldError(_unknown_field_msg(model, name))
     return GuardedQuery()[name]
 
 
@@ -526,6 +656,14 @@ class TinydanticModelMetaclass(ModelMetaclass):
                 # would silently match nothing.
                 return DocIdQuery()
             return GuardedQuery()[attr]
+        if cls.__pydantic_complete__ and not attr.startswith("_"):
+            # A public name that is neither a field nor a real
+            # class attribute is a typo, and the bare
+            # "AttributeError: username" Python would raise names
+            # neither the model nor the alternatives. Underscored
+            # names are left alone: they are pydantic, copy, and
+            # pickle probing, never a user querying a field.
+            raise QueryFieldError(_unknown_field_msg(cls, attr))
         return super().__getattr__(attr)  # type: ignore[misc]
 
 
@@ -1127,7 +1265,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     def find(cls, cond: QueryLike) -> FindQuery[Self]: ...
 
     @classmethod
-    def find(cls, cond: Any = _FIND_NOT_GIVEN) -> FindQuery[Self]:
+    def find(cls, cond: Any = _COND_NOT_GIVEN) -> FindQuery[Self]:
         """Build a lazy fluent query over this model's table.
 
         Returns an immutable [FindQuery][tinydantic.FindQuery]
@@ -1151,19 +1289,20 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             A lazy query description; no I/O happens here.
 
         Raises:
-            SelectorError: If ``cond`` is ``None`` — call
-                ``find()`` with no argument to query the whole
-                table.
+            QueryTypeError: If ``cond`` is ``None``, or anything
+                else TinyDB cannot evaluate as a condition. The
+                check runs here rather than at the terminal, so
+                the error names the line that made the mistake.
         """
-        if cond is None:
-            msg = (
-                "find() got None instead of a query condition — a "
-                "condition variable is unexpectedly None. To query "
-                "the whole table, call find() with no argument."
-            )
-            raise SelectorError(msg)
-        if cond is _FIND_NOT_GIVEN:
+        if cond is _COND_NOT_GIVEN:
             return FindQuery(cls)
+        _require_condition(
+            cond,
+            method="find",
+            none_hint=(
+                "To query the whole table, call find() with no argument."
+            ),
+        )
         return FindQuery(cls, cond=cast("QueryLike", cond))
 
     @classmethod
@@ -1610,7 +1749,16 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         conditions) are translated to document-id operations —
         TinyDB's own evaluator only ever sees the document body,
         which does not contain the id.
+
+        Raises:
+            QueryTypeError: If ``cond`` is not something TinyDB
+                can evaluate as a condition.
         """
+        _require_condition(
+            cond,
+            method="search",
+            none_hint="To read the whole table, use all().",
+        )
         if isinstance(cond, DocIdCondition) and cond.opname == "==":
             # Pure id equality: a direct key lookup beats a scan.
             doc = cls.get_table().get(doc_id=cast("int", cond.value))
@@ -1664,7 +1812,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     @classmethod
     def get(
         cls,
-        cond: QueryLike | None = None,
+        cond: QueryLike | None = _COND_NOT_GIVEN,
         *,
         doc_id: int | None = None,
         doc_ids: list[int] | None = None,
@@ -1688,7 +1836,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         Raises:
             SelectorError: If no selector, or more than one, is
                 provided.
+            QueryTypeError: If ``cond`` is given but is not
+                something TinyDB can evaluate as a condition.
         """
+        cond = _checked_cond(cond, method="get")
         provided = [s for s in (cond, doc_id, doc_ids) if s is not None]
         if len(provided) > 1:
             msg = "Provide at most one of cond, doc_id, or doc_ids"
@@ -1761,7 +1912,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     @classmethod
     def get_or_raise(
         cls,
-        cond: QueryLike | None = None,
+        cond: QueryLike | None = _COND_NOT_GIVEN,
         *,
         doc_id: int | None = None,
     ) -> Self:
@@ -1788,6 +1939,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             SelectorError: If no selector or both selectors are
                 provided.
         """
+        cond = _checked_cond(cond, method="get_or_raise")
         if cond is not None and doc_id is None:
             result = cls.get(cond)
         elif doc_id is not None and cond is None:
@@ -1806,7 +1958,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     @classmethod
     def contains(
         cls,
-        cond: QueryLike | None = None,
+        cond: QueryLike | None = _COND_NOT_GIVEN,
         *,
         doc_id: int | None = None,
     ) -> bool:
@@ -1819,7 +1971,10 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         Raises:
             SelectorError: If no selector, or both selectors, are
                 provided.
+            QueryTypeError: If ``cond`` is given but is not
+                something TinyDB can evaluate as a condition.
         """
+        cond = _checked_cond(cond, method="contains")
         if cond is not None and doc_id is not None:
             msg = "Provide at most one of cond or doc_id"
             raise SelectorError(msg)
@@ -1919,7 +2074,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     def update(
         cls,
         fields: Mapping | Callable[[Mapping], None],
-        cond: QueryLike | None = None,
+        cond: QueryLike | None = _COND_NOT_GIVEN,
         *,
         doc_ids: Iterable[int] | None = None,
         extra_keys: Literal["reject", "allow"] = "reject",
@@ -1999,6 +2154,11 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 validation against its field's type, or a matched
                 document's merged result fails model validation.
         """
+        cond = _checked_cond(
+            cond,
+            method="update",
+            none_hint="To update every document, use update_all().",
+        )
         if cond is not None and doc_ids is not None:
             msg = "Provide at most one of cond or doc_ids"
             raise SelectorError(msg)
@@ -2189,6 +2349,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 validation against its field's type, or a matched
                 document's merged result fails model validation.
         """
+        pairs = list(updates)
+        for _, pair_cond in pairs:
+            _require_condition(pair_cond, method="update_multiple")
         prepared = [
             (
                 fields
@@ -2199,7 +2362,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 ),
                 cond,
             )
-            for fields, cond in updates
+            for fields, cond in pairs
         ]
         validate = get_config_value(cls, "validate_writes", default=True)
         if validate or any(has_id_condition(cond) for _, cond in prepared):
@@ -2233,7 +2396,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     def upsert(
         cls,
         document: Self,
-        cond: QueryLike | None = None,
+        cond: QueryLike | None = _COND_NOT_GIVEN,
     ) -> list[int]:
         """Update documents matching ``cond``, or insert ``document``.
 
@@ -2257,7 +2420,17 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             SelectorError: If ``cond`` is omitted and
                 ``document.id`` is ``None`` — without either there
                 is nothing to select the document to update by.
+            QueryTypeError: If ``cond`` is given but is not
+                something TinyDB can evaluate as a condition.
         """
+        cond = _checked_cond(
+            cond,
+            method="upsert",
+            none_hint=(
+                "To upsert by the document's own id, call upsert() "
+                "with no condition."
+            ),
+        )
         if cond is None and document.id is None:
             msg = (
                 "upsert() without a cond updates by id, but this "
@@ -2329,7 +2502,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     @classmethod
     def remove(
         cls,
-        cond: QueryLike | None = None,
+        cond: QueryLike | None = _COND_NOT_GIVEN,
         *,
         doc_ids: Iterable[int] | None = None,
     ) -> list[int]:
@@ -2353,6 +2526,11 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             DocumentNotFoundError: If an explicit ``doc_ids`` id
                 does not exist; nothing is removed.
         """
+        cond = _checked_cond(
+            cond,
+            method="remove",
+            none_hint="To remove every document, use truncate().",
+        )
         if cond is None and doc_ids is None:
             msg = (
                 "remove() needs a selector: pass a query condition "
@@ -2393,7 +2571,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         cls.get_table().truncate()
 
     @classmethod
-    def count(cls, cond: QueryLike | None = None) -> int:
+    def count(cls, cond: QueryLike | None = _COND_NOT_GIVEN) -> int:
         """Count the documents matching ``cond``, or all documents.
 
         With a condition, delegates to [tinydb.table.Table.count][].
@@ -2408,7 +2586,16 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         Returns:
             The number of matching (or total) documents.
+
+        Raises:
+            QueryTypeError: If ``cond`` is given but is not
+                something TinyDB can evaluate as a condition.
         """
+        cond = _checked_cond(
+            cond,
+            method="count",
+            none_hint="To count every document, call count().",
+        )
         if cond is None:
             return len(cls.get_table())
         if has_id_condition(cond):

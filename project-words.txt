@@ -43,6 +43,7 @@ getattr
 getitem
 greppable
 Gunicorn
+hasattr
 hashval
 hashvals
 htmlcov

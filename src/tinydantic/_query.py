@@ -20,7 +20,7 @@ GuardedQuery ── GuardedCondition
 same tests, same hashvals, same equality, so they stay
 interchangeable with raw TinyDB conditions — except that the three
 protocols TinyDB leaves silently wrong raise
-[QueryConditionError][tinydantic.QueryConditionError] instead:
+[QueryTypeError][tinydantic.QueryTypeError] instead:
 boolean context (every condition is otherwise truthy, so
 ``if Model.field == x:`` is a check that always passes), iteration
 (which powers ``in``, otherwise ``True`` for any operand), and
@@ -53,7 +53,7 @@ from tinydb.queries import Query, QueryInstance
 
 from tinydantic._errors import (
     DocumentIDConditionError,
-    QueryConditionError,
+    QueryTypeError,
 )
 
 if TYPE_CHECKING:
@@ -176,9 +176,9 @@ class GuardedCondition(QueryInstance):
         """Refuse boolean context — a condition is not a boolean.
 
         Raises:
-            QueryConditionError: Always.
+            QueryTypeError: Always.
         """
-        raise QueryConditionError(_BOOL_COND_MSG)
+        raise QueryTypeError(_BOOL_COND_MSG)
 
     def __and__(self, other: QueryInstance) -> QueryInstance:
         """Compose with ``and``, keeping the guard."""
@@ -210,12 +210,12 @@ class GuardedQuery(Query):
         """Refuse boolean context — a query is not a boolean.
 
         Raises:
-            QueryConditionError: Always.
+            QueryTypeError: Always.
         """
-        raise QueryConditionError(_BOOL_QUERY_MSG)
+        raise QueryTypeError(_BOOL_QUERY_MSG)
 
     def __iter__(self) -> Any:
-        """Refuse iteration — and with it ``in``.
+        """Refuse iteration.
 
         Without this, Python falls back to the legacy sequence
         protocol: it calls ``__getitem__(0)``, compares the
@@ -224,18 +224,35 @@ class GuardedQuery(Query):
         operand at all.
 
         Raises:
-            QueryConditionError: Always.
+            QueryTypeError: Always.
         """
-        raise QueryConditionError(_ITER_MSG)
+        raise QueryTypeError(_ITER_MSG)
+
+    def __contains__(self, item: object) -> bool:
+        """Refuse ``in``, with the message ``__iter__`` cannot keep.
+
+        ``x in query`` would otherwise reach ``__iter__``, and
+        CPython replaces a ``TypeError`` raised there with its own
+        "argument of type 'GuardedQuery' is not iterable" — which
+        names none of the alternatives. Defining ``__contains__``
+        puts this class first in the lookup order, so the tailored
+        message survives. (It did survive while this error was a
+        ``ValueError``; the substitution is specific to
+        ``TypeError``.)
+
+        Raises:
+            QueryTypeError: Always.
+        """
+        raise QueryTypeError(_ITER_MSG)
 
     def __getitem__(self, item: str) -> Any:
         """Extend the query path by a document key.
 
         Raises:
-            QueryConditionError: If ``item`` is not a string.
+            QueryTypeError: If ``item`` is not a string.
         """
         if not isinstance(item, str):
-            raise QueryConditionError(_index_msg(item))
+            raise QueryTypeError(_index_msg(item))
         return super().__getitem__(item)
 
     def __eq__(self, rhs: object) -> Any:  # type: ignore[override]

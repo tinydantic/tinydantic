@@ -16,7 +16,7 @@ Design decisions (spelled out on the docs "Fluent queries" page):
     of modifier call order, following the unanimous SQL/MongoDB/
     ODM convention.
 -   Each clause is stated once; repeating a modifier raises
-    [FindQueryError][tinydantic.FindQueryError] because the wider
+    [QueryUsageError][tinydantic.QueryUsageError] because the wider
     ecosystem disagrees on what repetition means (Beanie appends a
     tiebreaker, Python's stable-sort idiom and pandas make the
     last sort primary, Django and MongoEngine replace), so
@@ -44,8 +44,10 @@ from typing import (
 
 from tinydantic._errors import (
     DocumentNotFoundError,
-    FindQueryError,
-    SortFieldError,
+    QueryFieldError,
+    QueryTypeError,
+    QueryUsageError,
+    QueryValueError,
 )
 
 if TYPE_CHECKING:
@@ -69,11 +71,18 @@ def _validated_window(name: str, n: object) -> int:
     Bools are rejected like the id-condition operand rule.
 
     Raises:
-        FindQueryError: If ``n`` is not an int or is negative.
+        QueryTypeError: If ``n`` is not an int (bools included).
+        QueryValueError: If ``n`` is an int below zero.
     """
-    if isinstance(n, bool) or not isinstance(n, int) or n < 0:
+    if isinstance(n, bool) or not isinstance(n, int):
+        msg = (
+            f"{name}() requires a non-negative int, got "
+            f"{type(n).__name__}: {n!r}"
+        )
+        raise QueryTypeError(msg)
+    if n < 0:
         msg = f"{name}() requires a non-negative int, got {n!r}"
-        raise FindQueryError(msg)
+        raise QueryValueError(msg)
     return n
 
 
@@ -170,22 +179,22 @@ class FindQuery(Generic[ModelT]):
             A new chain with the ordering set.
 
         Raises:
-            FindQueryError: If sort was already set, or the
-                forms are mixed.
-            SortFieldError: If a name is not a model field.
-            TypeError: If called with neither fields nor
-                ``key=``.
+            QueryUsageError: If sort was already set.
+            QueryValueError: If the forms are mixed, if
+                ``reverse=`` is used without ``key=``, or if
+                called with neither fields nor ``key=``.
+            QueryFieldError: If a name is not a model field.
         """
         if self._sort_fields is not None or self._sort_key is not None:
             msg = _REPEAT_MSG.format(
                 name="sort",
                 hint=(", combining keys in one call: .sort('name', '-age')"),
             )
-            raise FindQueryError(msg)
+            raise QueryUsageError(msg)
         if key is not None:
             if fields:
                 msg = "sort() takes field names or key=, not both"
-                raise FindQueryError(msg)
+                raise QueryValueError(msg)
             return self._replace(
                 sort_key=key,
                 sort_reverse=bool(reverse),
@@ -196,10 +205,10 @@ class FindQuery(Generic[ModelT]):
                 "names, mark descending per field with a '-' "
                 "prefix: .sort('-age')"
             )
-            raise FindQueryError(msg)
+            raise QueryValueError(msg)
         if not fields:
             msg = "sort() requires field names or key="
-            raise TypeError(msg)
+            raise QueryValueError(msg)
         parsed: list[tuple[str, bool]] = []
         for spec in fields:
             descending = spec.startswith("-")
@@ -212,7 +221,7 @@ class FindQuery(Generic[ModelT]):
                     "known fields: "
                     f"{sorted(self._model.model_fields)}"
                 )
-                raise SortFieldError(msg)
+                raise QueryFieldError(msg)
             parsed.append((name, descending))
         return self._replace(sort_fields=tuple(parsed))
 
@@ -229,12 +238,14 @@ class FindQuery(Generic[ModelT]):
             A new chain with the skip set.
 
         Raises:
-            FindQueryError: If skip was already set or ``n`` is
-                not a non-negative int (bools rejected).
+            QueryUsageError: If skip was already set.
+            QueryTypeError: If ``n`` is not an int (bools
+                rejected).
+            QueryValueError: If ``n`` is negative.
         """
         if self._skip is not None:
             msg = _REPEAT_MSG.format(name="skip", hint="")
-            raise FindQueryError(msg)
+            raise QueryUsageError(msg)
         return self._replace(skip=_validated_window("skip", n))
 
     def limit(self, n: int) -> FindQuery[ModelT]:
@@ -251,12 +262,14 @@ class FindQuery(Generic[ModelT]):
             A new chain with the limit set.
 
         Raises:
-            FindQueryError: If limit was already set or ``n``
-                is not a non-negative int (bools rejected).
+            QueryUsageError: If limit was already set.
+            QueryTypeError: If ``n`` is not an int (bools
+                rejected).
+            QueryValueError: If ``n`` is negative.
         """
         if self._limit is not None:
             msg = _REPEAT_MSG.format(name="limit", hint="")
-            raise FindQueryError(msg)
+            raise QueryUsageError(msg)
         return self._replace(limit=_validated_window("limit", n))
 
     def _execute(self) -> list[ModelT]:
@@ -431,19 +444,20 @@ class FindQuery(Generic[ModelT]):
         """Refuse boolean context — a chain has no truth value.
 
         Without this every ``if Model.find(cond):`` would be
-        silently, permanently true. Raising follows the
-        numpy/pandas ambiguous-truth precedent (and
-        ``FindQueryError`` is a ``ValueError``, matching them).
+        silently, permanently true. It raises the same error a
+        bare condition does one layer down — a chain and a
+        condition are both query objects, and using either as a
+        value is one mistake.
 
         Raises:
-            FindQueryError: Always; call ``.exists()`` or
+            QueryTypeError: Always; call ``.exists()`` or
                 ``.count()``.
         """
         msg = (
             "A FindQuery has no truth value (it is a lazy query "
             "description). Use .exists() or .count()."
         )
-        raise FindQueryError(msg)
+        raise QueryTypeError(msg)
 
     def __repr__(self) -> str:
         """Show the model and full clause set for debugging."""
