@@ -1,6 +1,6 @@
 # Configuration
 
-Configuration is how a model learns _where_ its documents live: which [TinyDB][tinydb.database.TinyDB] database, and which table within it. `tinydantic` takes both as class keyword arguments — the same shape as SQLModel's `class Hero(SQLModel, table=True)`. This page covers the two config keys, how the table name is derived, how config flows through subclassing, late binding with `bind()`, the errors you can hit, and — in a closing design note — why this config deliberately lives outside Pydantic's `model_config`.
+Configuration is how a model learns _where_ its documents live: which [TinyDB][tinydb.database.TinyDB] database, and which table within it. `tinydantic` takes both as class keyword arguments — the same shape as SQLModel's `class Hero(SQLModel, table=True)`. This page covers the six config keys, how the table name is derived, how config flows through subclassing, late binding with `bind()`, the errors you can hit, and — in a closing design note — why this config deliberately lives outside Pydantic's `model_config`.
 
 ```pycon
 >>> from tinydb import TinyDB
@@ -12,7 +12,7 @@ Configuration is how a model learns _where_ its documents live: which [TinyDB][t
 
 ## Class keyword arguments
 
-A model is configured with keyword arguments on the class statement: `database=` (a TinyDB instance), `table_name=` (a string), and `validate_writes=` (a bool).
+A model is configured with keyword arguments on the class statement: `database=` (a TinyDB instance), `table_name=` (a string), `validate_writes=` (a bool), `shadowed_fields=` (a tuple of names), `constraints=` (a tuple of [UniqueConstraint][tinydantic.UniqueConstraint]s), and `use_revision=` (a bool).
 
 ```pycon
 >>> class User(TinydanticModel, database=db, table_name="users"):
@@ -48,7 +48,7 @@ Attribute-assignment validation is separate — it is pydantic's own `validate_a
 
 ## `shadowed_fields`
 
-A field whose name collides with an existing class attribute — a tinydantic method (`search`, `count`, ...), a pydantic method (`copy`, `json`, ...), or one of your own mixin methods — would break the `Model.field` query shorthand silently, so tinydantic refuses the class definition with [ShadowedFieldError][tinydantic.ShadowedFieldError]. `shadowed_fields=` is the explicit opt-out for when you need such a field anyway (for example, a table shared with another tool that writes a `search` key). Listed fields work everywhere except the `Model.field` shorthand; query them with [q()][tinydantic.q] — see the [queries guide](queries.md#sharp-edge-fields-that-shadow-query-methods) for the full walkthrough:
+A field whose name collides with an existing class attribute — a tinydantic method (`search`, `count`, ...), a pydantic method (`copy`, `json`, ...), or one of your own mixin methods — would break the `Model.field` query shorthand silently, so tinydantic refuses the class definition with [ShadowedFieldError][tinydantic.ShadowedFieldError]. `shadowed_fields=` is the explicit opt-out for when you need such a field anyway (for example, a table shared with another tool that writes a `search` key). Listed fields work everywhere except the `Model.field` shorthand; query them by name with [field()][tinydantic.field] — `field(Command, "search")` — see the [queries guide](queries.md#sharp-edge-fields-that-shadow-query-methods) for the full walkthrough:
 
 ```pycon
 >>> class Command(TinydanticModel, database=db, shadowed_fields=("search",)):
@@ -62,6 +62,50 @@ Like the other keys, `shadowed_fields` is inherited: subclasses of `Command` do 
 > [!NOTE]
 >
 > The flat method namespace means a future tinydantic release that adds a new model method may newly shadow one of your fields — the class definition will then fail loudly at upgrade time, and the fix is this same one-line opt-out (or a rename).
+
+## `constraints`
+
+`constraints=` declares uniqueness across a _combination_ of fields, or uniqueness under a normalizing key — the cases the field-level [Unique()][tinydantic.Unique] marker cannot express. Each entry is a [UniqueConstraint][tinydantic.UniqueConstraint]; see [Models](models.md#unique-fields) for the semantics and the cost.
+
+```pycon
+>>> from tinydantic import UniqueConstraint
+>>> class Membership(
+...     TinydanticModel,
+...     database=db,
+...     table_name="memberships",
+...     constraints=(UniqueConstraint("org", "email"),),
+... ):
+...     org: str
+...     email: str
+>>> _ = Membership(org="acme", email="a@example.com").insert()
+>>> Membership(org="acme", email="a@example.com").insert()
+Traceback (most recent call last):
+    ...
+tinydantic._errors.UniqueConstraintError: Values ('acme', 'a@example.com') for unique fields ('org', 'email') already exist in table 'memberships' (model 'Membership') — held by document 1.
+
+```
+
+Unlike `use_revision`, `constraints` **can** be bound late: it adds no field, so nothing about the class shape depends on it.
+
+## `use_revision`
+
+`use_revision=True` opts a model into optimistic concurrency. The model gains a `revision_id` token that every write rotates and that `save()`, `replace()`, and `delete()` check — see [Concurrency](concurrency.md#optimistic-concurrency-use_revision) for the full protocol and the `ETag` recipe.
+
+```pycon
+>>> class Page(
+...     TinydanticModel,
+...     database=db,
+...     table_name="pages",
+...     use_revision=True,
+... ):
+...     title: str
+>>> page = Page(title="Home").insert()
+>>> page.revision_id is not None
+True
+
+```
+
+**This is the one key `bind()` cannot set.** The opt-in adds a field, and pydantic builds a model's field set when the class statement executes — so the decision has to be made there, in the class keywords, and not afterwards. A model that declares its own `revision_id` while opting in is refused at class definition with [RevisionFieldError][tinydantic.RevisionFieldError].
 
 ## Table-name derivation
 
@@ -116,7 +160,7 @@ Product(id=1, sku='ABC-123')
 
 ```
 
-`bind()` updates only the keys you pass, leaving the others (including inherited ones) untouched, and binding a subclass never affects its parents. Every configuration key on this page can be bound late — `database=`, `table_name=`, `validate_writes=`, and `shadowed_fields=`.
+`bind()` updates only the keys you pass, leaving the others (including inherited ones) untouched, and binding a subclass never affects its parents. Five of the six configuration keys can be bound late — `database=`, `table_name=`, `validate_writes=`, `shadowed_fields=`, and `constraints=`. [use_revision](#use_revision) is the exception, for a structural reason: it adds a field, and pydantic collects a model's fields when the class is built.
 
 ### Undo it with `unbind()`
 

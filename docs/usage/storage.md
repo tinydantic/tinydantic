@@ -123,6 +123,34 @@ Log(id=1, msg='cached')
 
 ```
 
+### Keeping document ids in numeric order
+
+TinyDB stores document ids as strings, so a table with ten documents serializes `"1"`, `"10"`, `"2"` — lexicographic order, which undoes much of the reason to choose a human-readable format in the first place. [SortIntDocIDsMiddleware][tinydantic.tinydb.middlewares.SortIntDocIDsMiddleware] converts the ids back to integers on write and inserts them in ascending numeric order:
+
+```pycon
+>>> from tinydantic.tinydb.middlewares import SortIntDocIDsMiddleware
+>>> tmpdir = tempfile.TemporaryDirectory()
+>>> sorted_path = os.path.join(tmpdir.name, "db.yaml")
+>>> db = TinyDB(sorted_path, storage=SortIntDocIDsMiddleware(YAMLStorage))
+>>> class Ticket(TinydanticModel, database=db, table_name="tickets"):
+...     summary: str
+>>> _ = Ticket.insert_multiple(
+...     [Ticket(summary=f"ticket {n}") for n in range(1, 11)]
+... )
+>>> db.close()
+>>> with open(sorted_path) as f:
+...     print(f.read()[:62], end="")
+tickets:
+  1:
+    summary: ticket 1
+  2:
+    summary: ticket 2
+>>> tmpdir.cleanup()
+
+```
+
+Without it, that file would open with `1`, `10`, `2`. The trade-off is in the name: the middleware hands integer keys to the storage below it, which is fine for JSON and YAML but may break a storage that can only serialize string keys.
+
 ## Beyond the built-ins
 
 TinyDB's [storage documentation](https://tinydb.readthedocs.io/en/latest/usage.html#storage-types) lists more options, and third-party packages add backends such as SQLite. Any storage that presents the TinyDB `Storage` interface works with `tinydantic` unchanged, because `tinydantic` only ever hands the storage layer JSON-safe primitives.
