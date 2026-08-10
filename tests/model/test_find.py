@@ -78,6 +78,89 @@ class TestErrorHierarchy:
         assert not issubclass(QueryUsageError, ValueError)
 
 
+class TestFilter:
+    """filter() narrows a chain, repeatably, with AND."""
+
+    @pytest.fixture
+    def populated(self, user_class: type[User]) -> type[User]:
+        """Four users spanning both filter dimensions."""
+        user_class.insert_multiple(
+            [
+                user_class(name="ada", age=36),
+                user_class(name="bob", age=17),
+                user_class(name="cy", age=41),
+                user_class(name="dee", age=17),
+            ],
+        )
+        return user_class
+
+    def test_filter_ands_with_the_find_condition(
+        self, populated: type[User]
+    ) -> None:
+        """Both conditions must match."""
+        chain = populated.find(field(populated, "age") > 18).filter(
+            field(populated, "name") == "ada",
+        )
+        assert [u.name for u in chain.all()] == ["ada"]
+
+    def test_filter_supplies_the_condition_when_there_is_none(
+        self, populated: type[User]
+    ) -> None:
+        """find() with no condition can still be narrowed."""
+        chain = populated.find().filter(field(populated, "age") == 17)
+        assert sorted(u.name for u in chain.all()) == ["bob", "dee"]
+
+    def test_filter_repeats_unlike_the_other_modifiers(
+        self, populated: type[User]
+    ) -> None:
+        """Successive filters mean AND, so repetition is allowed."""
+        chain = (
+            populated.find()
+            .filter(field(populated, "age") > 18)
+            .filter(field(populated, "age") < 40)
+            .filter(field(populated, "name") == "ada")
+        )
+        assert [u.name for u in chain.all()] == ["ada"]
+
+    def test_filter_returns_a_new_chain(self, populated: type[User]) -> None:
+        """The base chain is never mutated."""
+        base = populated.find(field(populated, "age") > 18)
+        narrowed = base.filter(field(populated, "name") == "ada")
+        assert narrowed is not base
+        assert base.count() == 2
+
+    def test_filter_composes_with_the_window(
+        self, populated: type[User]
+    ) -> None:
+        """Order of modifier calls does not change the pipeline."""
+        chain = (
+            populated.find()
+            .sort("name")
+            .filter(field(populated, "age") == 17)
+            .limit(1)
+        )
+        assert [u.name for u in chain.all()] == ["bob"]
+
+    def test_filter_works_on_top_of_a_callable_condition(
+        self, populated: type[User]
+    ) -> None:
+        """A lambda has no &, so the AND falls back to a closure."""
+        chain = populated.find(lambda doc: doc["age"] == 17).filter(
+            field(populated, "name") == "dee",
+        )
+        assert [u.name for u in chain.all()] == ["dee"]
+
+    def test_filter_refuses_a_non_condition(
+        self, populated: type[User]
+    ) -> None:
+        """The operand goes through the same guard find() uses."""
+        chain = populated.find()
+        with pytest.raises(QueryTypeError):
+            chain.filter("ada")  # type: ignore[arg-type]
+        with pytest.raises(QueryTypeError):
+            chain.filter(None)  # type: ignore[arg-type]
+
+
 class TestFindConstruction:
     """find() builds a lazy, immutable FindQuery."""
 

@@ -53,7 +53,7 @@ A chain is a _clause set_ — one condition, one ordering, one window — not a 
 
 ```
 
-**Each clause is stated once.** Calling a modifier twice on the same chain raises [QueryUsageError][tinydantic.QueryUsageError] instead of guessing what you meant (see [Sorting](#sorting) for why guessing is dangerous):
+**Each clause is stated once.** Calling `sort()`, `skip()`, or `limit()` twice on the same chain raises [QueryUsageError][tinydantic.QueryUsageError] instead of guessing what you meant (see [Sorting](#sorting) for why guessing is dangerous):
 
 ```pycon
 >>> adults.sort("name").sort("-age")
@@ -63,6 +63,8 @@ tinydantic._errors.QueryUsageError: sort() was already called on this query. Cla
 
 ```
 
+[filter()](#narrowing-a-chain) is the deliberate exception — see below.
+
 **The pipeline is fixed: match → sort → skip → limit, regardless of call order.** `limit(2).sort(...)` does _not_ mean "take two documents, then sort them" — sorting always happens before the window is cut, exactly as in SQL (`ORDER BY` before `LIMIT`) and MongoDB (cursor options, applied server-side in fixed order):
 
 ```pycon
@@ -70,6 +72,48 @@ tinydantic._errors.QueryUsageError: sort() was already called on this query. Cla
 >>> spelled_forward = User.find().sort("-age").limit(2)
 >>> spelled_backward.all() == spelled_forward.all()
 True
+
+```
+
+## Narrowing a chain
+
+[filter()][tinydantic.FindQuery.filter] adds a condition to a chain, ANDed with whatever it already carries. This is what makes a base query genuinely reusable — the same starting point, narrowed differently per caller:
+
+```pycon
+>>> thirty_plus = User.find(field(User, "age") >= 30)
+>>> sorted(u.name for u in thirty_plus.all())
+['bob', 'carol', 'erin']
+>>> named_c = thirty_plus.filter(field(User, "name").matches("c.*"))
+>>> [u.name for u in named_c.all()]
+['carol']
+>>> sorted(u.name for u in thirty_plus.all())  # the base is untouched
+['bob', 'carol', 'erin']
+
+```
+
+On a chain built by `find()` with no condition, the first `filter()` supplies the condition. Successive calls keep narrowing:
+
+```pycon
+>>> [
+...     u.name
+...     for u in User.find()
+...     .filter(field(User, "age") >= 30)
+...     .filter(field(User, "age") < 40)
+...     .sort("name")
+...     .all()
+... ]
+['bob', 'carol']
+
+```
+
+**Why `filter()` repeats when `sort()` refuses to.** The once-only rule exists because the ecosystem disagrees about what a second `sort()` means, so tinydantic will not guess. There is no such disagreement here: successive filters compose with AND in Django, SQLAlchemy, Beanie, and Mongoose alike. Where the meaning is unanimous, refusing would be pedantry rather than safety.
+
+Composing the conditions yourself with `&` before calling `find()` is equivalent, and better when you have both conditions in hand at once:
+
+```pycon
+>>> both = (field(User, "age") >= 30) & (field(User, "age") < 40)
+>>> sorted(u.name for u in User.find(both).all())
+['bob', 'carol']
 
 ```
 

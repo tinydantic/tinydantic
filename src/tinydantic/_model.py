@@ -40,7 +40,6 @@ from tinydantic._errors import (
     DocumentIDUpdateError,
     DocumentNotFoundError,
     QueryFieldError,
-    QueryTypeError,
     RevisionFieldError,
     RevisionUpdateError,
     SelectorError,
@@ -53,9 +52,12 @@ from tinydantic._errors import (
 from tinydantic._fields import Unique, UniqueConstraint
 from tinydantic._find import FindQuery
 from tinydantic._query import (
+    _COND_NOT_GIVEN,
     DocIdCondition,
     DocIdQuery,
     GuardedQuery,
+    _checked_cond,
+    _require_condition,
     has_id_condition,
 )
 from tinydantic.tinydb.operations import replace
@@ -101,123 +103,6 @@ _MANAGED_FIELDS = frozenset({"id", "revision_id"})
 # accidental None value. Every optional-``cond`` method defaults to
 # it, so an explicitly passed None is always reported as the wrong
 # kind of object rather than as a missing selector.
-class _CondNotGiven:
-    """The type of the "no condition was passed" sentinel.
-
-    Structurally a TinyDB ``QueryLike`` (callable and hashable) so
-    it can be the default of a ``QueryLike | None`` parameter
-    without weakening that annotation for callers. It is compared
-    by identity and never called; the public signatures are the
-    reason it exists.
-    """
-
-    def __call__(self, value: Mapping[Any, Any]) -> bool:  # noqa: ARG002
-        """Never invoked — the sentinel is identity-checked.
-
-        Present only so the sentinel satisfies ``QueryLike``
-        structurally; ``value`` is deliberately unused.
-        """
-        raise AssertionError(self.__doc__)
-
-
-_COND_NOT_GIVEN: QueryLike = _CondNotGiven()
-
-_NONE_HINT = (
-    "If the condition is optional, guard it with 'cond is not "
-    "None' before calling."
-)
-
-
-def _require_condition(
-    cond: object,
-    *,
-    method: str,
-    none_hint: str = _NONE_HINT,
-) -> None:
-    """Refuse anything TinyDB cannot evaluate as a condition.
-
-    TinyDB's ``QueryLike`` is a protocol, not a class: any
-    hashable callable is a valid condition, and plain lambdas are
-    a documented spelling. The check is therefore duck-typed —
-    an ``isinstance`` test against ``QueryInstance`` would reject
-    working code.
-
-    Without this, a non-condition reaches TinyDB and fails as
-    ``'str' object is not callable`` or ``unhashable type:
-    'dict'`` — or, on an empty table, does not fail at all and
-    quietly returns nothing.
-
-    Args:
-        cond: The candidate condition.
-        method: The public method name, for the message.
-        none_hint: Recovery advice appended to the ``None``
-            message, overridden where a whole-table spelling
-            exists.
-
-    Raises:
-        QueryTypeError: If ``cond`` is ``None``, a bare query
-            builder, or not a hashable callable.
-    """
-    if cond is None:
-        msg = (
-            f"{method}() got None instead of a query condition — "
-            f"a condition variable is unexpectedly None. {none_hint}"
-        )
-        raise QueryTypeError(msg)
-    if isinstance(cond, Query):
-        msg = (
-            f"{method}() got a query builder, not a query "
-            "condition. Model.field names a field; compare it to "
-            "build a condition (Model.field == <value>) and pass "
-            "that."
-        )
-        raise QueryTypeError(msg)
-    if isinstance(cond, dict):
-        msg = (
-            f"{method}() takes a query condition, not a dict. "
-            f"{cond!r} is MongoDB syntax; in tinydantic compare a "
-            "field instead — Model.field == <value>, or "
-            "field(Model, 'name') == <value> for a name the model "
-            "shadows."
-        )
-        raise QueryTypeError(msg)
-    if not callable(cond):
-        msg = (
-            f"{method}() takes a query condition, got "
-            f"{type(cond).__name__}: {cond!r}. A value is not a "
-            "condition — compare a field to it, as in "
-            f"Model.field == {cond!r}."
-        )
-        raise QueryTypeError(msg)
-    try:
-        hash(cond)
-    except TypeError:
-        msg = (
-            f"{method}() takes a hashable query condition (TinyDB "
-            f"caches on it), got an unhashable "
-            f"{type(cond).__name__}."
-        )
-        raise QueryTypeError(msg) from None
-
-
-def _checked_cond(
-    cond: object,
-    *,
-    method: str,
-    none_hint: str = _NONE_HINT,
-) -> QueryLike | None:
-    """Validate an optional condition, mapping the sentinel to None.
-
-    Call sites keep their ``cond is None`` selector logic; only
-    the default changes, so absence stays a
-    [SelectorError][tinydantic.SelectorError] while an explicit
-    ``None`` becomes a
-    [QueryTypeError][tinydantic.QueryTypeError].
-    """
-    if cond is _COND_NOT_GIVEN:
-        return None
-    _require_condition(cond, method=method, none_hint=none_hint)
-    return cast("QueryLike", cond)
 
 
 # Name of the per-class attribute caching unique field names
