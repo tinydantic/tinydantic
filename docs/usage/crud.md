@@ -259,6 +259,16 @@ Book(id=2, title='Neuromancer', author='Gibson', year=1984, in_stock=False)
 
 ```
 
+An update that matches nothing writes nothing and returns an empty list — SQL-like semantics, and the same shape `remove()` uses. It is not an error, so a typo in the condition's _value_ looks exactly like "there was nothing to do":
+
+```pycon
+>>> Book.update({"in_stock": False}, Book.author == "gibson")  # lowercase g
+[]
+
+```
+
+The returned ids are the check: `if not Book.update(...):` distinguishes the two cases when it matters.
+
 A transform callable mutates each matched document in place:
 
 ```pycon

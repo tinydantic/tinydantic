@@ -85,9 +85,10 @@ The stale write was refused and the store still holds `stock=4`. Recovery is alw
 When last-write-wins is genuinely what you want — an admin override, a migration script, a conflict handler that decided "mine wins" — say so explicitly. The token still rotates, so _other_ holders correctly go stale:
 
 ```pycon
+>>> stale.stock = 99  # a value the current document does not have
 >>> stale = stale.save(ignore_revision=True)  # deliberate overwrite
 >>> Book.get_by_id(book.id).stock
-3
+99
 
 ```
 
