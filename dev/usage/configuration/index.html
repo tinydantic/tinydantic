@@ -977,6 +977,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use_revision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        use_revision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#table-name-derivation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2128,6 +2150,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use_revision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        use_revision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#table-name-derivation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2255,14 +2299,19 @@
 
 
 <h1 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">¤</a></h1>
-<p>Configuration is how a model learns <em>where</em> its documents live: which <a class="autorefs autorefs-external" href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.database.TinyDB">TinyDB</a> database, and which table within it. <code>tinydantic</code> takes both as class keyword arguments — the same shape as SQLModel's <code>class Hero(SQLModel, table=True)</code>. This page covers the two config keys, how the table name is derived, how config flows through subclassing, late binding with <code>bind()</code>, the errors you can hit, and — in a closing design note — why this config deliberately lives outside Pydantic's <code>model_config</code>.</p>
+<p>Configuration is how a model learns <em>where</em> its documents live: which <a class="autorefs autorefs-external" href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.database.TinyDB">TinyDB</a> database, and which table within it. <code>tinydantic</code> takes both as class keyword arguments — the same shape as SQLModel's <code>class Hero(SQLModel, table=True)</code>. This page covers the six config keys, how the table name is derived, how config flows through subclassing, late binding with <code>bind()</code>, the errors you can hit, and — in a closing design note — why this config deliberately lives outside Pydantic's <code>model_config</code>.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb</span><span class="w"> </span><span class="kn">import</span> <span class="n">TinyDB</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydb.storages</span><span class="w"> </span><span class="kn">import</span> <span class="n">MemoryStorage</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">TinydanticModel</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">TinyDB</span><span class="p">(</span><span class="n">storage</span><span class="o">=</span><span class="n">MemoryStorage</span><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="class-keyword-arguments">Class keyword arguments<a class="headerlink" href="#class-keyword-arguments" title="Permanent link">¤</a></h2>
-<p>A model is configured with keyword arguments on the class statement: <code>database=</code> (a TinyDB instance), <code>table_name=</code> (a string), and <code>validate_writes=</code> (a bool).</p>
+<p>A model is configured with keyword arguments on the class statement: <code>database=</code> (a TinyDB instance), <code>table_name=</code> (a string), <code>validate_writes=</code> (a bool), <code>shadowed_fields=</code> (a tuple of names), <code>constraints=</code> (a tuple of <a class="autorefs autorefs-internal" title="            UniqueConstraint
+
+
+  
+      dataclass
+  " href="../../reference/api/tinydantic/#tinydantic.UniqueConstraint">UniqueConstraint</a>s), and <code>use_revision=</code> (a bool).</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;users&quot;</span><span class="p">):</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Alice&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
@@ -2282,7 +2331,7 @@
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
 </span></code></pre></div>
 <h2 id="shadowed_fields"><code>shadowed_fields</code><a class="headerlink" href="#shadowed_fields" title="Permanent link">¤</a></h2>
-<p>A field whose name collides with an existing class attribute — a tinydantic method (<code>search</code>, <code>count</code>, ...), a pydantic method (<code>copy</code>, <code>json</code>, ...), or one of your own mixin methods — would break the <code>Model.field</code> query shorthand silently, so tinydantic refuses the class definition with <a class="autorefs autorefs-internal" title="            ShadowedFieldError" href="../../reference/api/tinydantic/#tinydantic.ShadowedFieldError">ShadowedFieldError</a>. <code>shadowed_fields=</code> is the explicit opt-out for when you need such a field anyway (for example, a table shared with another tool that writes a <code>search</code> key). Listed fields work everywhere except the <code>Model.field</code> shorthand; query them with <a class="autorefs autorefs-internal" title="            q" href="../../reference/api/tinydantic/#tinydantic.q">q()</a> — see the <a href="../queries/#sharp-edge-fields-that-shadow-query-methods">queries guide</a> for the full walkthrough:</p>
+<p>A field whose name collides with an existing class attribute — a tinydantic method (<code>search</code>, <code>count</code>, ...), a pydantic method (<code>copy</code>, <code>json</code>, ...), or one of your own mixin methods — would break the <code>Model.field</code> query shorthand silently, so tinydantic refuses the class definition with <a class="autorefs autorefs-internal" title="            ShadowedFieldError" href="../../reference/api/tinydantic/#tinydantic.ShadowedFieldError">ShadowedFieldError</a>. <code>shadowed_fields=</code> is the explicit opt-out for when you need such a field anyway (for example, a table shared with another tool that writes a <code>search</code> key). Listed fields work everywhere except the <code>Model.field</code> shorthand; query them by name with <a class="autorefs autorefs-internal" title="            field" href="../../reference/api/tinydantic/#tinydantic.field">field()</a> — <code>field(Command, "search")</code> — see the <a href="../queries/#sharp-edge-fields-that-shadow-query-methods">queries guide</a> for the full walkthrough:</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">shadowed_fields</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;search&quot;</span><span class="p">,)):</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="gp">... </span>    <span class="n">search</span><span class="p">:</span> <span class="nb">str</span>
@@ -2292,30 +2341,72 @@
 <p class="admonition-title">Note</p>
 <p>The flat method namespace means a future tinydantic release that adds a new model method may newly shadow one of your fields — the class definition will then fail loudly at upgrade time, and the fix is this same one-line opt-out (or a rename).</p>
 </div>
+<h2 id="constraints"><code>constraints</code><a class="headerlink" href="#constraints" title="Permanent link">¤</a></h2>
+<p><code>constraints=</code> declares uniqueness across a <em>combination</em> of fields, or uniqueness under a normalizing key — the cases the field-level <a class="autorefs autorefs-internal" title="            Unique
+
+
+  
+      dataclass
+  " href="../../reference/api/tinydantic/#tinydantic.Unique">Unique()</a> marker cannot express. Each entry is a <a class="autorefs autorefs-internal" title="            UniqueConstraint
+
+
+  
+      dataclass
+  " href="../../reference/api/tinydantic/#tinydantic.UniqueConstraint">UniqueConstraint</a>; see <a href="../models/#unique-fields">Models</a> for the semantics and the cost.</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">UniqueConstraint</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Membership</span><span class="p">(</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="gp">... </span>    <span class="n">TinydanticModel</span><span class="p">,</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="gp">... </span>    <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="gp">... </span>    <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;memberships&quot;</span><span class="p">,</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="gp">... </span>    <span class="n">constraints</span><span class="o">=</span><span class="p">(</span><span class="n">UniqueConstraint</span><span class="p">(</span><span class="s2">&quot;org&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">),),</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="gp">... </span><span class="p">):</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="gp">... </span>    <span class="n">org</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="gp">... </span>    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">Membership</span><span class="p">(</span><span class="n">org</span><span class="o">=</span><span class="s2">&quot;acme&quot;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s2">&quot;a@example.com&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Membership</span><span class="p">(</span><span class="n">org</span><span class="o">=</span><span class="s2">&quot;acme&quot;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s2">&quot;a@example.com&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">    </span><span class="o">...</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="gr">tinydantic._errors.UniqueConstraintError</span>: <span class="n">Values (&#39;acme&#39;, &#39;a@example.com&#39;) for unique fields (&#39;org&#39;, &#39;email&#39;) already exist in table &#39;memberships&#39; (model &#39;Membership&#39;) — held by document 1.</span>
+</span></code></pre></div>
+<p>Unlike <code>use_revision</code>, <code>constraints</code> <strong>can</strong> be bound late: it adds no field, so nothing about the class shape depends on it.</p>
+<h2 id="use_revision"><code>use_revision</code><a class="headerlink" href="#use_revision" title="Permanent link">¤</a></h2>
+<p><code>use_revision=True</code> opts a model into optimistic concurrency. The model gains a <code>revision_id</code> token that every write rotates and that <code>save()</code>, <code>replace()</code>, and <code>delete()</code> check — see <a href="../concurrency/#optimistic-concurrency-use_revision">Concurrency</a> for the full protocol and the <code>ETag</code> recipe.</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Page</span><span class="p">(</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="gp">... </span>    <span class="n">TinydanticModel</span><span class="p">,</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="gp">... </span>    <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="gp">... </span>    <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;pages&quot;</span><span class="p">,</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="gp">... </span>    <span class="n">use_revision</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="gp">... </span><span class="p">):</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="gp">... </span>    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">page</span> <span class="o">=</span> <span class="n">Page</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Home&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">page</span><span class="o">.</span><span class="n">revision_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="go">True</span>
+</span></code></pre></div>
+<p><strong>This is the one key <code>bind()</code> cannot set.</strong> The opt-in adds a field, and pydantic builds a model's field set when the class statement executes — so the decision has to be made there, in the class keywords, and not afterwards. A model that declares its own <code>revision_id</code> while opting in is refused at class definition with <a class="autorefs autorefs-internal" title="            RevisionFieldError" href="../../reference/api/tinydantic/#tinydantic.RevisionFieldError">RevisionFieldError</a>.</p>
 <h2 id="table-name-derivation">Table-name derivation<a class="headerlink" href="#table-name-derivation" title="Permanent link">¤</a></h2>
 <p><code>table_name=</code> is optional. When you omit it, the table name is derived from the class name converted to <code>snake_case</code> via <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/latest/api/pydantic/config/#pydantic.alias_generators.to_snake">pydantic.alias_generators.to_snake</a> — so <code>AdminUser</code> stores its documents in a table named <code>admin_user</code>:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">AdminUser</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">AdminUser</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;root&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="go">AdminUser(id=1, name=&#39;root&#39;)</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">AdminUser</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="go">&#39;admin_user&#39;</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">AdminUser</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">AdminUser</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;root&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="go">AdminUser(id=1, name=&#39;root&#39;)</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">AdminUser</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="go">&#39;admin_user&#39;</span>
 </span></code></pre></div>
 <h2 id="configuration-inheritance">Configuration inheritance<a class="headerlink" href="#configuration-inheritance" title="Permanent link">¤</a></h2>
 <p>Config keys are resolved by walking the class's <a href="https://docs.python.org/3/glossary.html#term-method-resolution-order">MRO</a>: each key is looked up on the class itself first, then its bases, and the first class that sets it wins. A subclass therefore inherits its parent's config and can override any single key while leaving the rest intact.</p>
 <p>Here <code>Base</code> is bound to <code>db</code> with an explicit table name. <code>Child</code> sets only <code>table_name</code> — it inherits <code>database</code> from <code>Base</code>:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Base</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;base_table&quot;</span><span class="p">):</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="gp">... </span>    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Base</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;child_table&quot;</span><span class="p">):</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="gp">... </span>    <span class="n">b</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Child</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span> <span class="ow">is</span> <span class="n">db</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="go">True</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Child</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="go">&#39;child_table&#39;</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Base</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;base_table&quot;</span><span class="p">):</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="gp">... </span>    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Base</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;child_table&quot;</span><span class="p">):</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="gp">... </span>    <span class="n">b</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Child</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span> <span class="ow">is</span> <span class="n">db</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="go">True</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Child</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="go">&#39;child_table&#39;</span>
 </span></code></pre></div>
 <p>Each class stores only the keys explicitly set on it, so overriding a key on a child never mutates the parent:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Base</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">&#39;base_table&#39;</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Base</span><span class="o">.</span><span class="n">get_table</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">&#39;base_table&#39;</span>
 </span></code></pre></div>
 <h2 id="late-binding-with-bind">Late binding with <code>bind()</code><a class="headerlink" href="#late-binding-with-bind" title="Permanent link">¤</a></h2>
 <p>Sometimes no <code>TinyDB</code> instance exists when the class is defined — a common case in tests and application factories, where the database is created at startup. Define the model with no <code>database=</code>, then attach one later with <a class="autorefs autorefs-internal" title="            bind
@@ -2324,13 +2415,13 @@
   
       classmethod
   " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.bind">bind()</a>:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Product</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;products&quot;</span><span class="p">):</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="gp">... </span>    <span class="n">sku</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">)</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="p">(</span><span class="n">sku</span><span class="o">=</span><span class="s2">&quot;ABC-123&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="go">Product(id=1, sku=&#39;ABC-123&#39;)</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Product</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;products&quot;</span><span class="p">):</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="gp">... </span>    <span class="n">sku</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">)</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="p">(</span><span class="n">sku</span><span class="o">=</span><span class="s2">&quot;ABC-123&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">Product(id=1, sku=&#39;ABC-123&#39;)</span>
 </span></code></pre></div>
-<p><code>bind()</code> updates only the keys you pass, leaving the others (including inherited ones) untouched, and binding a subclass never affects its parents. Every configuration key on this page can be bound late — <code>database=</code>, <code>table_name=</code>, <code>validate_writes=</code>, and <code>shadowed_fields=</code>.</p>
+<p><code>bind()</code> updates only the keys you pass, leaving the others (including inherited ones) untouched, and binding a subclass never affects its parents. Five of the six configuration keys can be bound late — <code>database=</code>, <code>table_name=</code>, <code>validate_writes=</code>, <code>shadowed_fields=</code>, and <code>constraints=</code>. <a href="#use_revision">use_revision</a> is the exception, for a structural reason: it adds a field, and pydantic collects a model's fields when the class is built.</p>
 <h3 id="undo-it-with-unbind">Undo it with <code>unbind()</code><a class="headerlink" href="#undo-it-with-unbind" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            unbind
 
@@ -2338,47 +2429,47 @@
   
       classmethod
   " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.unbind">unbind()</a> is the inverse, built for test fixtures that attach a database in setup and must detach it in teardown. Pass key names to remove specific settings, or nothing to remove everything this class set:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="s2">&quot;database&quot;</span><span class="p">)</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="gr">tinydantic._errors.DatabaseNotBoundError</span>: <span class="n">...</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="s2">&quot;database&quot;</span><span class="p">)</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Product</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="gr">tinydantic._errors.DatabaseNotBoundError</span>: <span class="n">...</span>
 </span></code></pre></div>
 <p>In a pytest fixture, the pair looks like this (the <code>yield</code> runs the test between them):</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">bound_product</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="n">Product</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">TinyDB</span><span class="p">(</span><span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">&quot;test.json&quot;</span><span class="p">))</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span class="k">yield</span> <span class="n">Product</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="n">Product</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="s2">&quot;database&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">bound_product</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    <span class="n">Product</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">TinyDB</span><span class="p">(</span><span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">&quot;test.json&quot;</span><span class="p">))</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    <span class="k">yield</span> <span class="n">Product</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    <span class="n">Product</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="s2">&quot;database&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <p><code>unbind()</code> removes only settings made on the class itself — a value inherited from a base class resurfaces, exactly as <code>bind()</code> on a subclass never affects its parents. Unbinding a key the class never set is a no-op, and an unknown key name raises <code>ValueError</code>.</p>
 <h2 id="databasenotbounderror"><code>DatabaseNotBoundError</code><a class="headerlink" href="#databasenotbounderror" title="Permanent link">¤</a></h2>
 <p>Any table operation on a model that has no database anywhere in its class hierarchy raises <a class="autorefs autorefs-internal" title="            DatabaseNotBoundError" href="../../reference/api/tinydantic/#tinydantic.DatabaseNotBoundError">DatabaseNotBoundError</a>. The message points at both ways to fix it:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Orphan</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">):</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Orphan</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="gr">tinydantic._errors.DatabaseNotBoundError</span>: <span class="n">No database is bound to &#39;Orphan&#39;. Pass database=&lt;TinyDB instance&gt; as a class keyword when defining the model, or call Orphan.bind(database=...) before using it.</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Orphan</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">):</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Orphan</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="gr">tinydantic._errors.DatabaseNotBoundError</span>: <span class="n">No database is bound to &#39;Orphan&#39;. Pass database=&lt;TinyDB instance&gt; as a class keyword when defining the model, or call Orphan.bind(database=...) before using it.</span>
 </span></code></pre></div>
 <h2 id="ambiguousconfigerror"><code>AmbiguousConfigError</code><a class="headerlink" href="#ambiguousconfigerror" title="Permanent link">¤</a></h2>
 <p>MRO lookup gives a single, unambiguous answer when config comes down <em>one</em> inheritance chain. The one case where it could not is a diamond: a class inheriting from two <em>unrelated</em> bases that each set the same key to different values. Rather than silently pick one, <code>tinydantic</code> raises <a class="autorefs autorefs-internal" title="            AmbiguousConfigError" href="../../reference/api/tinydantic/#tinydantic.AmbiguousConfigError">AmbiguousConfigError</a> at class-definition time.</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">other_db</span> <span class="o">=</span> <span class="n">TinyDB</span><span class="p">(</span><span class="n">storage</span><span class="o">=</span><span class="n">MemoryStorage</span><span class="p">)</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">FromMain</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="gp">... </span>    <span class="k">pass</span>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">FromOther</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">other_db</span><span class="p">):</span>
-</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="gp">... </span>    <span class="k">pass</span>
-</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Combined</span><span class="p">(</span><span class="n">FromMain</span><span class="p">,</span> <span class="n">FromOther</span><span class="p">):</span>
-</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="gr">tinydantic._errors.AmbiguousConfigError</span>: <span class="n">&#39;Combined&#39; inherits conflicting values for tinydantic config key &#39;database&#39; from unrelated base classes &#39;FromMain&#39; and &#39;FromOther&#39;. Set database= explicitly on &#39;Combined&#39; to resolve the ambiguity.</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">other_db</span> <span class="o">=</span> <span class="n">TinyDB</span><span class="p">(</span><span class="n">storage</span><span class="o">=</span><span class="n">MemoryStorage</span><span class="p">)</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">FromMain</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="gp">... </span>    <span class="k">pass</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">FromOther</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">other_db</span><span class="p">):</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="gp">... </span>    <span class="k">pass</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Combined</span><span class="p">(</span><span class="n">FromMain</span><span class="p">,</span> <span class="n">FromOther</span><span class="p">):</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="gr">tinydantic._errors.AmbiguousConfigError</span>: <span class="n">&#39;Combined&#39; inherits conflicting values for tinydantic config key &#39;database&#39; from unrelated base classes &#39;FromMain&#39; and &#39;FromOther&#39;. Set database= explicitly on &#39;Combined&#39; to resolve the ambiguity.</span>
 </span></code></pre></div>
 <p>Setting the key explicitly on the new class resolves the conflict — the class's own value wins, and no lookup ambiguity remains:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Combined</span><span class="p">(</span><span class="n">FromMain</span><span class="p">,</span> <span class="n">FromOther</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Combined</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span> <span class="ow">is</span> <span class="n">db</span>
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">True</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Combined</span><span class="p">(</span><span class="n">FromMain</span><span class="p">,</span> <span class="n">FromOther</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">):</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="gp">... </span>    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Combined</span><span class="o">.</span><span class="n">get_database</span><span class="p">()</span> <span class="ow">is</span> <span class="n">db</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">True</span>
 </span></code></pre></div>
 <h2 id="design-notes-why-config-is-not-in-model_config">Design notes: why config is not in <code>model_config</code><a class="headerlink" href="#design-notes-why-config-is-not-in-model_config" title="Permanent link">¤</a></h2>
 <p><code>tinydantic</code> stores its config in a per-class <code>__tinydantic_config__</code> attribute and resolves it by walking the MRO — deliberately <em>not</em> in Pydantic's <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/latest/api/pydantic/base_model/#pydantic.BaseModel.model_config">model_config</a>. The reason is a mismatch in ordering semantics.</p>
