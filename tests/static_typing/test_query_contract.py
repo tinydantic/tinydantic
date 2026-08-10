@@ -12,7 +12,7 @@ what `docs/usage/queries.md` promises.
 
 from pydantic import BaseModel
 from tinydb import TinyDB
-from tinydb.queries import QueryInstance
+from tinydb.queries import QueryInstance, QueryLike
 from tinydb.storages import MemoryStorage
 from typing_extensions import assert_type
 
@@ -151,3 +151,48 @@ def ordinary_field_defaults_type_check() -> None:
     assert_type(post.views, int)
     assert_type(post.tags, list[str])
     assert_type(post.draft, bool)
+
+
+def none_is_never_a_condition() -> None:
+    """Pin that `None` is refused by every condition-taking method.
+
+    `None` reaches these calls when an optional-filter builder
+    returns nothing, and treating it as "no condition" would widen
+    a query to the whole table. Each ignore below is the
+    assertion: `warn_unused_ignores` is on for this package, so if
+    any of these calls ever type-checks again, the unused ignore
+    fails `poe types`.
+    """
+    User.find(None)  # type: ignore[call-overload]
+    User.get(None)  # type: ignore[call-overload]
+    User.get_or_raise(None)  # type: ignore[call-overload]
+    User.search(None)  # type: ignore[arg-type]
+    User.count(None)  # type: ignore[arg-type]
+    User.contains(None)  # type: ignore[arg-type]
+    User.remove(None)  # type: ignore[arg-type]
+    User.update({}, None)  # type: ignore[arg-type]
+    User.upsert(User(name="a"), None)  # type: ignore[arg-type]
+
+
+def an_unguarded_optional_condition_is_refused() -> None:
+    """Pin the shape the `None` rejection actually exists for.
+
+    A literal `None` is a typo; an optional-filter builder whose
+    result is passed straight through is the real bug, and it is
+    the one a checker can catch before the runtime guard has to.
+    """
+    maybe: QueryLike | None = None if _db is None else q(User.name) == "a"
+    User.count(maybe)  # type: ignore[arg-type]
+    if maybe is not None:
+        User.count(maybe)  # narrowing is all it takes
+
+
+def omitting_a_condition_stays_legal() -> None:
+    """Keep the sentinel default from reading as a required arg.
+
+    The condition is optional on every one of these methods; the
+    sentinel exists to tell "omitted" from "None", not to make the
+    argument mandatory.
+    """
+    assert_type(User.count(), int)
+    assert_type(User.find(), FindQuery[User])
