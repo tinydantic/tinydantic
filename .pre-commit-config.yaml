@@ -42,18 +42,18 @@ repos:
       - id: reuse-lint-file
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.12.1
+    rev: 0.12.3
     hooks:
       - id: uv-lock
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.1
+    rev: v0.16.2
     hooks:
       - id: ruff
         args:
           - --fix
       - id: ruff-format
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 3.8.0
+    rev: 3.11.1
     hooks:
       - id: editorconfig-checker
         alias: ec
@@ -63,11 +63,11 @@ repos:
     hooks:
       - id: check-pre-commit-ci-config
   - repo: https://github.com/henryiii/validate-pyproject-schema-store
-    rev: 2026.08.01
+    rev: 2026.08.08
     hooks:
       - id: validate-pyproject
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.4
+    rev: 0.38.0
     hooks:
       - id: check-github-workflows
         args:
@@ -76,7 +76,7 @@ repos:
   # doesn't allow network access for free tier) and keeps formatting
   # and linting deterministic across environments.
   - repo: https://github.com/tombi-toml/tombi-pre-commit
-    rev: v1.2.6
+    rev: v1.2.10
     hooks:
       - id: tombi-format
         args:
