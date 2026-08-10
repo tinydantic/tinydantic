@@ -157,6 +157,91 @@ class TestRevisionField:
                 revision_id: str  # type: ignore[assignment]
 
 
+class TestTokenStaysOutOfTheCallerSurface:
+    """The token is bookkeeping, not part of the document."""
+
+    def test_absent_from_model_dump(self, db: TinyDB):
+        """It would otherwise ride into every FastAPI response."""
+
+        class Book(TinydanticModel, database=db, use_revision=True):
+            """Test model."""
+
+            title: str
+
+        book = Book(title="Dune").insert()
+        assert book.model_dump() == {"id": book.id, "title": "Dune"}
+
+    def test_absent_from_the_json_schema(self, db: TinyDB):
+        """exclude=True alone does not do this; SkipJsonSchema does."""
+
+        class Book(TinydanticModel, database=db, use_revision=True):
+            """Test model."""
+
+            title: str
+
+        assert set(Book.model_json_schema()["properties"]) == {
+            "id",
+            "title",
+        }
+
+    def test_still_reachable_on_the_instance(self, db: TinyDB):
+        """The ETag flow reads it directly off the model."""
+
+        class Book(TinydanticModel, database=db, use_revision=True):
+            """Test model."""
+
+            title: str
+
+        book = Book(title="Dune").insert()
+        assert isinstance(book.revision_id, UUID)
+        assert "revision_id" in repr(book)
+
+    def test_still_written_to_storage(self, db: TinyDB):
+        """The one excluded field storage genuinely needs."""
+
+        class Book(TinydanticModel, database=db, use_revision=True):
+            """Test model."""
+
+            title: str
+
+        book = Book(title="Dune").insert()
+        book.title = "Dune (1965)"
+        book = book.save()
+        assert book.id is not None
+        stored = cast("Document", Book.get_table().get(doc_id=book.id))
+        assert stored["revision_id"] == str(book.revision_id)
+
+    def test_conflict_detection_survives_the_exclusion(self, db: TinyDB):
+        """The round trip the exclusion could have broken."""
+
+        class Book(TinydanticModel, database=db, use_revision=True):
+            """Test model."""
+
+            title: str
+            stock: int
+
+        book = Book(title="Dune", stock=5).insert()
+        assert book.id is not None
+        stale = cast("Book", Book.get_by_id(book.id))
+        book.stock = 4
+        book = book.save()
+        stale.stock = 3
+        with pytest.raises(StaleDocumentError):
+            stale.save()
+
+    def test_models_without_the_opt_in_are_untouched(self, db: TinyDB):
+        """No token, no exclusion, no schema change."""
+
+        class Note(TinydanticModel, database=db):
+            """Test model."""
+
+            text: str
+
+        note = Note(text="hi").insert()
+        assert note.model_dump() == {"id": note.id, "text": "hi"}
+        assert "revision_id" not in Note.model_json_schema()["properties"]
+
+
 class TestSaveCheck:
     """save() compares the held token and rotates on success."""
 

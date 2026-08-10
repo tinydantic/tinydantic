@@ -44,6 +44,18 @@ True
 
 ```
 
+The token is deliberately absent from `model_dump()` and from the JSON Schema, so it never rides into a FastAPI response or a published OpenAPI document as an unexplained field. It is bookkeeping, not part of your document — read it off the instance when you need it, as the ETag recipe below does:
+
+```pycon
+>>> book.model_dump()
+{'id': 1, 'title': 'Dune', 'stock': 5}
+>>> sorted(Book.model_json_schema()["properties"])
+['id', 'stock', 'title']
+>>> book.revision_id is not None  # still yours to read
+True
+
+```
+
 Every write path mints a fresh token for the documents it touches ("rotates" it). The instance methods that hold a token from their read — `save()`, `replace()`, and `delete()` — _check_ it first: if the stored token no longer matches, another writer got there in between, and nothing is written:
 
 ```pycon
