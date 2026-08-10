@@ -177,7 +177,7 @@ False
 
 > [!TIP]
 >
-> `contains()` is the existence check. A bare condition is not one — `if Book.title == "Dune":` raises [QueryConditionError][tinydantic.QueryConditionError], because a condition describes a query rather than answering one. See [A condition is never a boolean](queries.md#a-condition-is-never-a-boolean).
+> `contains()` is the existence check. A bare condition is not one — `if Book.title == "Dune":` raises [QueryTypeError][tinydantic.QueryTypeError], because a condition describes a query rather than answering one. See [A condition is never a boolean](queries.md#a-condition-is-never-a-boolean).
 
 ### `count`
 

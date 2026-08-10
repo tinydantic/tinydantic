@@ -53,13 +53,13 @@ A chain is a _clause set_ — one condition, one ordering, one window — not a 
 
 ```
 
-**Each clause is stated once.** Calling a modifier twice on the same chain raises [FindQueryError][tinydantic.FindQueryError] instead of guessing what you meant (see [Sorting](#sorting) for why guessing is dangerous):
+**Each clause is stated once.** Calling a modifier twice on the same chain raises [QueryUsageError][tinydantic.QueryUsageError] instead of guessing what you meant (see [Sorting](#sorting) for why guessing is dangerous):
 
 ```pycon
 >>> adults.sort("name").sort("-age")
 Traceback (most recent call last):
     ...
-tinydantic._errors.FindQueryError: sort() was already called on this query. Clauses do not accumulate; state each clause once, combining keys in one call: .sort('name', '-age').
+tinydantic._errors.QueryUsageError: sort() was already called on this query. Clauses do not accumulate; state each clause once, combining keys in one call: .sort('name', '-age').
 
 ```
 
@@ -90,7 +90,7 @@ Passing `None` as a _value_ is a different situation: it usually means a conditi
 >>> User.find(cond)
 Traceback (most recent call last):
     ...
-tinydantic._errors.SelectorError: find() got None instead of a query condition — a condition variable is unexpectedly None. To query the whole table, call find() with no argument.
+tinydantic._errors.QueryTypeError: find() got None instead of a query condition — a condition variable is unexpectedly None. To query the whole table, call find() with no argument.
 
 ```
 
@@ -112,7 +112,7 @@ An unknown name fails at the `.sort()` call itself, not three stack frames later
 >>> User.find().sort("nickname")
 Traceback (most recent call last):
     ...
-tinydantic._errors.SortFieldError: 'nickname' is not a sortable field of 'User'. Sort keys are Python field names (not storage aliases); known fields: ['age', 'id', 'name']
+tinydantic._errors.QueryFieldError: 'nickname' is not a sortable field of 'User'. Sort keys are Python field names (not storage aliases); known fields: ['age', 'id', 'name']
 
 ```
 
@@ -124,7 +124,7 @@ For anything the name form cannot express — nested paths, computed keys — pa
 
 ```
 
-The two forms are mutually exclusive; mixing field names with `key=` or `reverse=` raises `FindQueryError`.
+The two forms are mutually exclusive; mixing field names with `key=` or `reverse=` raises [QueryValueError][tinydantic.QueryValueError].
 
 > [!NOTE]
 >
@@ -194,7 +194,7 @@ A chain itself has **no truth value** — `if User.find(cond):` would otherwise 
 >>> bool(User.find(field(User, "age") > 100))
 Traceback (most recent call last):
     ...
-tinydantic._errors.FindQueryError: A FindQuery has no truth value (it is a lazy query description). Use .exists() or .count().
+tinydantic._errors.QueryTypeError: A FindQuery has no truth value (it is a lazy query description). Use .exists() or .count().
 
 ```
 

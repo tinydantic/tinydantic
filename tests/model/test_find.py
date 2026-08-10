@@ -22,10 +22,11 @@ from tinydantic import (
     DocumentIDUpdateError,
     DocumentNotFoundError,
     FindQuery,
-    FindQueryError,
-    SelectorError,
+    QueryFieldError,
+    QueryTypeError,
+    QueryUsageError,
+    QueryValueError,
     ShadowedFieldError,
-    SortFieldError,
     TinydanticModel,
     TinydanticUserError,
     Unique,
@@ -53,18 +54,28 @@ def user_class(db: TinyDB) -> type[User]:
 
 
 class TestErrorHierarchy:
-    """FindQueryError and SortFieldError join the curated surface."""
+    """Chain errors carry the builtin base Python would."""
 
-    def test_find_query_error_is_user_error_and_value_error(
-        self,
-    ) -> None:
-        """FindQueryError subclasses TinydanticUserError+ValueError."""
-        assert issubclass(FindQueryError, TinydanticUserError)
-        assert issubclass(FindQueryError, ValueError)
+    def test_every_chain_error_is_a_user_error(self) -> None:
+        """All four can be caught as TinydanticUserError."""
+        for error in (
+            QueryFieldError,
+            QueryTypeError,
+            QueryUsageError,
+            QueryValueError,
+        ):
+            assert issubclass(error, TinydanticUserError)
 
-    def test_sort_field_error_is_find_query_error(self) -> None:
-        """SortFieldError subclasses FindQueryError."""
-        assert issubclass(SortFieldError, FindQueryError)
+    def test_builtin_bases_follow_python_convention(self) -> None:
+        """Wrong kind, bad value, and bad name map as Python does."""
+        assert issubclass(QueryTypeError, TypeError)
+        assert issubclass(QueryValueError, ValueError)
+        assert issubclass(QueryFieldError, AttributeError)
+
+    def test_usage_error_has_no_builtin_base(self) -> None:
+        """A clause stated twice is neither a type nor a value bug."""
+        assert not issubclass(QueryUsageError, TypeError)
+        assert not issubclass(QueryUsageError, ValueError)
 
 
 class TestFindConstruction:
@@ -76,11 +87,16 @@ class TestFindConstruction:
         adults = user_class.find(field(user_class, "age") >= 18)
         assert isinstance(adults, FindQuery)
 
-    def test_find_none_raises_selector_error(
+    def test_find_none_raises_query_type_error(
         self, user_class: type[User]
     ) -> None:
-        """A None condition value is refused at construction."""
-        with pytest.raises(SelectorError, match="no argument"):
+        """A None condition value is refused at construction.
+
+        None is the wrong kind of object, not a missing
+        argument — omitting the condition is the whole-table
+        spelling, which the message names.
+        """
+        with pytest.raises(QueryTypeError, match="no argument"):
             user_class.find(None)  # type: ignore[call-overload]
 
     def test_find_performs_no_io(self, db: TinyDB) -> None:
@@ -115,23 +131,23 @@ class TestModifiers:
     def test_repeated_sort_raises(self, user_class: type[User]) -> None:
         """A second sort() raises; message teaches one-call form."""
         chain = user_class.find().sort("name")
-        with pytest.raises(FindQueryError, match="once"):
+        with pytest.raises(QueryUsageError, match="once"):
             chain.sort("age")
 
     def test_repeated_skip_and_limit_raise(
         self, user_class: type[User]
     ) -> None:
         """skip()/limit() follow the same once-rule as sort()."""
-        with pytest.raises(FindQueryError, match="once"):
+        with pytest.raises(QueryUsageError, match="once"):
             user_class.find().skip(1).skip(2)
-        with pytest.raises(FindQueryError, match="once"):
+        with pytest.raises(QueryUsageError, match="once"):
             user_class.find().limit(1).limit(2)
 
     def test_unknown_sort_field_raises_eagerly(
         self, user_class: type[User]
     ) -> None:
         """A wrong field name fails at sort(), not at all()."""
-        with pytest.raises(SortFieldError, match="shoe_size"):
+        with pytest.raises(QueryFieldError, match="shoe_size"):
             user_class.find().sort("shoe_size")
 
     def test_alias_is_not_a_sort_key(self, db: TinyDB) -> None:
@@ -143,27 +159,33 @@ class TestModifiers:
             full_name: str = Field(alias="fullName")
 
         Aliased.find().sort("full_name")  # attribute name: fine
-        with pytest.raises(SortFieldError, match="fullName"):
+        with pytest.raises(QueryFieldError, match="fullName"):
             Aliased.find().sort("fullName")
 
     def test_descending_prefix_parses(self, user_class: type[User]) -> None:
         """A - prefix is accepted; a bare - is refused."""
         user_class.find().sort("-age", "name")
-        with pytest.raises(SortFieldError):
+        with pytest.raises(QueryFieldError):
             user_class.find().sort("-")
 
     def test_mixed_sort_forms_raise(self, user_class: type[User]) -> None:
         """Field names cannot combine with key= or reverse=."""
-        with pytest.raises(FindQueryError, match="key="):
+        with pytest.raises(QueryValueError, match="key="):
             user_class.find().sort("name", key=lambda u: u.age)
-        with pytest.raises(FindQueryError, match="key="):
+        with pytest.raises(QueryValueError, match="key="):
             user_class.find().sort("name", reverse=True)
 
-    def test_sort_without_arguments_raises_type_error(
+    def test_sort_without_arguments_raises(
         self, user_class: type[User]
     ) -> None:
-        """sort() with nothing to sort by is a TypeError."""
-        with pytest.raises(TypeError, match="sort"):
+        """sort() with nothing to sort by names no ordering.
+
+        Like a missing selector, the arguments are individually
+        fine and the combination supplies no value, so this is a
+        QueryValueError rather than the bare TypeError it used
+        to leak.
+        """
+        with pytest.raises(QueryValueError, match="sort"):
             user_class.find().sort()
 
     def test_skip_limit_operand_validation(
@@ -171,11 +193,15 @@ class TestModifiers:
     ) -> None:
         """skip/limit require a non-negative non-bool int."""
         find = user_class.find()
-        for bad in (-1, True, 1.5, "3", None):
-            with pytest.raises(FindQueryError):
-                find.skip(bad)  # type: ignore[arg-type]
-            with pytest.raises(FindQueryError):
-                find.limit(bad)  # type: ignore[arg-type]
+        for wrong_type in (True, 1.5, "3", None):
+            with pytest.raises(QueryTypeError):
+                find.skip(wrong_type)  # type: ignore[arg-type]
+            with pytest.raises(QueryTypeError):
+                find.limit(wrong_type)  # type: ignore[arg-type]
+        with pytest.raises(QueryValueError):
+            find.skip(-1)
+        with pytest.raises(QueryValueError):
+            find.limit(-1)
         find.skip(0)  # legal no-op
         find.limit(0)  # legal empty window
 
@@ -522,7 +548,7 @@ class TestBooleanContext:
         self, user_class: type[User]
     ) -> None:
         """If User.find(...) is refused with the fix named."""
-        with pytest.raises(FindQueryError, match="exists"):
+        with pytest.raises(QueryTypeError, match="exists"):
             bool(user_class.find())
 
     def test_len_is_unsupported(self, user_class: type[User]) -> None:

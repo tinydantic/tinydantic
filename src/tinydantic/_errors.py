@@ -227,11 +227,22 @@ class SelectorError(TinydanticUserError, ValueError):
 
     Selector-taking methods (``get()``, ``contains()``,
     ``update()``, ``remove()``, ``get_or_raise()``, ``upsert()``)
-    need exactly one way to pick documents. tinydantic raises this — a
-    ``ValueError`` subclass, so existing handlers keep working —
-    instead of letting TinyDB's ``RuntimeError`` (which nothing
-    catches deliberately) or its hints about TinyDB internals
-    leak through.
+    need exactly one way to pick documents. This covers *how many*
+    were given — none, or several — not what they are: a selector
+    of the wrong kind is a
+    [QueryTypeError][tinydantic.QueryTypeError].
+
+    It stays separate from
+    [QueryValueError][tinydantic.QueryValueError], despite sharing
+    a base, because a selector is not always a query:
+    ``get(doc_id=1, doc_ids=[1])`` names no query at all.
+
+    ``ValueError`` is the base for the same reason
+    ``subprocess.run(capture_output=True, stdout=...)`` raises one
+    — the arguments are individually well-typed and wrong in
+    combination. tinydantic raises it instead of letting TinyDB's
+    ``RuntimeError`` (which nothing catches deliberately) or its
+    hints about TinyDB internals leak through.
     """
 
     def __init__(self, message: str) -> None:
@@ -239,73 +250,103 @@ class SelectorError(TinydanticUserError, ValueError):
         super().__init__(message)
 
 
-class FindQueryError(TinydanticUserError, ValueError):
-    """A fluent query chain is misused.
+class QueryTypeError(TinydanticUserError, TypeError):
+    """A query and a value were confused for one another.
 
-    Raised eagerly at the offending modifier call — never deferred
-    to the terminal — for: repeating a modifier on a chain
-    (orderings and windows are stated once, in one call), mixing
-    the field-name and ``key=`` sort forms, passing an invalid
-    ``skip``/``limit`` operand, or using a
-    [FindQuery][tinydantic.FindQuery] in boolean context.
-    Subclasses ``ValueError`` following the numpy/pandas precedent
-    for ambiguous-truth-value errors.
+    One mistake with two directions, and tinydantic raises the
+    same type for both because a caller recovers from them the
+    same way:
+
+    -   A query object used as a value. ``Model.field`` is a query
+        builder and ``Model.field == value`` describes a test —
+        neither is a boolean, neither is iterable, and a query
+        path is a sequence of document keys. Python's default
+        answers are silently wrong (every object is truthy; a
+        ``Query`` iterates forever through ``__getitem__``; a
+        non-string path step is read as a callable and matches
+        nothing).
+    -   A value used as a query. ``search("Alice")`` and
+        ``search({"name": "Alice"})`` reach TinyDB as conditions
+        it cannot evaluate, failing with ``'str' object is not
+        callable`` or ``unhashable type: 'dict'`` — or, on an
+        empty table, not failing at all and returning ``[]``.
+
+    A modifier operand of the wrong type (``limit("10")``) lands
+    here too: same rule, same base.
+
+    ``TypeError`` is the base because Python raises ``TypeError``
+    for every analogous mistake — a non-iterable in ``list()``, a
+    bad index type, an argument of the wrong type. An earlier
+    design used ``ValueError`` on the numpy/pandas
+    ambiguous-truth precedent, but that precedent only ever
+    covered ``bool()``; it was carried to iteration, indexing, and
+    argument types, where it does not apply. Nothing depended on
+    the old base: raw TinyDB raises nothing at all for the
+    query-as-value cases, and the value-as-query cases leaked a
+    bare ``TypeError`` anyway.
+
+    Despite the name this is not about static typing — it is the
+    runtime kind of an object. Type-checker friction is what
+    [q()][tinydantic.q] is for.
     """
 
 
-class QueryConditionError(TinydanticUserError, ValueError):
-    """A query object was used as if it were a value.
+class QueryValueError(TinydanticUserError, ValueError):
+    """A query operand has the right type and an unusable value.
 
-    ``Model.field`` is a query builder and ``Model.field == value``
-    is a description of a test — neither is a boolean, neither is
-    iterable, and a query path is a sequence of document keys.
-    Python's default answers for all three are silently wrong
-    (every object is truthy; a ``Query`` iterates forever through
-    ``__getitem__``; a non-string path step is read as a callable
-    and matches nothing), so tinydantic raises instead.
+    Raised eagerly, at the call that supplied the value: a
+    negative ``skip()``/``limit()`` window, or a ``sort()`` given
+    both field names and ``key=`` when it can honor only one.
 
-    One error type covers all three because they are one mistake —
-    using a query object where a value belongs — and a caller
-    recovers from them the same way. It subclasses ``ValueError``
-    for the same reason
-    [FindQueryError][tinydantic.FindQueryError] does: the
-    numpy/pandas ambiguous-truth precedent, which
-    ``FindQuery.__bool__`` already follows for this exact mistake
-    one layer up.
-
-    That deviates from the convention static analyzers expect —
-    ``TypeError`` from ``__bool__``/``__iter__``, ``LookupError``
-    from ``__getitem__`` — deliberately. numpy and pandas both
-    raise ``ValueError`` from ``__bool__``, splitting one concept
-    across three exception types would be worse than matching
-    them, and nothing can depend on the conventional types here:
-    raw TinyDB raises *nothing* from any of the three, so there is
-    no prior behavior to stay compatible with.
+    The line against
+    [QueryTypeError][tinydantic.QueryTypeError] is Python's own:
+    ``limit("10")`` is the wrong kind of object, ``limit(-1)`` is
+    the right kind carrying a value no window can have.
     """
 
 
-class SortFieldError(FindQueryError):
-    """A sort key does not name a model field.
+class QueryUsageError(TinydanticUserError):
+    """A query was built in an unsupported sequence.
 
-    Sort keys are Python field (attribute) names — not storage
-    aliases — because sorting runs on validated model instances.
-    Raised eagerly at the ``.sort()`` call.
+    Type and value are both fine; the call sequence is not.
+    Raised when a chain restates a clause it already has —
+    ``find().sort("a").sort("b")`` — because the ecosystem
+    disagrees about what repetition means (Beanie appends a
+    tiebreaker, Python's stable-sort idiom and pandas make the
+    last sort primary, Django and MongoEngine replace), so
+    tinydantic refuses to guess.
+
+    Alone among the query errors it subclasses no builtin. It is
+    neither a type nor a value problem, and mapping it onto
+    ``ValueError`` or ``RuntimeError`` would be arbitrary; the
+    thing to catch is
+    [TinydanticUserError][tinydantic.TinydanticUserError].
+
+    ``filter()`` is deliberately exempt: successive filters mean
+    AND everywhere in the ecosystem, so there is nothing to guess.
     """
 
 
-class QueryFieldError(TinydanticUserError):
-    """[field()][tinydantic.field] was given a name it cannot query.
+class QueryFieldError(TinydanticUserError, AttributeError):
+    """A name is not a queryable or sortable field of the model.
 
-    Raised eagerly at the ``field()`` call rather than returning a
-    query that matches nothing forever. Covers names the model does
-    not declare (including storage aliases, which are never storage
-    keys), ``id`` (mapped to ``doc_id``, never written to the
-    document body), and dotted paths (``where()`` does not traverse
-    them — chain attributes instead).
+    Raised eagerly — at the [field()][tinydantic.field] call, the
+    ``.sort()`` call, or the ``Model.name`` attribute access —
+    rather than returning a query that matches nothing forever.
+    Covers names the model does not declare (including storage
+    aliases, which are never storage keys), ``id`` (mapped to
+    ``doc_id``, never written to the document body), and dotted
+    paths (``where()`` does not traverse them — chain attributes
+    instead).
 
     Keys the model genuinely does not declare — ``extra="allow"``
     documents, legacy keys — are reachable with TinyDB's
     ``where()``, which the message names.
+
+    ``AttributeError`` is load-bearing, not decoration: the
+    metaclass raises this from ``__getattr__``, and ``hasattr()``,
+    ``copy``, ``pickle``, and pydantic's own introspection all
+    depend on attribute lookup failing with an ``AttributeError``.
     """
 
 

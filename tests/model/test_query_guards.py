@@ -15,7 +15,7 @@ from tinydb import TinyDB, where
 from tinydb.queries import Query, QueryInstance
 from tinydb.storages import MemoryStorage
 
-from tinydantic import QueryConditionError, TinydanticModel, field, q
+from tinydantic import QueryTypeError, TinydanticModel, field, q
 
 
 def _branch_on(cond: object) -> str:
@@ -60,82 +60,82 @@ class TestBooleanContext:
 
     def test_condition_is_not_a_boolean(self) -> None:
         """A bare condition refuses bool()."""
-        with pytest.raises(QueryConditionError, match="no truth value"):
+        with pytest.raises(QueryTypeError, match="no truth value"):
             bool(User.name == "Alice")
 
     def test_condition_that_would_not_match_also_raises(self) -> None:
         """The guard does not depend on stored data."""
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             bool(User.name == "nobody")
 
     def test_if_statement_raises(self) -> None:
         """`if cond:` — the headline mistake — raises."""
-        with pytest.raises(QueryConditionError, match="contains"):
+        with pytest.raises(QueryTypeError, match="contains"):
             _branch_on(User.name == "Alice")
 
     def test_not_raises(self) -> None:
         """`not cond` raises rather than returning False."""
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             _ = not (User.age > 30)
 
     def test_and_raises(self) -> None:
         """`and` raises rather than discarding the left operand."""
-        with pytest.raises(QueryConditionError, match=r"& \| ~"):
+        with pytest.raises(QueryTypeError, match=r"& \| ~"):
             _ = (User.age > 30) and (User.name == "Alice")
 
     def test_or_raises(self) -> None:
         """`or` raises rather than discarding the right operand."""
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             _ = (User.age > 30) or (User.name == "Alice")
 
     def test_builtin_all_raises(self) -> None:
         """all() over conditions raises rather than returning True."""
         conditions = [User.age > 30, User.name == "Alice"]
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             all(conditions)
 
     def test_comprehension_filter_raises(self) -> None:
         """A class-level condition in a comprehension raises."""
         users = User.all()
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             [u for u in users if User.age > 30]
 
     def test_composed_condition_raises(self) -> None:
         """`&` keeps the guard, so `if (a & b):` raises too."""
         composed = (User.age > 20) & (User.name == "Alice")
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             bool(composed)
 
     def test_inverted_condition_raises(self) -> None:
         """`~` keeps the guard."""
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             bool(~(User.name == "Alice"))
 
     def test_or_composed_condition_raises(self) -> None:
         """`|` keeps the guard."""
         composed = (User.age > 20) | (User.name == "Bob")
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             bool(composed)
 
     def test_query_builder_is_not_a_boolean(self) -> None:
         """`bool(Model.field)` raises with builder-specific advice."""
-        with pytest.raises(QueryConditionError, match="query builder"):
+        with pytest.raises(QueryTypeError, match="query builder"):
             bool(User.name)
 
     def test_id_condition_is_guarded(self) -> None:
         """DocIdCondition inherits the guard."""
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             bool(User.id == 1)
 
     def test_field_helper_conditions_are_guarded(self) -> None:
         """Conditions from field() are guarded too."""
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             bool(field(User, "name") == "Alice")
 
     def test_message_names_the_is_not_none_spelling(self) -> None:
         """The optional-condition idiom is given its fix."""
         with pytest.raises(
-            QueryConditionError,
+            QueryTypeError,
             match="cond is not None",
         ):
             bool(User.name == "Alice")
@@ -146,17 +146,17 @@ class TestIteration:
 
     def test_in_raises(self) -> None:
         """`x in Model.field` raises rather than returning True."""
-        with pytest.raises(QueryConditionError, match="not iterable"):
+        with pytest.raises(QueryTypeError, match="not iterable"):
             _ = "A" in User.name
 
     def test_in_on_list_field_raises(self) -> None:
         """List-field membership raises and names .any()."""
-        with pytest.raises(QueryConditionError, match=r"\.any\("):
+        with pytest.raises(QueryTypeError, match=r"\.any\("):
             _ = "admin" in User.tags
 
     def test_iteration_raises(self) -> None:
         """Explicit iteration raises rather than never ending."""
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             list(User.name)
 
 
@@ -165,12 +165,12 @@ class TestPathIndexing:
 
     def test_integer_index_raises(self) -> None:
         """Positional indexing of a list field raises."""
-        with pytest.raises(QueryConditionError, match="matches nothing"):
+        with pytest.raises(QueryTypeError, match="matches nothing"):
             _ = User.tags[0]
 
     def test_message_shows_the_offending_step(self) -> None:
         """The message quotes the step that was rejected."""
-        with pytest.raises(QueryConditionError, match="got 0"):
+        with pytest.raises(QueryTypeError, match="got 0"):
             _ = User.tags[0]
 
     def test_string_key_still_works(self) -> None:
@@ -233,7 +233,7 @@ class TestQueriesStillWork:
 
     def test_nested_attribute_chaining_stays_guarded(self) -> None:
         """Chained access keeps the subclass, so guards persist."""
-        with pytest.raises(QueryConditionError):
+        with pytest.raises(QueryTypeError):
             bool(q(User.name).nested == "x")
 
     def test_id_queries_still_work(self) -> None:
