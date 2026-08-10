@@ -42,6 +42,8 @@ from typing import (
     cast,
 )
 
+from tinydb.queries import QueryInstance
+
 from tinydantic._errors import (
     DocumentNotFoundError,
     QueryFieldError,
@@ -49,6 +51,7 @@ from tinydantic._errors import (
     QueryUsageError,
     QueryValueError,
 )
+from tinydantic._query import _require_condition
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping
@@ -84,6 +87,27 @@ def _validated_window(name: str, n: object) -> int:
         msg = f"{name}() requires a non-negative int, got {n!r}"
         raise QueryValueError(msg)
     return n
+
+
+def _and_conditions(left: QueryLike, right: QueryLike) -> QueryLike:
+    """Combine two conditions so both must match.
+
+    TinyDB's ``&`` is defined on ``QueryInstance``, not on the
+    ``QueryLike`` protocol, so a chain filtered on top of a plain
+    callable (a documented spelling) cannot use it. Two
+    ``QueryInstance`` operands still compose with ``&`` — keeping
+    the stable hashval TinyDB's query cache needs — and anything
+    else falls back to a closure, which is hashable by identity
+    and so merely uncacheable rather than broken.
+    """
+    if isinstance(left, QueryInstance) and isinstance(right, QueryInstance):
+        return left & right
+
+    def both(value: Mapping[Any, Any]) -> bool:
+        """Match only documents both conditions accept."""
+        return bool(left(value)) and bool(right(value))
+
+    return both
 
 
 class FindQuery(Generic[ModelT]):
@@ -146,6 +170,44 @@ class FindQuery(Generic[ModelT]):
         }
         state.update(changes)
         return FindQuery(self._model, **state)
+
+    def filter(self, cond: QueryLike) -> FindQuery[ModelT]:
+        """Narrow the chain with another condition (repeatable).
+
+        The new condition is ANDed with whatever the chain
+        already carries, so a base query can be refined per
+        request without rebuilding it:
+
+        ```python
+        base = Article.find(q(Article.published) == True)
+        recent = base.filter(q(Article.created) > cutoff)
+        mine = recent.filter(q(Article.author_id) == user_id)
+        ```
+
+        Unlike ``sort``/``skip``/``limit``, ``filter()`` may be
+        called any number of times. Those three refuse a second
+        call because the ecosystem disagrees about what
+        repetition means; successive filters mean AND in Django,
+        SQLAlchemy, Beanie, and Mongoose alike, so there is
+        nothing to guess.
+
+        On a chain built by ``find()`` with no condition, the
+        first ``filter()`` supplies the condition.
+
+        Args:
+            cond: The condition to AND into the chain.
+
+        Returns:
+            A new chain matching both conditions.
+
+        Raises:
+            QueryTypeError: If ``cond`` is ``None`` or anything
+                else TinyDB cannot evaluate as a condition.
+        """
+        _require_condition(cond, method="filter")
+        if self._cond is None:
+            return self._replace(cond=cond)
+        return self._replace(cond=_and_conditions(self._cond, cond))
 
     def sort(
         self,
