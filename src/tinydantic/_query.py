@@ -462,6 +462,27 @@ def has_id_condition(cond: object) -> bool:
     return _tree_has_sentinel(getattr(cond, "_hash", None))
 
 
+def id_from_condition(cond: object) -> int | None:
+    """Get the document id a condition names, if it names exactly one.
+
+    Only a bare ``Model.id == n`` names a single document: every
+    other operator matches a range, and a composition adds
+    constraints the id alone does not capture. Used to enrich
+    [DocumentNotFoundError][tinydantic.DocumentNotFoundError] with
+    the missing id when the lookup was an id equality.
+
+    Args:
+        cond: The condition to inspect.
+
+    Returns:
+        The document id for a bare ``id ==`` condition, else
+        ``None``.
+    """
+    if isinstance(cond, DocIdCondition) and cond.opname == "==":
+        return cast("int", cond.value)
+    return None
+
+
 def _tree_has_sentinel(node: object) -> bool:
     """Check a hashval tree for the ``DOC_ID_SENTINEL`` tag."""
     if isinstance(node, tuple):
