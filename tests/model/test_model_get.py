@@ -20,5 +20,5 @@ class TestModelGet:
         user = user_class(name="Alice", age=37)
         user.insert()
         assert user.id is not None
-        result = user_class.get(doc_id=user.id)
+        result = user_class.get_by_id(user.id)
         assert isinstance(result, user_class)

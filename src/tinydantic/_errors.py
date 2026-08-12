@@ -89,7 +89,7 @@ class DocumentNotFoundError(TinydanticError):
 class DocumentAlreadyExistsError(TinydanticError, ValueError):
     """A document with this id already exists in the table.
 
-    Raised by ``insert()`` and ``insert_multiple()`` when a model
+    Raised by ``insert()`` and ``insert_many()`` when a model
     arrives with an ``id`` that is already taken — by a stored
     document, or by another model in the same batch. A
     ``ValueError`` subclass, so handlers written for TinyDB's raw
@@ -121,7 +121,7 @@ class UniqueConstraintError(TinydanticError):
     marked [Unique][tinydantic.Unique] — or the field tuple of a
     [UniqueConstraint][tinydantic.UniqueConstraint] — already
     holds the same value elsewhere: in the table, or earlier in
-    the same ``insert_multiple()`` batch. When the match was
+    the same ``insert_many()`` batch. When the match was
     produced by a comparison-``key`` callable, the message shows
     the computed key alongside the raw values, so a normalized
     match never looks like a phantom collision.

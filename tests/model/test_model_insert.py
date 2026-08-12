@@ -93,7 +93,7 @@ class TestModelInsert:
         user = user_class(name="Alice")
         user.insert()
         assert user.id is not None
-        result = user_class.get(doc_id=user.id)
+        result = user_class.get_by_id(user.id)
         assert isinstance(result, user_class)
         assert result.name == "Alice"
         assert result.age is None
@@ -103,7 +103,7 @@ class TestModelInsert:
         user = user_class(name="Alice", age=37)
         user.insert()
         assert user.id is not None
-        result = user_class.get(doc_id=user.id)
+        result = user_class.get_by_id(user.id)
         assert isinstance(result, user_class)
         assert result.name == "Alice"
         assert result.age == 37
@@ -113,7 +113,7 @@ class TestModelInsert:
         user = user_class(name="Alice", age=37)
         user.insert()
         assert user.id is not None
-        user_class.get(doc_id=user.id)
+        user_class.get_by_id(user.id)
         with pytest.raises(
             DocumentAlreadyExistsError,
             match=rf"Document with id {user.id} already exists",
@@ -122,15 +122,15 @@ class TestModelInsert:
 
 
 class TestModelInsertMany:
-    """Tests for TinydanticModel.insert_multiple."""
+    """Tests for TinydanticModel.insert_many."""
 
     def test_insert_many(
         self,
         user_class: type[UserBase],
         make_users: list[UserBase],
     ):
-        """insert_multiple stores every provided model."""
-        user_class.insert_multiple(make_users)
+        """insert_many stores every provided model."""
+        user_class.insert_many(make_users)
         assert user_class.count() == len(make_users)
 
     def test_insert_many_sets_ids_in_place(
@@ -140,7 +140,7 @@ class TestModelInsertMany:
     ):
         """Each passed-in model gets its assigned id, like insert()."""
         assert all(user.id is None for user in make_users)
-        user_class.insert_multiple(make_users)
+        user_class.insert_many(make_users)
         assert [user.id for user in make_users] == [1, 2]
 
     def test_insert_many_returns_the_models(
@@ -149,7 +149,7 @@ class TestModelInsertMany:
         make_users: list[UserBase],
     ):
         """The same instances come back, ids set, in order."""
-        result = user_class.insert_multiple(make_users)
+        result = user_class.insert_many(make_users)
         assert result == make_users
         assert all(a is b for a, b in zip(result, make_users, strict=True))
         assert [user.id for user in result] == [1, 2]
@@ -160,7 +160,7 @@ class TestModelInsertMany:
         make_users: list[UserBase],
     ):
         """Inserted models can be fetched back by their new ids."""
-        for user in user_class.insert_multiple(make_users):
+        for user in user_class.insert_many(make_users):
             assert user.id is not None
             fetched = user_class.get_by_id(user.id)
             assert fetched is not None
@@ -171,7 +171,7 @@ class TestModelInsertMany:
         user_class: type[UserBase],
     ):
         """Non-list iterables work and still come back as a list."""
-        result = user_class.insert_multiple(
+        result = user_class.insert_many(
             user_class(name=name) for name in ("Alice", "Bob")
         )
         assert [user.name for user in result] == ["Alice", "Bob"]

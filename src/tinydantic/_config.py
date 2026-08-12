@@ -112,7 +112,7 @@ class TinydanticConfig(TypedDict, total=False):
     When True (the default), every write refuses to persist a
     document body that would fail validation on its next read:
     whole-model writes validate their serialized payload, and
-    ``update()``/``update_multiple()`` validate each matched
+    ``update()``/``update_many()`` validate each matched
     document's merged result before anything is written. Set False
     to skip this re-validation — the escape hatch for
     performance-critical bulk writes, where per-document

@@ -88,7 +88,7 @@ class TestInsertPaths:
             email: Annotated[str, Unique()]
 
         with pytest.raises(UniqueConstraintError):
-            User.insert_multiple(
+            User.insert_many(
                 [User(email="a@x.io"), User(email="a@x.io")],
             )
         assert User.count() == 0
@@ -239,7 +239,7 @@ class TestDocumentedBypass:
         User(name="al", email="a@x.io").insert()
         bob = User(name="bo", email="b@x.io").insert()
         assert bob.id is not None
-        User.update({"email": "a@x.io"}, doc_ids=[bob.id])
+        User.update_by_ids({"email": "a@x.io"}, [bob.id])
         raw = User.get_table().get(doc_id=bob.id)
         assert isinstance(raw, dict)
         assert raw["email"] == "a@x.io"

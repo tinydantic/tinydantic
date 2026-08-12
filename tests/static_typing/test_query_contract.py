@@ -105,14 +105,19 @@ def q_conditions_compose() -> None:
 def read_methods_keep_their_return_types() -> None:
     """Keep return types intact across every read entry point.
 
-    Overloaded methods are the ones that matter. Passing a bare
-    comparison to `get()` costs mypy the whole return type (it falls
-    back to `Any`), which is why the docs steer readers to q()
-    rather than to `# type: ignore`.
+    Passing a bare comparison to `get()` costs mypy the whole
+    return type (it falls back to `Any`), which is why the docs
+    steer readers to q() rather than to `# type: ignore`.
+
+    The strict/lenient split is visible to the type checker:
+    `get()` asserts and so carries no `None`, while
+    `get_or_none()` does.
     """
     assert_type(User.search(q(User.name) == "Alice"), list[User])
-    assert_type(User.get(q(User.name) == "Alice"), User | None)
-    assert_type(User.get_or_raise(q(User.name) == "Alice"), User)
+    assert_type(User.get(q(User.name) == "Alice"), User)
+    assert_type(User.get_or_none(q(User.name) == "Alice"), User | None)
+    assert_type(User.get_by_id(1), User)
+    assert_type(User.get_by_ids([1, 2]), list[User])
     assert_type(User.count(q(User.age) > 30), int)
     assert_type(User.contains(q(User.age) > 30), bool)
     assert_type(User.find(q(User.age) > 30), FindQuery[User])
@@ -164,8 +169,8 @@ def none_is_never_a_condition() -> None:
     fails `poe types`.
     """
     User.find(None)  # type: ignore[call-overload]
-    User.get(None)  # type: ignore[call-overload]
-    User.get_or_raise(None)  # type: ignore[call-overload]
+    User.get(None)  # type: ignore[arg-type]
+    User.get_or_none(None)  # type: ignore[arg-type]
     User.search(None)  # type: ignore[arg-type]
     User.count(None)  # type: ignore[arg-type]
     User.contains(None)  # type: ignore[arg-type]

@@ -76,7 +76,7 @@ class TestRevisionField:
 
             title: str
 
-        books = Book.insert_multiple(
+        books = Book.insert_many(
             [Book(title="A"), Book(title="B")],
         )
         tokens = {book.revision_id for book in books}
@@ -324,7 +324,8 @@ class TestSaveCheck:
         with pytest.raises(StaleDocumentError) as excinfo:
             snapshot.save()
         assert excinfo.value.deleted is True
-        assert Book.get_by_id(book.id) is None
+        with pytest.raises(DocumentNotFoundError):
+            Book.get_by_id(book.id)
 
     def test_never_read_instance_with_free_id_inserts(self, db: TinyDB):
         """Held None plus missing document inserts, import-style."""
@@ -447,7 +448,8 @@ class TestReplaceAndDelete:
             stale.delete()
         assert Book.get_by_id(book.id) is not None
         stale.delete(ignore_revision=True)
-        assert Book.get_by_id(book.id) is None
+        with pytest.raises(DocumentNotFoundError):
+            Book.get_by_id(book.id)
 
     def test_fresh_delete_succeeds(self, db: TinyDB):
         """A delete() holding the current token goes through."""
@@ -460,7 +462,8 @@ class TestReplaceAndDelete:
         book = Book(title="Dune").insert()
         assert book.id is not None
         book.delete()
-        assert Book.get_by_id(book.id) is None
+        with pytest.raises(DocumentNotFoundError):
+            Book.get_by_id(book.id)
 
 
 class TestPatchRotates:
@@ -553,7 +556,7 @@ class TestTableVerbsRotate:
 
         book = Book(title="Dune").insert()
         assert book.id is not None
-        Book.update({"stock": 1}, doc_ids=[book.id])
+        Book.update_by_ids({"stock": 1}, [book.id])
         book.stock = 2
         with pytest.raises(StaleDocumentError):
             book.save()
@@ -569,7 +572,7 @@ class TestTableVerbsRotate:
         book = Book(title="Dune").insert()
         assert book.id is not None
         with pytest.raises(RevisionUpdateError):
-            Book.update({"revision_id": str(uuid4())}, doc_ids=[book.id])
+            Book.update_by_ids({"revision_id": str(uuid4())}, [book.id])
 
     def test_update_transform_cannot_forge_a_token(self, db: TinyDB):
         """Rotation runs after transform callables."""
@@ -587,7 +590,7 @@ class TestTableVerbsRotate:
             """Try to write a chosen token through a transform."""
             cast("dict[str, Any]", body)["revision_id"] = forged
 
-        Book.update(forge, doc_ids=[book.id])
+        Book.update_by_ids(forge, [book.id])
         reloaded = Book.get_by_id(book.id)
         assert reloaded is not None
         assert str(reloaded.revision_id) != forged
@@ -613,7 +616,7 @@ class TestTableVerbsRotate:
             book.save()
 
     def test_update_multiple_rotates(self, db: TinyDB):
-        """update_multiple() rotates each matched document."""
+        """update_many() rotates each matched document."""
 
         class Book(TinydanticModel, database=db, use_revision=True):
             """Test model."""
@@ -623,7 +626,7 @@ class TestTableVerbsRotate:
 
         book_a = Book(title="A").insert()
         book_b = Book(title="B").insert()
-        Book.update_multiple(
+        Book.update_many(
             [
                 ({"stock": 1}, q(Book.title) == "A"),
                 ({"stock": 2}, q(Book.title) == "B"),

@@ -60,6 +60,7 @@ from tinydantic._query import (
     _checked_cond,
     _require_condition,
     has_id_condition,
+    id_from_condition,
 )
 from tinydantic.tinydb.operations import replace
 
@@ -672,7 +673,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         Fires once at the start of ``insert()``, ``save()``,
         ``replace()``, ``upsert()``, ``patch()``, and for each
-        document of ``insert_multiple()``. ``fields`` is the
+        document of ``insert_many()``. ``fields`` is the
         model-field mapping about to be written, as validated
         Python values — every field on a whole-model write, only
         the caller's fields on ``patch()`` — and never contains
@@ -1084,7 +1085,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         return instance
 
     @classmethod
-    def insert_multiple(cls, documents: Iterable[Self]) -> list[Self]:
+    def insert_many(cls, documents: Iterable[Self]) -> list[Self]:
         """Insert several models at once.
 
         Serializes each model with
@@ -1601,7 +1602,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         This is the project's only *call* into a TinyDB internal
         API (``Table._update_table``) — approved 2026-07-13 for
         id-condition writes, extended 2026-08-02 to all validated
-        ``update()``/``update_multiple()`` writes. TinyDB's public
+        ``update()``/``update_many()`` writes. TinyDB's public
         API offers no ``doc_ids`` batch path, never exposes
         ``doc_id`` to conditions, and cannot validate-then-write
         atomically (a public two-pass alternative has a
@@ -1681,81 +1682,33 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         ]
 
     @classmethod
-    def _table_get(
-        cls,
-        cond: QueryLike | None,
-        doc_id: int | None,
-        doc_ids: list[int] | None,
-    ) -> Document | list[Document] | None:
-        """Call TinyDB's ``Table.get()`` with a single selector.
+    def get_or_none(cls, cond: QueryLike) -> Self | None:
+        """Get the first document matching ``cond``, or ``None``.
 
-        TinyDB >= 4.9 overloads ``Table.get()`` per call shape, and
-        no overload accepts all three selectors as optionals at
-        once. ``get()`` has already established that exactly one is
-        set, so dispatch on it rather than forwarding two ``None``s
-        — which also buys a precise return type per branch.
-        """
-        if doc_ids is not None:
-            return cls.get_table().get(doc_ids=doc_ids)
-        if doc_id is not None:
-            return cls.get_table().get(doc_id=doc_id)
-        return cls.get_table().get(cast("QueryLike", cond))
+        The lenient counterpart to
+        [get][tinydantic.TinydanticModel.get], for call sites where
+        a missing document is an expected outcome rather than an
+        error. The pair mirrors Python's own ``d[key]`` (raises) and
+        ``d.get(key)`` (returns ``None``): the plain form asserts,
+        and leniency is opted into by name.
 
-    @overload
-    @classmethod
-    def get(cls, cond: QueryLike) -> Self | None: ...
+        Conditions on ``Model.id`` (bare or composed with field
+        conditions) are translated to document-id operations — a
+        bare ``id ==`` becomes a direct key lookup.
 
-    @overload
-    @classmethod
-    def get(cls, *, doc_id: int) -> Self | None: ...
+        Args:
+            cond: The query condition to match.
 
-    @overload
-    @classmethod
-    def get(cls, *, doc_ids: list[int]) -> list[Self]: ...
-
-    @classmethod
-    def get(
-        cls,
-        cond: QueryLike | None = _COND_NOT_GIVEN,
-        *,
-        doc_id: int | None = None,
-        doc_ids: list[int] | None = None,
-    ) -> Self | list[Self] | None:
-        """Get one document (or several by id) as validated models.
-
-        Mirrors [tinydb.table.Table.get][], with one tightening: at
-        most one of ``cond``, ``doc_id``, ``doc_ids`` may be provided
-        (TinyDB silently applies a precedence order; tinydantic raises
-        ``ValueError``). The typed variants
-        [get_by_cond][tinydantic.TinydanticModel.get_by_cond],
-        [get_by_id][tinydantic.TinydanticModel.get_by_id], and
-        [get_by_ids][tinydantic.TinydanticModel.get_by_ids] offer
-        precise return types per call shape.
-
-        When ``doc_ids`` is given, TinyDB returns only the documents
-        that exist (missing ids are silently skipped), so the result is
-        a ``list`` that may be shorter than the ids requested and is
-        ordered by storage iteration, not by the ids passed in.
+        Returns:
+            The first matching document as a validated model, or
+            ``None`` if nothing matched.
 
         Raises:
-            SelectorError: If no selector, or more than one, is
-                provided.
-            QueryTypeError: If ``cond`` is given but is not
-                something TinyDB can evaluate as a condition.
+            QueryTypeError: If ``cond`` is not something TinyDB can
+                evaluate as a condition.
         """
-        cond = _checked_cond(cond, method="get")
-        provided = [s for s in (cond, doc_id, doc_ids) if s is not None]
-        if len(provided) > 1:
-            msg = "Provide at most one of cond, doc_id, or doc_ids"
-            raise SelectorError(msg)
-        if not provided:
-            msg = (
-                "get() needs a selector: pass a query condition, "
-                "doc_id=, or doc_ids="
-            )
-            raise SelectorError(msg)
-
-        if cond is not None and has_id_condition(cond):
+        _require_condition(cond, method="get_or_none")
+        if has_id_condition(cond):
             if isinstance(cond, DocIdCondition) and cond.opname == "==":
                 # Pure id equality: search() does a direct key
                 # lookup and validates at most one document.
@@ -1763,27 +1716,19 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 return results[0] if results else None
             # Other id conditions: stop at the first match in
             # table order, validating only the returned document —
-            # the same semantics TinyDB's get(cond) and the
-            # field-condition path give.
+            # the same semantics the field-condition path gives.
             for doc in iter(cls.get_table()):
                 if cond(doc):
                     return cls.from_tinydb_document(doc)
             return None
-
-        result = cls._table_get(cond, doc_id, doc_ids)
-
+        result = cls.get_table().get(cond)
         if result is None:
             return None
-
         if isinstance(result, Document):
             return cls.from_tinydb_document(result)
-
-        if isinstance(result, list):
-            return [cls.from_tinydb_document(doc) for doc in result]
-
-        # Unreachable per TinyDB's Table.get() contract (None, a
-        # Document, or a list) — but a contract violation should
-        # diagnose itself rather than raise bare.
+        # Unreachable per TinyDB's Table.get(cond) contract (None or
+        # a Document) — but a contract violation should diagnose
+        # itself rather than raise bare.
         msg = (
             "unexpected return type from TinyDB Table.get(): "
             f"{type(result).__name__!r}"
@@ -1791,112 +1736,135 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         raise TypeError(msg)
 
     @classmethod
-    def get_by_cond(cls, cond: QueryLike) -> Self | None:
-        """Get the first document matching ``cond``, or ``None``."""
-        return cls.get(cond)
+    def get(cls, cond: QueryLike) -> Self:
+        """Get the first document matching ``cond``.
 
-    @classmethod
-    def get_by_id(cls, doc_id: int) -> Self | None:
-        """Get the document with the given id, or ``None``."""
-        return cls.get(doc_id=doc_id)
+        The plain form asserts the document exists, so the return
+        type carries no ``None`` to unpack. Where a miss is an
+        expected outcome rather than a bug, use
+        [get_or_none][tinydantic.TinydanticModel.get_or_none] —
+        the same ``d[key]`` / ``d.get(key)`` split Python itself
+        draws.
 
-    @classmethod
-    def get_by_ids(cls, doc_ids: list[int]) -> list[Self]:
-        """Get documents for the given ids (see get() for semantics)."""
-        return cls.get(doc_ids=doc_ids)
-
-    @overload
-    @classmethod
-    def get_or_raise(cls, cond: QueryLike) -> Self: ...
-
-    @overload
-    @classmethod
-    def get_or_raise(cls, *, doc_id: int) -> Self: ...
-
-    @classmethod
-    def get_or_raise(
-        cls,
-        cond: QueryLike | None = _COND_NOT_GIVEN,
-        *,
-        doc_id: int | None = None,
-    ) -> Self:
-        """Get one document, raising instead of returning ``None``.
-
-        The strict counterpart to
-        [get][tinydantic.TinydanticModel.get] for call sites where a
-        missing document is an error rather than an expected outcome
-        (request handlers, lookups by known id, ...). Accepts exactly
-        one selector: a query condition or a ``doc_id``. There is no
-        ``doc_ids`` form — TinyDB silently skips missing ids in bulk
-        gets, so "raise if missing" has no single obvious meaning
-        there.
+        Conditions on ``Model.id`` are translated to document-id
+        operations, and a bare ``Model.id == n`` names the missing
+        id in the error.
 
         Args:
             cond: The query condition to match.
+
+        Returns:
+            The first matching document as a validated model.
+
+        Raises:
+            DocumentNotFoundError: If no document matches.
+            QueryTypeError: If ``cond`` is not something TinyDB can
+                evaluate as a condition.
+        """
+        _require_condition(cond, method="get")
+        result = cls.get_or_none(cond)
+        if result is None:
+            raise DocumentNotFoundError(
+                model_name=cls.__name__,
+                table_name=cls.get_table().name,
+                doc_id=id_from_condition(cond),
+            )
+        return result
+
+    @classmethod
+    def get_by_id(cls, doc_id: int) -> Self:
+        """Get the document with the given id.
+
+        Shorthand for ``get(Model.id == doc_id)``, and strict for
+        the same reason: naming an id asserts it exists. For the
+        lenient lookup write
+        ``get_or_none(Model.id == doc_id)``.
+
+        Args:
             doc_id: The document id to fetch.
 
         Returns:
-            The validated model instance.
+            The document as a validated model.
 
         Raises:
-            DocumentNotFoundError: If no matching document exists.
-            SelectorError: If no selector or both selectors are
-                provided.
+            DocumentNotFoundError: If no document has that id.
         """
-        cond = _checked_cond(cond, method="get_or_raise")
-        if cond is not None and doc_id is None:
-            result = cls.get(cond)
-        elif doc_id is not None and cond is None:
-            result = cls.get(doc_id=doc_id)
-        else:
-            msg = "Provide exactly one of cond or doc_id"
-            raise SelectorError(msg)
-        if result is None:
+        document = cls.get_table().get(doc_id=doc_id)
+        if document is None:
             raise DocumentNotFoundError(
                 model_name=cls.__name__,
                 table_name=cls.get_table().name,
                 doc_id=doc_id,
             )
-        return result
+        return cls.from_tinydb_document(document)
 
     @classmethod
-    def contains(
-        cls,
-        cond: QueryLike = _COND_NOT_GIVEN,
-        *,
-        doc_id: int | None = None,
-    ) -> bool:
+    def get_by_ids(cls, doc_ids: Iterable[int]) -> list[Self]:
+        """Get the documents with the given ids, in the order given.
+
+        Every id must exist: an explicit id list asserts, where a
+        condition filters. Because the batch is all-or-nothing, the
+        result is positional — ``len(result) == len(doc_ids)``, in
+        the caller's order, with a repeated id yielding a document
+        per occurrence. That is what
+        [tinydb.table.Table.get][]'s own ``doc_ids=`` cannot
+        promise: it skips missing ids and returns storage order.
+
+        For a best-effort batch read, filter instead:
+        ``search(Model.id.one_of(doc_ids))``.
+
+        Args:
+            doc_ids: The document ids to fetch.
+
+        Returns:
+            The documents as validated models, positionally
+            matching ``doc_ids``.
+
+        Raises:
+            DocumentNotFoundError: For the first id not present in
+                the table.
+        """
+        wanted = list(doc_ids)
+        # One table read for the whole batch: a per-id lookup costs
+        # a full storage read each on file-backed storages.
+        stored = {doc.doc_id: doc for doc in iter(cls.get_table())}
+        for doc_id in wanted:
+            if doc_id not in stored:
+                raise DocumentNotFoundError(
+                    model_name=cls.__name__,
+                    table_name=cls.get_table().name,
+                    doc_id=doc_id,
+                )
+        return [cls.from_tinydb_document(stored[i]) for i in wanted]
+
+    @classmethod
+    def contains(cls, cond: QueryLike) -> bool:
         """Check whether a matching document exists.
 
         Conditions on ``Model.id`` are translated to document-id
         operations; like plain-condition calls, no document is
-        validated into a model.
+        validated into a model. There is no by-id variant: an
+        existence check has nothing to assert, so
+        ``contains(Model.id == n)`` is the id spelling.
+
+        Args:
+            cond: The query condition to match.
+
+        Returns:
+            ``True`` if any document matches.
 
         Raises:
-            SelectorError: If no selector, or both selectors, are
-                provided.
-            QueryTypeError: If ``cond`` is given but is not
-                something TinyDB can evaluate as a condition.
+            QueryTypeError: If ``cond`` is not something TinyDB can
+                evaluate as a condition.
         """
-        selector = _checked_cond(cond, method="contains")
-        if selector is not None and doc_id is not None:
-            msg = "Provide at most one of cond or doc_id"
-            raise SelectorError(msg)
-        if selector is None and doc_id is None:
-            msg = (
-                "contains() needs a selector: pass a query "
-                "condition or doc_id="
-            )
-            raise SelectorError(msg)
-        if selector is not None and has_id_condition(selector):
-            if isinstance(selector, DocIdCondition) and (
-                selector.opname == "=="
-            ):
+        _require_condition(cond, method="contains")
+        if has_id_condition(cond):
+            if isinstance(cond, DocIdCondition) and cond.opname == "==":
                 return cls.get_table().contains(
-                    doc_id=cast("int", selector.value),
+                    doc_id=cast("int", cond.value),
                 )
-            return any(selector(doc) for doc in iter(cls.get_table()))
-        return cls.get_table().contains(cond=selector, doc_id=doc_id)
+            return any(cond(doc) for doc in iter(cls.get_table()))
+        return cls.get_table().contains(cond=cond)
 
     @classmethod
     def _field_adapter(cls, field_name: str) -> TypeAdapter[Any]:
@@ -1982,7 +1950,6 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         fields: Mapping | Callable[[Mapping], None],
         cond: QueryLike = _COND_NOT_GIVEN,
         *,
-        doc_ids: Iterable[int] | None = None,
         extra_keys: Literal["reject", "allow"] = "reject",
     ) -> list[int]:
         """Update matching documents with new fields or a transform.
@@ -2008,16 +1975,20 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         a validation failure on any matched document means nothing
         is written.
 
-        Exactly one selector is required: a query condition or
-        explicit ``doc_ids``. TinyDB's own ``update()`` treats a
-        bare call as "update every document" and silently prefers
-        ``doc_ids`` when both are given; tinydantic raises
-        [SelectorError][tinydantic.SelectorError] in both cases —
-        updating the whole table must be spelled
+        A condition is required — TinyDB's own ``update()`` treats
+        a bare call as "update every document", while tinydantic
+        raises [SelectorError][tinydantic.SelectorError], so a
+        dropped condition can never quietly rewrite the whole
+        table. Updating everything must be spelled
         [update_all][tinydantic.TinydanticModel.update_all],
         mirroring the
         [remove][tinydantic.TinydanticModel.remove]/
         [truncate][tinydantic.TinydanticModel.truncate] split.
+
+        A condition *filters*: documents that do not match are
+        simply not updated, and the returned list says which were.
+        To assert a specific set of documents exists, use
+        [update_by_ids][tinydantic.TinydanticModel.update_by_ids].
 
         Conditions on ``Model.id`` are supported (bare or composed
         with field conditions), evaluated against
@@ -2032,8 +2003,6 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             fields: A mapping of new field values, or a transform
                 callable applied to each matched document body.
             cond: The query condition selecting documents.
-            doc_ids: Explicit document ids to update instead of a
-                condition.
             extra_keys: ``"reject"`` (default) raises for mapping
                 keys that are not model fields — they would be
                 written without any validation. ``"allow"`` writes
@@ -2045,14 +2014,11 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             The ids of all updated documents.
 
         Raises:
-            SelectorError: If neither ``cond`` nor ``doc_ids`` is
-                provided (use
+            SelectorError: If ``cond`` is not provided — use
                 [update_all][tinydantic.TinydanticModel.update_all]
-                to update every document), or both are.
+                to update every document.
             DocumentIDUpdateError: If a mapping contains an ``id``
                 key.
-            DocumentNotFoundError: If an explicit ``doc_ids`` id
-                does not exist; nothing is written.
             UnknownUpdateFieldError: If a mapping contains keys
                 that are not model fields and ``extra_keys`` is
                 ``"reject"`` (the default).
@@ -2065,38 +2031,110 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             method="update",
             none_hint="To update every document, use update_all().",
         )
-        if selector is not None and doc_ids is not None:
-            msg = "Provide at most one of cond or doc_ids"
-            raise SelectorError(msg)
-        if selector is None and doc_ids is None:
+        if selector is None:
             msg = (
-                "update() needs a selector: pass a query condition "
-                "or doc_ids=. To update every document, use "
-                "update_all()."
+                "update() needs a query condition. To update every "
+                "document, use update_all(); to update specific "
+                "ids, use update_by_ids()."
             )
             raise SelectorError(msg)
+        return cls._update_selected(
+            fields,
+            cond=selector,
+            doc_ids=None,
+            extra_keys=extra_keys,
+        )
+
+    @classmethod
+    def update_by_ids(
+        cls,
+        fields: Mapping | Callable[[Mapping], None],
+        doc_ids: Iterable[int],
+        *,
+        extra_keys: Literal["reject", "allow"] = "reject",
+    ) -> list[int]:
+        """Update the documents with the given ids.
+
+        Where [update][tinydantic.TinydanticModel.update] filters,
+        this asserts: naming ids declares they exist, so a batch
+        containing an id the table does not hold is refused whole,
+        before anything is written. TinyDB's own ``doc_ids=``
+        instead skips missing ids and reports only the ones it
+        touched — a partial write that looks like success.
+
+        Otherwise identical to
+        [update][tinydantic.TinydanticModel.update]: same
+        mapping-or-transform contract, same ``extra_keys`` policy,
+        same merged-result validation in one atomic
+        read-modify-write cycle, and the same deliberate
+        non-enforcement of [Unique][tinydantic.Unique] markers.
+
+        Args:
+            fields: A mapping of new field values, or a transform
+                callable applied to each matched document body.
+            doc_ids: The document ids to update.
+            extra_keys: ``"reject"`` (default) raises for mapping
+                keys that are not model fields; ``"allow"`` writes
+                them through unchanged.
+
+        Returns:
+            The ids of all updated documents.
+
+        Raises:
+            DocumentNotFoundError: If any id is not present in the
+                table; nothing is written.
+            DocumentIDUpdateError: If a mapping contains an ``id``
+                key.
+            UnknownUpdateFieldError: If a mapping contains keys
+                that are not model fields and ``extra_keys`` is
+                ``"reject"`` (the default).
+            pydantic.ValidationError: If a mapping value fails
+                validation against its field's type, or a matched
+                document's merged result fails model validation.
+        """
+        return cls._update_selected(
+            fields,
+            cond=None,
+            doc_ids=list(doc_ids),
+            extra_keys=extra_keys,
+        )
+
+    @classmethod
+    def _update_selected(
+        cls,
+        fields: Mapping | Callable[[Mapping], None],
+        *,
+        cond: QueryLike | None,
+        doc_ids: list[int] | None,
+        extra_keys: Literal["reject", "allow"],
+    ) -> list[int]:
+        """Apply an update to a condition- or id-selected batch.
+
+        The shared core of
+        [update][tinydantic.TinydanticModel.update] and
+        [update_by_ids][tinydantic.TinydanticModel.update_by_ids];
+        exactly one of ``cond``/``doc_ids`` is set, which the
+        public methods have already established.
+        """
         if not callable(fields):
             fields = cls._serialize_update_fields(
                 fields,
                 extra_keys=extra_keys,
             )
         if doc_ids is not None:
-            doc_ids = list(doc_ids)
             cls._check_doc_ids_exist(doc_ids)
         validate = get_config_value(cls, "validate_writes", default=True)
         id_cond = (
-            selector is not None
-            and doc_ids is None
-            and has_id_condition(selector)
+            cond is not None and doc_ids is None and has_id_condition(cond)
         )
         if not validate and not id_cond:
             return cls.get_table().update(
                 cls._rotated(fields),
-                cond=selector,
+                cond=cond,
                 doc_ids=doc_ids,
             )
         table = cls.get_table()
-        _cond, _fields, _doc_ids = selector, fields, doc_ids
+        _cond, _fields, _doc_ids = cond, fields, doc_ids
 
         def apply_update(data: dict[int, Any]) -> list[int]:
             """Apply the fields to each selected document."""
@@ -2201,7 +2239,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         return cls._run_write_cycle(apply_update_all)
 
     @classmethod
-    def update_multiple(
+    def update_many(
         cls,
         updates: Iterable[
             tuple[
@@ -2259,7 +2297,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         """
         pairs = list(updates)
         for _, pair_cond in pairs:
-            _require_condition(pair_cond, method="update_multiple")
+            _require_condition(pair_cond, method="update_many")
         prepared = [
             (
                 fields
@@ -2411,49 +2449,44 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
     def remove(
         cls,
         cond: QueryLike = _COND_NOT_GIVEN,
-        *,
-        doc_ids: Iterable[int] | None = None,
     ) -> list[int]:
         """Remove matching documents.
 
+        A condition *filters*: documents that do not match are
+        simply not removed, and the returned list says which were.
+        To assert a specific set of documents exists, use
+        [remove_by_ids][tinydantic.TinydanticModel.remove_by_ids].
+
         Conditions on ``Model.id`` are executed in one atomic
-        read-modify-write cycle (see
-        ``_run_write_cycle``), with the condition
-        evaluated against [Document][tinydb.table.Document]
-        wrappers so it can read ``doc_id``. When ``doc_ids`` is
-        passed explicitly, TinyDB's precedence applies and
-        ``cond`` is not evaluated.
+        read-modify-write cycle (see ``_run_write_cycle``), with
+        the condition evaluated against
+        [Document][tinydb.table.Document] wrappers so it can read
+        ``doc_id``.
+
+        Args:
+            cond: The query condition selecting documents.
 
         Returns:
             The ids of all removed documents.
 
         Raises:
-            SelectorError: If neither ``cond`` nor ``doc_ids`` is
-                provided — removing every document must be spelled
+            SelectorError: If ``cond`` is not provided — removing
+                every document must be spelled
                 [truncate][tinydantic.TinydanticModel.truncate].
-            DocumentNotFoundError: If an explicit ``doc_ids`` id
-                does not exist; nothing is removed.
         """
         selector = _checked_cond(
             cond,
             method="remove",
             none_hint="To remove every document, use truncate().",
         )
-        if selector is None and doc_ids is None:
+        if selector is None:
             msg = (
-                "remove() needs a selector: pass a query condition "
-                "or doc_ids=. To remove every document, use "
-                "truncate()."
+                "remove() needs a query condition. To remove every "
+                "document, use truncate(); to remove specific ids, "
+                "use remove_by_ids()."
             )
             raise SelectorError(msg)
-        if doc_ids is not None:
-            doc_ids = list(doc_ids)
-            cls._check_doc_ids_exist(doc_ids)
-        if (
-            selector is not None
-            and doc_ids is None
-            and has_id_condition(selector)
-        ):
+        if has_id_condition(selector):
             table = cls.get_table()
             _cond = selector
 
@@ -2471,7 +2504,32 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 return matched
 
             return cls._run_write_cycle(apply_remove)
-        return cls.get_table().remove(cond=selector, doc_ids=doc_ids)
+        return cls.get_table().remove(cond=selector)
+
+    @classmethod
+    def remove_by_ids(cls, doc_ids: Iterable[int]) -> list[int]:
+        """Remove the documents with the given ids.
+
+        Where [remove][tinydantic.TinydanticModel.remove] filters,
+        this asserts: naming ids declares they exist, so a batch
+        containing an id the table does not hold is refused whole,
+        before anything is removed. TinyDB's own ``doc_ids=``
+        instead skips missing ids and reports only the ones it
+        touched — a partial delete that looks like success.
+
+        Args:
+            doc_ids: The document ids to remove.
+
+        Returns:
+            The ids of all removed documents.
+
+        Raises:
+            DocumentNotFoundError: If any id is not present in the
+                table; nothing is removed.
+        """
+        targets = list(doc_ids)
+        cls._check_doc_ids_exist(targets)
+        return cls.get_table().remove(doc_ids=targets)
 
     @classmethod
     def truncate(cls) -> None:
@@ -2969,7 +3027,7 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             exclude_doc_ids={self.id},
             touched_fields=set(serialized_patch),
         )
-        cls.update(fields, doc_ids=[self.id])
+        cls.update_by_ids(fields, [self.id])
         # Sync only after the write succeeded — the merged result
         # was already validated above.
         self._apply_write_fields(validated)

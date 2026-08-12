@@ -19,8 +19,8 @@ from tests.model.models import UserBase
 from tinydantic import (
     DocumentIDConditionError,
     DocumentIDUpdateError,
+    DocumentNotFoundError,
     QueryFieldError,
-    SelectorError,
     TinydanticError,
     field,
     q,
@@ -165,7 +165,7 @@ class TestModelIdExpression:
 @pytest.fixture
 def users(user_class: type[UserBase]) -> type[UserBase]:
     """Return the bound user class with three users (ids 1-3)."""
-    user_class.insert_multiple(
+    user_class.insert_many(
         [
             user_class(name="Alice", age=30),
             user_class(name="Bob", age=25),
@@ -180,8 +180,7 @@ class TestIdConditionReads:
 
     def test_get_by_id_equality(self, users: type[UserBase]) -> None:
         """get(Model.id == n) fetches by document id."""
-        user = users.get(users.id == 2)  # type: ignore[call-overload]
-        assert user is not None
+        user = users.get(q(users.id) == 2)
         assert user.id == 2
         assert user.name == "Bob"
 
@@ -190,7 +189,7 @@ class TestIdConditionReads:
         users: type[UserBase],
     ) -> None:
         """A get with an unknown id returns None."""
-        assert users.get(q(users.id) == 999) is None
+        assert users.get_or_none(q(users.id) == 999) is None
 
     @pytest.mark.parametrize(
         ("build", "expected_ids"),
@@ -241,10 +240,10 @@ class TestIdConditionReads:
         users: type[UserBase],
     ) -> None:
         """The get() delegates inherit translation."""
-        by_cond = users.get_by_cond(q(users.id) == 3)
+        by_cond = users.get(q(users.id) == 3)
         assert by_cond is not None
         assert by_cond.name == "Carol"
-        assert users.get_or_raise(q(users.id) == 1).name == "Alice"
+        assert users.get(q(users.id) == 1).name == "Alice"
 
     def test_contains(self, users: type[UserBase]) -> None:
         """contains() translates pure and composed id conditions."""
@@ -354,18 +353,15 @@ class TestIdConditionWrites:
         assert updated == []
         assert users.count() == 3
 
-    def test_update_id_cond_with_doc_ids_raises(
+    def test_id_condition_filters_while_by_ids_asserts(
         self,
         users: type[UserBase],
     ) -> None:
-        """Id conditions and doc_ids= are conflicting selectors."""
-        with pytest.raises(SelectorError, match="one of"):
-            users.update(
-                {"age": 1},
-                q(users.id) == 2,
-                doc_ids=[3],
-            )
-        assert [user.age for user in users.all()] != [1, 1, 1]
+        """update_by_ids() asserts, where an id condition filters."""
+        assert users.update({"age": 1}, q(users.id).one_of([2, 999])) == [2]
+        with pytest.raises(DocumentNotFoundError, match="id 999"):
+            users.update_by_ids({"age": 5}, [3, 999])
+        assert [user.age for user in users.all()] == [30, 1, 35]
 
     def test_remove_by_id_condition(self, users: type[UserBase]) -> None:
         """remove() resolves id conditions to doc_ids."""
@@ -411,8 +407,8 @@ class TestIdConditionWrites:
         self,
         users: type[UserBase],
     ) -> None:
-        """update_multiple() applies id-condition pairs in a batch."""
-        ids = users.update_multiple(
+        """update_many() applies id-condition pairs in a batch."""
+        ids = users.update_many(
             [
                 ({"age": 1}, q(users.id) == 1),
                 ({"age": 2}, q(users.id).one_of([2, 3])),
@@ -428,7 +424,7 @@ class TestIdConditionWrites:
         users: type[UserBase],
     ) -> None:
         """Field-condition and id-condition pairs mix in one batch."""
-        ids = users.update_multiple(
+        ids = users.update_many(
             [
                 ({"age": 50}, where("name") == "Alice"),
                 ({"age": 60}, (q(users.id) > 1) & (q(users.age) == 35)),
@@ -445,7 +441,7 @@ class TestIdConditionWrites:
         One id per matching pair, in order, and later pairs see
         earlier pairs' mutations.
         """
-        ids = users.update_multiple(
+        ids = users.update_many(
             [
                 ({"age": 1}, q(users.id) == 2),
                 ({"name": "Bobby"}, q(users.id) == 2),
@@ -462,7 +458,7 @@ class TestIdConditionWrites:
         users: type[UserBase],
     ) -> None:
         """No matching ids: empty result, nothing changed."""
-        result = users.update_multiple(
+        result = users.update_many(
             [({"age": 9}, q(users.id) == 999)],
         )
         assert result == []
@@ -480,7 +476,7 @@ class TestIdConditionWrites:
             raise RuntimeError(msg)
 
         with pytest.raises(RuntimeError, match="boom"):
-            users.update_multiple(
+            users.update_many(
                 [
                     ({"age": 99}, q(users.id) == 1),
                     (boom, q(users.id) == 2),
@@ -515,9 +511,9 @@ class TestIdConditionWrites:
         self,
         users: type[UserBase],
     ) -> None:
-        """update_multiple() mappings get the same id guard."""
+        """update_many() mappings get the same id guard."""
         with pytest.raises(DocumentIDUpdateError, match="doc_id"):
-            users.update_multiple(
+            users.update_many(
                 [({"id": 99}, where("name") == "Alice")],
             )
 
@@ -530,23 +526,23 @@ class TestIdFromCondition:
         users: type[UserBase],
     ) -> None:
         """A bare ``id == n`` condition yields ``n``."""
-        assert id_from_condition(users.id == 3) == 3
+        assert id_from_condition(q(users.id) == 3) == 3
 
     def test_other_operators_yield_none(
         self,
         users: type[UserBase],
     ) -> None:
         """Only equality names a single document."""
-        assert id_from_condition(users.id != 3) is None
-        assert id_from_condition(users.id > 3) is None
-        assert id_from_condition(users.id.one_of([1, 2])) is None
+        assert id_from_condition(q(users.id) != 3) is None
+        assert id_from_condition(q(users.id) > 3) is None
+        assert id_from_condition(q(users.id).one_of([1, 2])) is None
 
     def test_composed_condition_yields_none(
         self,
         users: type[UserBase],
     ) -> None:
         """A composition may match more than the named id."""
-        cond = (users.id == 3) & (where("name") == "Alice")
+        cond = (q(users.id) == 3) & (where("name") == "Alice")
         assert id_from_condition(cond) is None
 
     def test_field_condition_yields_none(self) -> None:
