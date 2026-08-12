@@ -57,10 +57,9 @@ class TestFieldQueries:
             name: str
 
         User(name="Alice").insert()
-        # A raw field comparison is a Query at runtime but types as
-        # bool (this is why q() exists); get() also returns a union.
-        result = User.get(User.name == "Alice")  # type: ignore[call-overload]
-        assert result is not None
+        # A raw field comparison is a Query at runtime but types
+        # as bool — this is why q() exists.
+        result = User.get(User.name == "Alice")  # type: ignore[arg-type]
         assert result.name == "Alice"  # type: ignore[union-attr]
 
     def test_nested_field_query(self, memory_db: TinyDB):
@@ -73,10 +72,9 @@ class TestFieldQueries:
             address: Address
 
         User(name="Alice", address=Address(city="Oakland")).insert()
-        # A raw field comparison is a Query at runtime but types as
-        # bool (this is why q() exists); get() also returns a union.
-        result = User.get(User.address.city == "Oakland")  # type: ignore[call-overload]
-        assert result is not None
+        # A raw field comparison is a Query at runtime but types
+        # as bool — this is why q() exists.
+        result = User.get(User.address.city == "Oakland")  # type: ignore[arg-type]
         assert result.name == "Alice"  # type: ignore[union-attr]
 
     def test_non_field_attribute_raises(self, memory_db: TinyDB):

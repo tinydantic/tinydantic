@@ -99,7 +99,7 @@ class TestRoundTrip:
         )
         original.insert()
         assert original.id is not None
-        loaded = rich_class.get(doc_id=original.id)
+        loaded = rich_class.get_by_id(original.id)
         assert isinstance(loaded, rich_class)
         assert loaded.created_at == original.created_at
         assert loaded.token == original.token
@@ -141,7 +141,7 @@ class TestUpdateSerialization:
         new_time = datetime.datetime(
             2027, 1, 1, 12, 0, tzinfo=datetime.timezone.utc
         )
-        rich_class.update({"created_at": new_time}, doc_ids=[original.id])
+        rich_class.update_by_ids({"created_at": new_time}, [original.id])
         raw = rich_class.get_table().get(doc_id=original.id)
         assert isinstance(raw, Document)
         assert isinstance(raw["created_at"], str)
@@ -163,9 +163,9 @@ class TestUpdateSerialization:
             address=Address(city="Oakland", zip_code="94601"),
         ).insert()
         assert original.id is not None
-        rich_class.update(
+        rich_class.update_by_ids(
             {"address": Address(city="Berlin", zip_code="10115")},
-            doc_ids=[original.id],
+            [original.id],
         )
         raw = rich_class.get_table().get(doc_id=original.id)
         assert isinstance(raw, Document)
@@ -176,7 +176,7 @@ class TestUpdateSerialization:
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
         with pytest.raises(ValidationError):
-            user_class.update({"age": "not a number"}, doc_ids=[user.id])
+            user_class.update_by_ids({"age": "not a number"}, [user.id])
 
     def test_update_unknown_keys_need_explicit_allow(
         self,
@@ -186,10 +186,10 @@ class TestUpdateSerialization:
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
         with pytest.raises(UnknownUpdateFieldError, match="nickname"):
-            user_class.update({"nickname": "Al"}, doc_ids=[user.id])
-        user_class.update(
+            user_class.update_by_ids({"nickname": "Al"}, [user.id])
+        user_class.update_by_ids(
             {"nickname": "Al"},
-            doc_ids=[user.id],
+            [user.id],
             extra_keys="allow",
         )
         raw = user_class.get_table().get(doc_id=user.id)
@@ -200,7 +200,7 @@ class TestUpdateSerialization:
         self,
         rich_class: type[RichBase],
     ):
-        """update_multiple() serializes each update's mapping too."""
+        """update_many() serializes each update's mapping too."""
         original = rich_class(
             name="Alice",
             created_at=datetime.datetime(
@@ -212,7 +212,7 @@ class TestUpdateSerialization:
         new_time = datetime.datetime(
             2028, 1, 1, 12, 0, tzinfo=datetime.timezone.utc
         )
-        rich_class.update_multiple(
+        rich_class.update_many(
             [({"created_at": new_time}, field(rich_class, "name") == "Alice")],
         )
         assert original.id is not None
@@ -230,7 +230,7 @@ class TestSave:
         saved = user.save()
         assert saved is user
         assert user.id is not None
-        fetched = user_class.get(doc_id=user.id)
+        fetched = user_class.get_by_id(user.id)
         assert isinstance(fetched, user_class)
         assert fetched.name == "Alice"
 
@@ -240,7 +240,7 @@ class TestSave:
         user.age = 38
         user.save()
         assert user.id is not None
-        fetched = user_class.get(doc_id=user.id)
+        fetched = user_class.get_by_id(user.id)
         assert isinstance(fetched, user_class)
         assert fetched.age == 38
         assert fetched.id == user.id
@@ -254,7 +254,8 @@ class TestDelete:
         user = user_class(name="Alice", age=37).insert()
         user.delete()
         assert user.id is not None
-        assert user_class.get(doc_id=user.id) is None
+        with pytest.raises(DocumentNotFoundError):
+            user_class.get_by_id(user.id)
 
     def test_delete_without_id_raises(self, user_class: type[UserBase]):
         """Unsaved instances cannot be deleted."""

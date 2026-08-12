@@ -60,21 +60,16 @@ class TestContains:
         assert user_class.contains(user_class.name == "Alice")  # type: ignore[arg-type]
         assert not user_class.contains(user_class.name == "Bob")  # type: ignore[arg-type]
 
-    def test_contains_by_doc_id(self, user_class: type[UserBase]):
-        """doc_id form."""
+    def test_contains_by_id_condition(self, user_class: type[UserBase]):
+        """An id condition is the by-id existence check."""
         user = user_class(name="Alice", age=37).insert()
-        assert user_class.contains(doc_id=user.id)
-        assert not user_class.contains(doc_id=999)
-
-    def test_contains_both_selectors_raises(self, user_class: type[UserBase]):
-        """Tighter than TinyDB: both selectors is a ValueError."""
-        user = user_class(name="Alice", age=37).insert()
-        with pytest.raises(ValueError, match="one of"):
-            user_class.contains(user_class.name == "Alice", doc_id=user.id)  # type: ignore[arg-type]
+        assert user.id is not None
+        assert user_class.contains(q(user_class.id) == user.id)
+        assert not user_class.contains(q(user_class.id) == 999)
 
 
 class TestUpdate:
-    """update()/update_multiple() write through to the table."""
+    """update()/update_many() write through to the table."""
 
     def test_update_fields_by_cond(self, user_class: type[UserBase]):
         """Mapping-of-fields form."""
@@ -90,7 +85,7 @@ class TestUpdate:
         """doc_ids form."""
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
-        user_class.update({"age": 40}, doc_ids=[user.id])
+        user_class.update_by_ids({"age": 40}, [user.id])
         fetched = user_class.get_by_id(user.id)
         assert fetched is not None
         assert fetched.age == 40
@@ -107,29 +102,13 @@ class TestUpdate:
         assert fetched is not None
         assert fetched.age == 37
 
-    def test_update_both_selectors_raises(
-        self,
-        user_class: type[UserBase],
-    ):
-        """Both selectors raise instead of doc_ids silently winning."""
-        user = user_class(name="Alice", age=37).insert()
-        with pytest.raises(SelectorError, match="one of"):
-            user_class.update(
-                {"age": 1},
-                user_class.name == "Bob",  # type: ignore[arg-type]
-                doc_ids=[cast("int", user.id)],
-            )
-        fetched = user_class.get_by_id(cast("int", user.id))
-        assert fetched is not None
-        assert fetched.age == 37
-
     def test_update_multiple(self, user_class: type[UserBase]):
         """Batched per-condition updates."""
         u1 = user_class(name="Alice", age=37).insert()
         u2 = user_class(name="Bob", age=24).insert()
         assert u1.id is not None
         assert u2.id is not None
-        updated = user_class.update_multiple(
+        updated = user_class.update_many(
             [
                 ({"age": 1}, user_class.name == "Alice"),  # type: ignore[list-item]
                 ({"age": 2}, user_class.name == "Bob"),  # type: ignore[list-item]
@@ -297,9 +276,10 @@ class TestRemove:
         """doc_ids form."""
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
-        removed = user_class.remove(doc_ids=[user.id])
+        removed = user_class.remove_by_ids([user.id])
         assert removed == [user.id]
-        assert user_class.get_by_id(user.id) is None
+        with pytest.raises(DocumentNotFoundError):
+            user_class.get_by_id(user.id)
 
 
 class TestMissingDocIDsRefuseWholeBatch:
@@ -322,7 +302,7 @@ class TestMissingDocIDsRefuseWholeBatch:
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
         with pytest.raises(DocumentNotFoundError):
-            user_class.update({"age": 99}, doc_ids=[user.id, 12345])
+            user_class.update_by_ids({"age": 99}, [user.id, 12345])
         fetched = user_class.get_by_id(user.id)
         assert fetched is not None
         assert fetched.age == 37
@@ -335,7 +315,7 @@ class TestMissingDocIDsRefuseWholeBatch:
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
         with pytest.raises(DocumentNotFoundError):
-            user_class.remove(doc_ids=[user.id, 12345])
+            user_class.remove_by_ids([user.id, 12345])
         assert user_class.get_by_id(user.id) is not None
 
     def test_update_validate_writes_false_also_refuses(
@@ -361,7 +341,7 @@ class TestMissingDocIDsRefuseWholeBatch:
         item = Item(name="keep").insert()
         assert item.id is not None
         with pytest.raises(DocumentNotFoundError):
-            Item.update({"name": "changed"}, doc_ids=[item.id, 12345])
+            Item.update_by_ids({"name": "changed"}, [item.id, 12345])
         fetched = Item.get_by_id(item.id)
         assert fetched is not None
         assert fetched.name == "keep"
@@ -391,9 +371,9 @@ class TestOperationsEscapeHatch:
         """Callable-transform form (TinyDB operations protocol)."""
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
-        user_class.update(
+        user_class.update_by_ids(
             replace({"name": "Alicia", "age": 38}),  # type: ignore[arg-type]
-            doc_ids=[user.id],
+            [user.id],
         )
         fetched = user_class.get_by_id(user.id)
         assert fetched is not None
@@ -440,7 +420,7 @@ class TestUpdateExtraKeys:
         assert raw["gadget"] == 1
 
     def test_update_multiple_rejects_unknown_keys(self, db: TinyDB):
-        """update_multiple() applies the same default."""
+        """update_many() applies the same default."""
 
         class User(TinydanticModel, database=db):
             """Test model."""
@@ -449,12 +429,12 @@ class TestUpdateExtraKeys:
 
         User(name="Al").insert()
         with pytest.raises(UnknownUpdateFieldError, match="gadget"):
-            User.update_multiple(
+            User.update_many(
                 [({"gadget": 1}, q(User.name) == "Al")],
             )
 
     def test_update_multiple_extra_keys_allow(self, db: TinyDB):
-        """update_multiple() honors extra_keys='allow'."""
+        """update_many() honors extra_keys='allow'."""
 
         class User(TinydanticModel, database=db):
             """Test model."""
@@ -462,7 +442,7 @@ class TestUpdateExtraKeys:
             name: str
 
         user = User(name="Al").insert()
-        User.update_multiple(
+        User.update_many(
             [({"gadget": 1}, q(User.name) == "Al")],
             extra_keys="allow",
         )
@@ -578,8 +558,12 @@ class TestUpdateMergedValidation:
 
         user = User(name="Al").insert()
         assert user.id is not None
-        User.update({"legacy": "kept"}, doc_ids=[user.id], extra_keys="allow")
-        User.update({"name": "Bob"}, doc_ids=[user.id])
+        User.update_by_ids(
+            {"legacy": "kept"},
+            [user.id],
+            extra_keys="allow",
+        )
+        User.update_by_ids({"name": "Bob"}, [user.id])
         raw = User.get_table().get(doc_id=user.id)
         assert isinstance(raw, dict)
         assert raw["name"] == "Bob"
@@ -613,11 +597,11 @@ class TestUpdateMergedValidation:
 
         spy = Spy(name="x").insert()
         recorder.clear()
-        Spy.update({"name": "y"}, doc_ids=[spy.id] if spy.id else None)
+        Spy.update_by_ids({"name": "y"}, [cast("int", spy.id)])
         assert spy.id in recorder
 
     def test_update_multiple_enforces_invariants(self, db: TinyDB):
-        """update_multiple() validates merged results per pair."""
+        """update_many() validates merged results per pair."""
 
         class Event(TinydanticModel, database=db):
             """Test model with a cross-field invariant."""
@@ -635,7 +619,7 @@ class TestUpdateMergedValidation:
 
         event = Event(start=10, end=20).insert()
         with pytest.raises(ValidationError):
-            Event.update_multiple([({"end": 5}, q(Event.start) == 10)])
+            Event.update_many([({"end": 5}, q(Event.start) == 10)])
         assert event.id is not None
         loaded = Event.get_by_id(event.id)
         assert loaded is not None

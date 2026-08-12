@@ -47,12 +47,12 @@ class Unique:
     """Mark a field's values as unique within the model's table.
 
     Enforced with a check-then-write scan on create-style and
-    instance-level writes (``insert``, ``insert_multiple``,
+    instance-level writes (``insert``, ``insert_many``,
     ``save``, ``replace``, ``upsert``, ``patch``); violations
     raise
     [UniqueConstraintError][tinydantic.UniqueConstraintError].
     ``None`` values are exempt (SQL ``NULL`` semantics), the
-    table-level bulk ``update()``/``update_multiple()`` path is a
+    table-level bulk ``update()``/``update_many()`` path is a
     documented bypass, and the check is in-process only — see the
     models guide for the full contract.
 
@@ -88,7 +88,7 @@ class UniqueConstraint:
     A row participates in the check only when **all** of the
     constraint's fields are non-``None`` (SQL composite
     ``UNIQUE``/``NULL`` semantics); the table-level bulk
-    ``update()``/``update_multiple()`` path is a documented
+    ``update()``/``update_many()`` path is a documented
     bypass, and the check is in-process only.
 
     Attributes:

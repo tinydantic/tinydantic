@@ -69,8 +69,7 @@ def _guarded_calls() -> dict[str, Callable[[Any], object]]:
     return {
         "search": User.search,
         "get": User.get,
-        "get_by_cond": User.get_by_cond,
-        "get_or_raise": User.get_or_raise,
+        "get_or_none": User.get_or_none,
         "contains": User.contains,
         "count": User.count,
         "remove": User.remove,
@@ -80,7 +79,7 @@ def _guarded_calls() -> dict[str, Callable[[Any], object]]:
             User(name="B", age=1),
             cond,
         ),
-        "update_multiple": lambda cond: User.update_multiple(
+        "update_many": lambda cond: User.update_many(
             [({"age": 1}, cond)],
         ),
     }
@@ -169,8 +168,20 @@ class TestValidConditionsStillPass:
     def test_omitted_conditions_still_mean_omitted(self) -> None:
         """The sentinel keeps absence distinct from None."""
         assert User.count() == 1
-        with pytest.raises(SelectorError):
-            User.get()  # type: ignore[call-overload]
+        # remove() keeps the sentinel so absence can point at the
+        # whole-table spelling instead of failing as a bare
+        # TypeError.
+        with pytest.raises(SelectorError, match="truncate"):
+            User.remove()
+        with pytest.raises(SelectorError, match="update_all"):
+            User.update({"age": 1})
+
+    def test_reads_require_a_condition_positionally(self) -> None:
+        """Reads take one selector, so absence is a TypeError."""
+        with pytest.raises(TypeError, match="cond"):
+            User.get()  # type: ignore[call-arg]
+        with pytest.raises(TypeError, match="cond"):
+            User.contains()  # type: ignore[call-arg]
 
 
 class TestFindRaisesEagerly:

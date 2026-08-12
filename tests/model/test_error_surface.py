@@ -17,7 +17,6 @@ from tinydantic import (
     DocumentNotFoundError,
     SelectorError,
     TinydanticModel,
-    q,
 )
 
 if TYPE_CHECKING:
@@ -27,57 +26,38 @@ if TYPE_CHECKING:
 class TestSelectorError:
     """Selector misuse raises SelectorError, never RuntimeError."""
 
-    def test_get_no_selector(self, db: TinyDB):
-        """get() with nothing raises SelectorError."""
+    def test_reads_take_one_selector_positionally(self, db: TinyDB):
+        """Reads accept a condition only, so absence is a TypeError.
+
+        No read method takes more than one selector any more, so
+        the "conflicting selectors" arm of SelectorError is gone
+        and a bare call is an ordinary missing-argument TypeError.
+        """
 
         class User(TinydanticModel, database=db):
             """Test model."""
 
             name: str
 
-        with pytest.raises(SelectorError):
-            User.get()  # type: ignore[call-overload]
+        with pytest.raises(TypeError, match="cond"):
+            User.get()  # type: ignore[call-arg]
+        with pytest.raises(TypeError, match="cond"):
+            User.get_or_none()  # type: ignore[call-arg]
+        with pytest.raises(TypeError, match="cond"):
+            User.contains()  # type: ignore[call-arg]
 
-    def test_get_too_many_selectors_compat(self, db: TinyDB):
-        """The upgraded guard can still be caught as ValueError."""
-
-        class User(TinydanticModel, database=db):
-            """Test model."""
-
-            name: str
-
-        with pytest.raises(ValueError, match="at most one"):
-            User.get(  # type: ignore[call-overload]
-                q(User.name) == "x",
-                doc_id=1,
-            )
-        with pytest.raises(SelectorError):
-            User.get(  # type: ignore[call-overload]
-                q(User.name) == "x",
-                doc_id=1,
-            )
-
-    def test_contains_no_selector(self, db: TinyDB):
-        """contains() with nothing raises SelectorError."""
+    def test_update_no_selector_points_at_update_all(self, db: TinyDB):
+        """update() with nothing refuses and names the fixes."""
 
         class User(TinydanticModel, database=db):
             """Test model."""
 
             name: str
 
-        with pytest.raises(SelectorError):
-            User.contains()
-
-    def test_get_or_raise_no_selector(self, db: TinyDB):
-        """get_or_raise() with nothing raises SelectorError."""
-
-        class User(TinydanticModel, database=db):
-            """Test model."""
-
-            name: str
-
-        with pytest.raises(SelectorError):
-            User.get_or_raise()  # type: ignore[call-overload]
+        User(name="x").insert()
+        with pytest.raises(SelectorError, match="update_all"):
+            User.update({"name": "y"})
+        assert User.get_by_id(1).name == "x"
 
     def test_remove_no_selector_points_at_truncate(self, db: TinyDB):
         """remove() with nothing refuses and names truncate()."""
@@ -159,7 +139,7 @@ class TestDocumentAlreadyExists:
             DocumentAlreadyExistsError,
             match=str(user.id),
         ):
-            User.insert_multiple(
+            User.insert_many(
                 [User(name="new"), User(id=user.id, name="dup")],
             )
         assert User.count() == 1
@@ -173,7 +153,7 @@ class TestDocumentAlreadyExists:
             name: str
 
         with pytest.raises(DocumentAlreadyExistsError, match="7"):
-            User.insert_multiple(
+            User.insert_many(
                 [User(id=7, name="a"), User(id=7, name="b")],
             )
         assert User.count() == 0
@@ -208,7 +188,7 @@ class TestMissingDocIDs:
 
         User(name="x").insert()
         with pytest.raises(DocumentNotFoundError, match="999"):
-            User.update({"name": "y"}, doc_ids=[999])
+            User.update_by_ids({"name": "y"}, [999])
         loaded = User.get_by_id(1)
         assert loaded is not None
         assert loaded.name == "x"
@@ -224,7 +204,7 @@ class TestMissingDocIDs:
         user = User(name="x").insert()
         assert user.id is not None
         with pytest.raises(DocumentNotFoundError, match="999"):
-            User.update({"name": "y"}, doc_ids=[user.id, 999])
+            User.update_by_ids({"name": "y"}, [user.id, 999])
         loaded = User.get_by_id(user.id)
         assert loaded is not None
         assert loaded.name == "x"
@@ -239,7 +219,7 @@ class TestMissingDocIDs:
 
         Loose(name="x").insert()
         with pytest.raises(DocumentNotFoundError, match="999"):
-            Loose.update({"name": "y"}, doc_ids=[999])
+            Loose.update_by_ids({"name": "y"}, [999])
 
     def test_remove_missing_doc_id(self, db: TinyDB):
         """remove(doc_ids=[missing]) names the missing id."""
@@ -251,5 +231,5 @@ class TestMissingDocIDs:
 
         User(name="x").insert()
         with pytest.raises(DocumentNotFoundError, match="999"):
-            User.remove(doc_ids=[999])
+            User.remove_by_ids([999])
         assert User.count() == 1

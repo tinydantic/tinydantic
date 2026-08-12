@@ -84,7 +84,7 @@ class TestFilter:
     @pytest.fixture
     def populated(self, user_class: type[User]) -> type[User]:
         """Four users spanning both filter dimensions."""
-        user_class.insert_multiple(
+        user_class.insert_many(
             [
                 user_class(name="ada", age=36),
                 user_class(name="bob", age=17),
@@ -620,7 +620,7 @@ class TestUpdate:
         doc = Doc(body="v1").insert()
         before = doc.revision_id
         Doc.find(field(Doc, "body") == "v1").sort("id").update({"body": "v2"})
-        stored = Doc.get_or_raise(doc_id=cast("int", doc.id))
+        stored = Doc.get_by_id(cast("int", doc.id))
         assert stored.revision_id != before
 
 

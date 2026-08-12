@@ -156,8 +156,8 @@ class TestBeforeWriteCoverage:
         self,
         hooked: type[Hooked],
     ):
-        """insert_multiple() fires once per document."""
-        docs = hooked.insert_multiple([hooked(name="a"), hooked(name="b")])
+        """insert_many() fires once per document."""
+        docs = hooked.insert_many([hooked(name="a"), hooked(name="b")])
         assert hooked.writes == ["a", "b"]
         assert [doc.stamped for doc in docs] == [1, 1]
 
@@ -166,7 +166,7 @@ class TestBeforeWriteCoverage:
         doc = hooked(name="a").insert()
         hooked.writes.clear()
         assert doc.id is not None
-        hooked.update({"name": "b"}, doc_ids=[doc.id])
+        hooked.update_by_ids({"name": "b"}, [doc.id])
         assert hooked.writes == []
 
     def test_update_all_does_not_fire(self, hooked: type[Hooked]):

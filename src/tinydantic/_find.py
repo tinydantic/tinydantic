@@ -51,7 +51,7 @@ from tinydantic._errors import (
     QueryUsageError,
     QueryValueError,
 )
-from tinydantic._query import _require_condition
+from tinydantic._query import DocIdQuery, _require_condition
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping
@@ -408,6 +408,29 @@ class FindQuery(Generic[ModelT]):
             or self._limit is not None
         )
 
+    def _id_filter(self, ids: list[int]) -> QueryLike:
+        """Build a filtering condition over resolved document ids.
+
+        Resolved ids were never named by the caller, so the chain
+        has nothing to assert: the write paths route through this
+        condition rather than the ``_by_ids`` verbs, so a document
+        vanishing between resolution and write yields a smaller
+        result instead of an error. It is also one full table read
+        cheaper than the id-assertion path.
+        """
+        return cast("DocIdQuery", self._model.id).one_of(ids)
+
+    @staticmethod
+    def _in_window_order(written: list[int], window: list[int]) -> list[int]:
+        """Restore the window's order over a condition's result.
+
+        Condition writes report ids in table order, but a chain
+        promises the order its own read pipeline produced — the
+        whole point of honouring ``sort``/``skip``/``limit``.
+        """
+        touched = set(written)
+        return [doc_id for doc_id in window if doc_id in touched]
+
     def _resolved_ids(self) -> list[int]:
         """Resolve the chain to concrete document ids.
 
@@ -442,7 +465,10 @@ class FindQuery(Generic[ModelT]):
         ids = self._resolved_ids()
         if not ids:
             return []
-        return self._model.remove(doc_ids=ids)
+        return self._in_window_order(
+            self._model.remove(self._id_filter(ids)),
+            ids,
+        )
 
     def update(
         self,
@@ -500,7 +526,14 @@ class FindQuery(Generic[ModelT]):
                     extra_keys=extra_keys,
                 )
             return []
-        return self._model.update(fields, doc_ids=ids, extra_keys=extra_keys)
+        return self._in_window_order(
+            self._model.update(
+                fields,
+                self._id_filter(ids),
+                extra_keys=extra_keys,
+            ),
+            ids,
+        )
 
     def __bool__(self) -> bool:
         """Refuse boolean context — a chain has no truth value.

@@ -47,7 +47,7 @@ class User(TinydanticModel, database=_db):
 def _populate() -> None:
     """Reset the table to two known documents per test."""
     User.truncate()
-    User.insert_multiple(
+    User.insert_many(
         [
             User(name="Alice", age=30, tags=["admin"]),
             User(name="Bob", age=40, tags=["us"]),

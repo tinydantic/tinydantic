@@ -422,7 +422,16 @@ class DocIdQuery(GuardedQuery):
             TypeError: If any element is not an int.
         """
         ids = tuple(_validate_doc_id(item) for item in items)
-        return DocIdCondition("one_of", lambda a, b: a in b, ids)
+        # Test against a set, not the tuple: the condition is
+        # evaluated once per stored document, so tuple membership
+        # would make a wide id list O(table x ids). The tuple stays
+        # the hashval operand, keeping equal conditions equal.
+        lookup = frozenset(ids)
+        return DocIdCondition(
+            "one_of",
+            lambda doc_id, _: doc_id in lookup,
+            ids,
+        )
 
     def __getattr__(self, item: str) -> Any:
         """Refuse sub-field access — id has no sub-fields.
