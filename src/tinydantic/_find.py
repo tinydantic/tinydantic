@@ -51,7 +51,7 @@ from tinydantic._errors import (
     QueryUsageError,
     QueryValueError,
 )
-from tinydantic._query import _require_condition
+from tinydantic._query import DocIdQuery, _require_condition
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping
@@ -59,7 +59,6 @@ if TYPE_CHECKING:
     from tinydb.queries import QueryLike
 
     from tinydantic._model import TinydanticModel
-    from tinydantic._query import DocIdQuery
 
 ModelT = TypeVar("ModelT", bound="TinydanticModel")
 
@@ -422,7 +421,11 @@ class FindQuery(Generic[ModelT]):
         result instead of an error. It is also one full table read
         cheaper than the id-assertion path.
         """
-        return cast("DocIdQuery", self._model.id).one_of(ids)
+        # Built directly rather than through ``self._model.id``:
+        # comparisons on a DocIdQuery read no instance state, and
+        # the class-level attribute types as the model's ``int |
+        # None`` field, so reaching through it would need a cast.
+        return DocIdQuery().one_of(ids)
 
     @staticmethod
     def _in_window_order(written: list[int], window: list[int]) -> list[int]:
