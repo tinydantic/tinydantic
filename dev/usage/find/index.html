@@ -2371,12 +2371,12 @@
 </span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">past_the_end</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span> <span class="n">past_the_end</span><span class="o">.</span><span class="n">exists</span><span class="p">(),</span> <span class="n">past_the_end</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
 </span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="go">(0, False, None)</span>
 </span></code></pre></div>
-<p><a class="autorefs autorefs-internal" title="            first_or_raise" href="../../reference/api/tinydantic/#tinydantic.FindQuery.first_or_raise">first_or_raise()</a> is the strict variant for call sites where an empty window is an error — the chain counterpart to <a class="autorefs autorefs-internal" title="            get_or_raise
+<p><a class="autorefs autorefs-internal" title="            first_or_raise" href="../../reference/api/tinydantic/#tinydantic.FindQuery.first_or_raise">first_or_raise()</a> is the strict variant for call sites where an empty window is an error — the chain counterpart to <a class="autorefs autorefs-internal" title="            get
 
 
   
       classmethod
-  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.get_or_raise">get_or_raise()</a>, raising the same <a class="autorefs autorefs-internal" title="            DocumentNotFoundError" href="../../reference/api/tinydantic/#tinydantic.DocumentNotFoundError">DocumentNotFoundError</a>:</p>
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.get">get()</a>, raising the same <a class="autorefs autorefs-internal" title="            DocumentNotFoundError" href="../../reference/api/tinydantic/#tinydantic.DocumentNotFoundError">DocumentNotFoundError</a>:</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">field</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">first_or_raise</span><span class="p">()</span>
 </span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="gt">Traceback (most recent call last):</span>
 </span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="o">...</span>

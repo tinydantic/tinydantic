@@ -1780,10 +1780,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#update_multiple-cannot-select-documents-by-id" class="md-nav__link">
+  <a href="#update_many-cannot-select-documents-by-id" class="md-nav__link">
     <span class="md-ellipsis">
       
-        update_multiple() cannot select documents by id
+        update_many() cannot select documents by id
       
     </span>
   </a>
@@ -1791,10 +1791,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently" class="md-nav__link">
+  <a href="#tableupdatedoc_ids-and-tableremovedoc_ids-skip-missing-ids-silently" class="md-nav__link">
     <span class="md-ellipsis">
       
-        update(doc_ids=…) and remove(doc_ids=…) skip missing ids silently
+        Table.update(doc_ids=…) and Table.remove(doc_ids=…) skip missing ids silently
       
     </span>
   </a>
@@ -2202,10 +2202,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#update_multiple-cannot-select-documents-by-id" class="md-nav__link">
+  <a href="#update_many-cannot-select-documents-by-id" class="md-nav__link">
     <span class="md-ellipsis">
       
-        update_multiple() cannot select documents by id
+        update_many() cannot select documents by id
       
     </span>
   </a>
@@ -2213,10 +2213,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently" class="md-nav__link">
+  <a href="#tableupdatedoc_ids-and-tableremovedoc_ids-skip-missing-ids-silently" class="md-nav__link">
     <span class="md-ellipsis">
       
-        update(doc_ids=…) and remove(doc_ids=…) skip missing ids silently
+        Table.update(doc_ids=…) and Table.remove(doc_ids=…) skip missing ids silently
       
     </span>
   </a>
@@ -2443,20 +2443,35 @@
 <li>Add a <code>DocId</code> query type to <code>tinydb.queries</code> whose comparisons build <code>QueryInstance</code>s with <code>needs_doc_id=True</code> and test <code>doc.doc_id</code>.</li>
 <li>At each of the five evaluation sites: <code>if getattr(cond, "needs_doc_id", False)</code>, wrap the body in <code>self.document_class(doc, self.document_id_class(doc_id))</code> before calling the condition; otherwise call it with the raw body exactly as today.</li>
 </ol>
-<p>Existing queries and third-party <code>QueryLike</code> objects pay nothing (the <code>getattr</code> default preserves current behavior); id queries work in every API including <code>update_multiple()</code>; the storage format is untouched. This would let <code>tinydantic</code> delete its entire translation layer.</p>
-<h3 id="update_multiple-cannot-select-documents-by-id"><code>update_multiple()</code> cannot select documents by id<a class="headerlink" href="#update_multiple-cannot-select-documents-by-id" title="Permanent link">¤</a></h3>
+<p>Existing queries and third-party <code>QueryLike</code> objects pay nothing (the <code>getattr</code> default preserves current behavior); id queries work in every API including <code>update_many()</code>; the storage format is untouched. This would let <code>tinydantic</code> delete its entire translation layer.</p>
+<h3 id="update_many-cannot-select-documents-by-id"><code>update_many()</code> cannot select documents by id<a class="headerlink" href="#update_many-cannot-select-documents-by-id" title="Permanent link">¤</a></h3>
 <p><strong>Limitation.</strong> <code>Table.update(fields, cond, doc_ids)</code> and <code>Table.remove(cond, doc_ids)</code> both accept a <code>doc_ids</code> selector, but <code>Table.update_multiple(updates)</code> accepts only <code>(fields, cond)</code> pairs. Combined with the evaluation limitation above, there is no way to run a batched update that targets documents by id — neither via a condition (conditions cannot see ids) nor via an explicit selector (the parameter does not exist).</p>
-<p><strong>Why it matters to an ODM.</strong> <code>update_multiple()</code> is TinyDB's only batched write — the whole batch runs in one atomic read-modify-write cycle (<code>Table._update_table()</code>), which is the reason to use it over looping <code>update()</code>. <code>tinydantic</code> translates id conditions to <code>doc_ids=</code> operations where a public landing spot exists, but <code>update_multiple()</code> offers none, so supporting id conditions there (without sacrificing the batch's single-write atomicity) required the private-API use recorded in the <a href="#tinydb-private-api-usage-registry">registry below</a>.</p>
+<p><strong>Why it matters to an ODM.</strong> <code>update_many()</code> is TinyDB's only batched write — the whole batch runs in one atomic read-modify-write cycle (<code>Table._update_table()</code>), which is the reason to use it over looping <code>update()</code>. <code>tinydantic</code> translates id conditions to <code>doc_ids=</code> operations where a public landing spot exists, but <code>update_many()</code> offers none, so supporting id conditions there (without sacrificing the batch's single-write atomicity) required the private-API use recorded in the <a href="#tinydb-private-api-usage-registry">registry below</a>.</p>
 <p><strong>Suggested improvement.</strong> Either of:</p>
 <ul>
-<li>Accept an optional per-pair id selector, e.g. <code>update_multiple(updates: Iterable[tuple[fields, cond | None, doc_ids | None]])</code> (or a parallel <code>update_multiple_by_ids()</code>), mirroring the <code>update()</code>/<code>remove()</code> signatures.</li>
-<li>Ship the <code>needs_doc_id</code>/<code>DocId</code> improvement above, which subsumes this: id conditions would then work in <code>update_multiple()</code>'s existing signature.</li>
+<li>Accept an optional per-pair id selector, e.g. <code>update_many(updates: Iterable[tuple[fields, cond | None, doc_ids | None]])</code> (or a parallel <code>update_multiple_by_ids()</code>), mirroring the <code>update()</code>/<code>remove()</code> signatures.</li>
+<li>Ship the <code>needs_doc_id</code>/<code>DocId</code> improvement above, which subsumes this: id conditions would then work in <code>update_many()</code>'s existing signature.</li>
 </ul>
-<h3 id="updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently"><code>update(doc_ids=…)</code> and <code>remove(doc_ids=…)</code> skip missing ids silently<a class="headerlink" href="#updatedoc_ids-and-removedoc_ids-skip-missing-ids-silently" title="Permanent link">¤</a></h3>
+<h3 id="tableupdatedoc_ids-and-tableremovedoc_ids-skip-missing-ids-silently"><code>Table.update(doc_ids=…)</code> and <code>Table.remove(doc_ids=…)</code> skip missing ids silently<a class="headerlink" href="#tableupdatedoc_ids-and-tableremovedoc_ids-skip-missing-ids-silently" title="Permanent link">¤</a></h3>
 <p><strong>Limitation.</strong> As of TinyDB 4.9.0 (<a href="https://github.com/msiemens/tinydb/issues/591">#591</a>), <code>Table.update(fields, doc_ids=…)</code> and <code>Table.remove(doc_ids=…)</code> filter the requested ids down to those present in the table, operate on that subset, and return only the ids they actually touched. An id that does not exist is not reported in any way. Before 4.9.0 the same call raised a bare <code>KeyError</code> partway through the updater — which was its own problem (an uncurated exception, raised after some documents had already been mutated in the working copy).</p>
 <p><strong>Why it matters to an ODM.</strong> The new behavior makes a mixed batch a <strong>partial write that reports success</strong>: <code>update(fields, doc_ids=[1, 999])</code> on a table without document 999 updates document 1, returns <code>[1]</code>, and leaves the caller to notice that the returned list is shorter than the one they passed. A typo'd id in a batch is silently a different operation than the one requested. That is precisely the silent-wrong failure mode <code>tinydantic</code> exists to eliminate, and the returned-list-length check that would catch it is exactly the kind of bookkeeping users do not write.</p>
-<p><code>tinydantic</code> therefore keeps <code>TinydanticModel._check_doc_ids_exist()</code> (<code>src/tinydantic/_model.py</code>), which reads the table once and raises <a class="autorefs autorefs-internal" title="            DocumentNotFoundError" href="../../reference/api/tinydantic/#tinydantic.DocumentNotFoundError"><code>DocumentNotFoundError</code></a> for the first id that is absent, <strong>before</strong> any write is attempted. A batch naming a missing id is refused whole rather than applied in part, so <code>update()</code>/<code>remove()</code> keep all-or-nothing semantics across both the validated and <code>validate_writes=False</code> paths. The cost is one extra table read per id-selected write.</p>
-<p>Note that this is deliberately <em>stricter</em> than <code>Table.get(doc_ids=…)</code>, which has always skipped missing ids and which <code>tinydantic</code> mirrors as-is — a read that returns fewer documents than requested is self-describing, whereas a write that silently narrows its own target set is not.</p>
+<p><code>tinydantic</code> therefore keeps <code>TinydanticModel._check_doc_ids_exist()</code> (<code>src/tinydantic/_model.py</code>), which reads the table once and raises <a class="autorefs autorefs-internal" title="            DocumentNotFoundError" href="../../reference/api/tinydantic/#tinydantic.DocumentNotFoundError"><code>DocumentNotFoundError</code></a> for the first id that is absent, <strong>before</strong> any write is attempted. It backs <a class="autorefs autorefs-internal" title="            update_by_ids
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.update_by_ids"><code>update_by_ids()</code></a> and <a class="autorefs autorefs-internal" title="            remove_by_ids
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.remove_by_ids"><code>remove_by_ids()</code></a>, so a batch naming a missing id is refused whole rather than applied in part — all-or-nothing across both the validated and <code>validate_writes=False</code> paths. The cost is one extra table read per id-selected write.</p>
+<p><code>tinydantic</code> applies the same assertion to reads: <a class="autorefs autorefs-internal" title="            get_by_ids
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.get_by_ids"><code>get_by_ids()</code></a> refuses a batch naming an absent id rather than mirroring <code>Table.get(doc_ids=…)</code>, which silently returns a shorter list in storage order. Asserting also makes the read <em>positional</em> — one document per id, in the caller's order — which the upstream behavior cannot promise. Best-effort selection stays available through conditions (<code>search(Model.id.one_of(...))</code>), which filter by design.</p>
 <p><strong>Suggested improvement.</strong> Return enough information to distinguish "skipped" from "done", or let the caller choose. Either a <code>strict: bool = False</code> parameter on <code>update()</code>/<code>remove()</code> that raises a dedicated <code>MissingDocumentIDError</code> naming the absent ids, or a documented guarantee that the returned list can be compared against the requested one (plus a note in the docstring that it <em>must</em> be, to detect partial application).</p>
 <h3 id="document-ids-are-stringified-before-reaching-storages">Document ids are stringified before reaching storages<a class="headerlink" href="#document-ids-are-stringified-before-reaching-storages" title="Permanent link">¤</a></h3>
 <p><strong>Limitation.</strong> Before table data is handed to the storage layer, document ids are converted to strings (<code>{str(doc_id): doc}</code> in <code>Table._update_table()</code>), because the reference JSON storage requires string keys. Storages and middlewares therefore never see the native int ids, and serialized output sorts ids lexicographically (<code>"10"</code> before <code>"2"</code>). See the upstream discussion <a href="https://github.com/msiemens/tinydb/discussions/466">msiemens/tinydb#466</a>.</p>
@@ -2488,10 +2503,10 @@
 </tr>
 <tr>
 <td><code>Table._update_table(updater)</code></td>
-<td><code>TinydanticModel._run_write_cycle()</code> — all <code>update()</code>/<code>update_multiple()</code> writes (which validate each matched document's merged result unless <code>validate_writes=False</code>), plus the id-condition paths of <code>remove()</code> and <code>upsert()</code></td>
+<td><code>TinydanticModel._run_write_cycle()</code> — all <code>update()</code>/<code>update_many()</code> writes (which validate each matched document's merged result unless <code>validate_writes=False</code>), plus the id-condition paths of <code>remove()</code> and <code>upsert()</code></td>
 <td><strong>In use</strong> (approved 2026-07-13 for id-condition writes; scope extended 2026-08-02 to all validated update writes)</td>
-<td>The only way to select write targets by id inside one atomic read-modify-write cycle, and the only way to validate-then-write atomically: <code>update_multiple()</code> has no <code>doc_ids</code> parameter, conditions cannot see ids (the two limitations above), and a public two-pass validate-then-update has a read-modify-write race between passes. The custom updater evaluates every condition against <code>Document(body, doc_id)</code> wrappers inside upstream's own read → mutate → write → cache-clear lifecycle, validates merged bodies before the write, applies mutations copy-on-write (so an aborted or validation-failed cycle leaks nothing, even on <code>MemoryStorage</code>, whose <code>read()</code> shares body dicts by reference), and skips the storage write entirely when nothing matched. Benchmarked ~23% faster than the two-pass public-API alternative on a 5,000-document JSONStorage table (one full file read saved per write).</td>
-<td>Either <code>update_multiple()</code> improvement above plus an atomic validate-hook, or the <code>needs_doc_id</code>/<code>DocId</code> evaluator change combined with a public batched read-modify-write API.</td>
+<td>The only way to select write targets by id inside one atomic read-modify-write cycle, and the only way to validate-then-write atomically: <code>update_many()</code> has no <code>doc_ids</code> parameter, conditions cannot see ids (the two limitations above), and a public two-pass validate-then-update has a read-modify-write race between passes. The custom updater evaluates every condition against <code>Document(body, doc_id)</code> wrappers inside upstream's own read → mutate → write → cache-clear lifecycle, validates merged bodies before the write, applies mutations copy-on-write (so an aborted or validation-failed cycle leaks nothing, even on <code>MemoryStorage</code>, whose <code>read()</code> shares body dicts by reference), and skips the storage write entirely when nothing matched. Benchmarked ~23% faster than the two-pass public-API alternative on a 5,000-document JSONStorage table (one full file read saved per write).</td>
+<td>Either <code>update_many()</code> improvement above plus an atomic validate-hook, or the <code>needs_doc_id</code>/<code>DocId</code> evaluator change combined with a public batched read-modify-write API.</td>
 </tr>
 </tbody>
 </table>

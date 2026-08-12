@@ -2264,7 +2264,7 @@
 <p><code>q()</code> hands back the very object you passed it, so both spellings build the identical query — there is no runtime cost and no behavior change. If you do not run a type checker you never need it, which is why the rest of the documentation uses the shorter bare form.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Reach for <code>q()</code> rather than silencing the error. <code>get()</code>, <code>get_or_raise()</code>, and <code>find()</code> are overloaded, and when no overload matches, <code>mypy</code> gives up on the whole call and types the result <code>Any</code> — so a <code># type: ignore</code> hides the message and leaves you with an unchecked value where a <code>User</code> should be.</p>
+<p>Reach for <code>q()</code> rather than silencing the error. <code>find()</code> is overloaded, and when no overload matches, <code>mypy</code> gives up on the whole call and types the result <code>Any</code> — so a <code># type: ignore</code> hides the message and leaves you with an unchecked value where a <code>User</code> should be.</p>
 </div>
 <p>See <a href="https://tinydantic.github.io/tinydantic/latest/usage/queries/#static-type-checking">Queries → Static type checking</a> for what <code>q()</code> does and does not fix.</p>
 <h2 id="update-it">Update it<a class="headerlink" href="#update-it" title="Permanent link">¤</a></h2>
@@ -2278,7 +2278,7 @@
 <h2 id="delete-it">Delete it<a class="headerlink" href="#delete-it" title="Permanent link">¤</a></h2>
 <p>Call <a href="https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.delete">delete()</a> to remove the document. Querying for it afterwards returns <code>None</code>.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">alice</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Alice&quot;</span><span class="p">))</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">get_or_none</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Alice&quot;</span><span class="p">))</span>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="go">None</span>
 </span></code></pre></div>
 <h2 id="using-tinydb-directly">Using TinyDB directly<a class="headerlink" href="#using-tinydb-directly" title="Permanent link">¤</a></h2>
