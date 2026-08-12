@@ -32,7 +32,7 @@ The instance has no `rating` — but the stored document still does. What happen
 Book(id=1, title='Dune')
 >>> db.table("books").get(doc_id=1)
 {'title': 'Dune', 'rating': 5}
->>> Book.update({"title": "Dune (1965)"}, doc_ids=[1])
+>>> Book.update_by_ids({"title": "Dune (1965)"}, [1])
 [1]
 >>> db.table("books").get(doc_id=1)
 {'title': 'Dune (1965)', 'rating': 5}
@@ -58,7 +58,7 @@ The behavior, verb by verb:
 | --- | --- |
 | any read | dropped from the instance; storage untouched |
 | `save()` | preserved — merges into the stored document |
-| `update()` / `update_all()` / `update_multiple()` | preserved — validation ignores but keeps them |
+| `update()` / `update_all()` / `update_many()` | preserved — validation ignores but keeps them |
 | `replace()` | **deleted from storage** — writes the model's view |
 
 ### Round-tripping with `extra='allow'`

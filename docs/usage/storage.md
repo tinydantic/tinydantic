@@ -134,9 +134,7 @@ TinyDB stores document ids as strings, so a table with ten documents serializes 
 >>> db = TinyDB(sorted_path, storage=SortIntDocIDsMiddleware(YAMLStorage))
 >>> class Ticket(TinydanticModel, database=db, table_name="tickets"):
 ...     summary: str
->>> _ = Ticket.insert_multiple(
-...     [Ticket(summary=f"ticket {n}") for n in range(1, 11)]
-... )
+>>> _ = Ticket.insert_many([Ticket(summary=f"ticket {n}") for n in range(1, 11)])
 >>> db.close()
 >>> with open(sorted_path) as f:
 ...     print(f.read()[:62], end="")

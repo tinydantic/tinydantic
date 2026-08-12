@@ -24,7 +24,7 @@ User(id=1, name='Alice')
 
 ## `validate_writes`
 
-`validate_writes=` (default `True`) controls tinydantic's write-boundary re-validation: whole-model writes (`insert()`, `save()`, `replace()`, `upsert()`) validate their serialized payload before it reaches storage, and `update()`/`update_multiple()` validate each matched document's merged result — so a document that would fail its next read is never written (see the [CRUD tour](crud.md)).
+`validate_writes=` (default `True`) controls tinydantic's write-boundary re-validation: whole-model writes (`insert()`, `save()`, `replace()`, `upsert()`) validate their serialized payload before it reaches storage, and `update()`/`update_many()` validate each matched document's merged result — so a document that would fail its next read is never written (see the [CRUD tour](crud.md)).
 
 Set it to `False` when per-document validation cost matters more than the guarantee — the intended use case is performance-critical bulk writes:
 

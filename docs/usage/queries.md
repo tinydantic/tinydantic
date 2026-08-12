@@ -18,7 +18,7 @@ The examples share an in-memory database of three users. Run them in order.
 ...     age: int
 ...     email: str
 ...     address: Address
->>> users = User.insert_multiple(
+>>> users = User.insert_many(
 ...     [
 ...         User(
 ...             name="Alice",
@@ -118,7 +118,7 @@ Pydantic's [`@computed_field`](https://docs.pydantic.dev/latest/concepts/fields/
 ...     @property
 ...     def price_band(self) -> str:
 ...         return "premium" if self.price_cents >= 5000 else "budget"
->>> _ = Product.insert_multiple(
+>>> _ = Product.insert_many(
 ...     [
 ...         Product(name="Desk", price_cents=24900),
 ...         Product(name="Mug", price_cents=1200),
@@ -161,7 +161,7 @@ If you want to query on a derived value, that is the distinction that matters: a
 Computed fields stay read-only. Assignment raises, exactly as it does on a plain pydantic model:
 
 ```pycon
->>> Product.get(doc_id=2).price_band = "premium"
+>>> Product.get_by_id(2).price_band = "premium"
 Traceback (most recent call last):
   ...
 AttributeError: property 'price_band' of 'Product' object has no setter
@@ -203,7 +203,7 @@ The [q()][tinydantic.q] helper resolves this. It returns its argument unchanged 
 `q()` is a _cast_, not a constructor. It does not take a field name, because a string is indistinguishable from an instance attribute that happens to hold one — accepting either would make `q(user.name)` quietly build a query on the _value_:
 
 ```pycon
->>> alice = User.get_or_raise(q(User.name) == "Alice")
+>>> alice = User.get(q(User.name) == "Alice")
 >>> q(alice.name)
 Traceback (most recent call last):
   ...
@@ -215,7 +215,7 @@ To query a field by name, use [field()][tinydantic.field] — see [Sharp edge: f
 
 ### Prefer `q()` to suppressing the error
 
-A suppressed error is not equivalent to a fixed one. `search()` takes a single condition, so `mypy` reports the argument and still knows the return type — but `get()`, `get_or_raise()`, and `find()` are overloaded, and when no overload matches `mypy` falls back to `Any` for the whole call:
+A suppressed error is not equivalent to a fixed one. `search()` takes a single condition, so `mypy` reports the argument and still knows the return type — but `find()` is overloaded, and when no overload matches `mypy` falls back to `Any` for the whole call:
 
 ```text
 a = User.search(User.name == "Alice")   # error: incompatible type "bool"
@@ -321,9 +321,7 @@ The reset trap, concretely — a checkpoint recorded before a truncate silently 
 ```pycon
 >>> class Draft(TinydanticModel, database=db, table_name="drafts"):
 ...     text: str
->>> drafts = Draft.insert_multiple(
-...     [Draft(text="a"), Draft(text="b"), Draft(text="c")]
-... )
+>>> drafts = Draft.insert_many([Draft(text="a"), Draft(text="b"), Draft(text="c")])
 >>> [draft.id for draft in drafts]
 [1, 2, 3]
 >>> checkpoint = 3
@@ -374,7 +372,7 @@ Hand the condition to a method instead. Which method depends on what you want ba
 ```pycon
 >>> User.contains(User.name == "nobody by this name")
 False
->>> User.get(User.name == "nobody by this name") is not None
+>>> User.get_or_none(User.name == "nobody by this name") is not None
 False
 >>> User.find(User.name == "nobody by this name").exists()
 False
@@ -451,7 +449,7 @@ For a list field, `.any()` is the query that means "contains this element":
 >>> class Post(TinydanticModel, database=db, table_name="posts"):
 ...     title: str
 ...     tags: list[str] = []
->>> posts = Post.insert_multiple(
+>>> posts = Post.insert_many(
 ...     [
 ...         Post(title="Intro", tags=["python", "tinydb"]),
 ...         Post(title="Notes", tags=["docs"]),
@@ -536,7 +534,7 @@ If you need the field anyway — say the table is shared with another tool that 
 ... ):
 ...     name: str
 ...     search: str
->>> commands = Command.insert_multiple(
+>>> commands = Command.insert_many(
 ...     [
 ...         Command(name="find", search="fuzzy"),
 ...         Command(name="grep", search="regex"),
