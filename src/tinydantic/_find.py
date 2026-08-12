@@ -51,7 +51,7 @@ from tinydantic._errors import (
     QueryUsageError,
     QueryValueError,
 )
-from tinydantic._query import DocIdQuery, _require_condition
+from tinydantic._query import _require_condition
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping
@@ -59,6 +59,7 @@ if TYPE_CHECKING:
     from tinydb.queries import QueryLike
 
     from tinydantic._model import TinydanticModel
+    from tinydantic._query import DocIdQuery
 
 ModelT = TypeVar("ModelT", bound="TinydanticModel")
 
