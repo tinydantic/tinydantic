@@ -29,6 +29,7 @@ docstrings
 doctest
 doctested
 doctests
+Ecto
 EDITMSG
 esbenp
 excinfo
@@ -37,6 +38,7 @@ filterwarnings
 Firestore
 followee
 fontawesome
+frozenset
 fspath
 functools
 getattr
@@ -98,6 +100,7 @@ pyflow
 pygments
 Pylint
 pymdownx
+pymongo
 pypa
 pypackages
 pypi

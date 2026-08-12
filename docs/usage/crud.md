@@ -29,12 +29,12 @@ Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
 
 ```
 
-### `insert_multiple`
+### `insert_many`
 
-[insert_multiple()][tinydantic.TinydanticModel.insert_multiple] stores several models in one call. Exactly like `insert()`, each passed-in model gets its assigned `id` set in place, and the same instances come back in insertion order.
+[insert_many()][tinydantic.TinydanticModel.insert_many] stores several models in one call. Exactly like `insert()`, each passed-in model gets its assigned `id` set in place, and the same instances come back in insertion order.
 
 ```pycon
->>> Book.insert_multiple(
+>>> Book.insert_many(
 ...     [
 ...         Book(title="Neuromancer", author="Gibson", year=1984),
 ...         Book(title="Snow Crash", author="Stephenson", year=1992),
@@ -80,11 +80,19 @@ The table now holds four books. Read methods return validated model instances wi
 
 ```
 
+### The one rule: the plain form asserts
+
+Every method below follows a single rule, so you never have to remember which one is forgiving:
+
+- **The plain form asserts.** `get()`, `get_by_id()`, `get_by_ids()`, `update_by_ids()`, and `remove_by_ids()` raise [DocumentNotFoundError][tinydantic.DocumentNotFoundError] when a document you named is not there.
+- **Leniency is opted into by name.** `get_or_none()` returns `None` instead.
+- **A condition filters.** `search()`, `update(cond)`, and `remove(cond)` match what is there and tell you what they touched; matching nothing is a normal result, not an error.
+
+This is the split Python itself draws between `d[key]` and `d.get(key)` — and it means a typo'd or stale id fails loudly at the call that used it, rather than surfacing later as `AttributeError: 'NoneType' object has no attribute ...`.
+
 ### `get`
 
-[get()][tinydantic.TinydanticModel.get] fetches a single document. It accepts a query condition, a `doc_id=`, or a `doc_ids=` list — but at most one of the three (passing more than one raises `ValueError`).
-
-By condition:
+[get()][tinydantic.TinydanticModel.get] fetches the single document matching a condition:
 
 ```pycon
 >>> Book.get(Book.title == "Dune")
@@ -92,61 +100,81 @@ Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
 
 ```
 
-By document id:
+No match is an error, not a `None`:
 
 ```pycon
->>> Book.get(doc_id=2)
-Book(id=2, title='Neuromancer', author='Gibson', year=1984, in_stock=True)
+>>> Book.get(Book.title == "Nonesuch")
+Traceback (most recent call last):
+  ...
+tinydantic._errors.DocumentNotFoundError: No document matching the given query in table 'books' (model 'Book')
 
 ```
 
-Because `id` maps to the document id, a condition on `Book.id` is a document-id lookup — `Book.get(Book.id == 2)` and `Book.get(doc_id=2)` are equivalent (see [Queries](queries.md)):
+Because `id` maps to the document id, a condition on `Book.id` is a document-id lookup, and the error names the id you asked for (see [Queries](queries.md)):
 
 ```pycon
 >>> Book.get(Book.id == 2)
 Book(id=2, title='Neuromancer', author='Gibson', year=1984, in_stock=True)
-
-```
-
-By a list of document ids — this returns a `list`:
-
-```pycon
->>> Book.get(doc_ids=[3, 1, 999])
-[Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True),
-  Book(id=3, title='Snow Crash', author='Stephenson', year=1992, in_stock=True)]
-
-```
-
-> [!WARNING]
->
-> **`doc_ids` skips missing ids and ignores your ordering.** We asked for `[3, 1, 999]` and got documents `1` and `3` back, in storage order — not `[3, 1]`. The nonexistent id `999` was silently dropped, so the result can be shorter than the list you passed. Never assume the returned order matches your input or that every id produced a document. If you need results in a specific order, sort them yourself after reading.
-
-### `get_by_cond`, `get_by_id`, `get_by_ids`
-
-These are precisely typed aliases for the three `get()` call shapes. Use them when you want a static type checker to know exactly what comes back.
-
-```pycon
->>> Book.get_by_cond(Book.author == "Gibson")
-Book(id=2, title='Neuromancer', author='Gibson', year=1984, in_stock=True)
->>> Book.get_by_id(4)
-Book(id=4, title='Hyperion', author='Dan Simmons', year=1989, in_stock=True)
->>> Book.get_by_ids([1, 3])
-[Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True),
-  Book(id=3, title='Snow Crash', author='Stephenson', year=1992, in_stock=True)]
-
-```
-
-### `get_or_raise`
-
-[get_or_raise()][tinydantic.TinydanticModel.get_or_raise] is the strict counterpart to `get()`: where a missing document would return `None`, it raises [DocumentNotFoundError][tinydantic.DocumentNotFoundError] instead. Reach for it when a missing document is a bug (or a 404), not an expected outcome. It accepts exactly one selector — a condition or a `doc_id=`.
-
-```pycon
->>> Book.get_or_raise(Book.title == "Dune")
-Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
->>> Book.get_or_raise(doc_id=999)
+>>> Book.get(Book.id == 999)
 Traceback (most recent call last):
   ...
 tinydantic._errors.DocumentNotFoundError: No document with id 999 in table 'books' (model 'Book')
+
+```
+
+### `get_or_none`
+
+[get_or_none()][tinydantic.TinydanticModel.get_or_none] is the lenient half — same condition, `None` instead of an exception. Reach for it when a missing document is an expected outcome rather than a bug:
+
+```pycon
+>>> Book.get_or_none(Book.title == "Dune")
+Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
+>>> print(Book.get_or_none(Book.title == "Nonesuch"))
+None
+>>> print(Book.get_or_none(Book.id == 999))
+None
+
+```
+
+### `get_by_id`, `get_by_ids`
+
+[get_by_id()][tinydantic.TinydanticModel.get_by_id] is shorthand for `get(Book.id == n)`, and asserts for the same reason — naming an id declares it exists:
+
+```pycon
+>>> Book.get_by_id(4)
+Book(id=4, title='Hyperion', author='Dan Simmons', year=1989, in_stock=True)
+>>> Book.get_by_id(999)
+Traceback (most recent call last):
+  ...
+tinydantic._errors.DocumentNotFoundError: No document with id 999 in table 'books' (model 'Book')
+
+```
+
+[get_by_ids()][tinydantic.TinydanticModel.get_by_ids] asserts every id in the list. Because the batch is all-or-nothing, the result is **positional**: same length as the ids you passed, in your order.
+
+```pycon
+>>> Book.get_by_ids([3, 1])
+[Book(id=3, title='Snow Crash', author='Stephenson', year=1992, in_stock=True),
+  Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)]
+
+```
+
+One absent id refuses the whole read, so a short result can never quietly stand in for a missing document:
+
+```pycon
+>>> Book.get_by_ids([3, 1, 999])
+Traceback (most recent call last):
+  ...
+tinydantic._errors.DocumentNotFoundError: No document with id 999 in table 'books' (model 'Book')
+
+```
+
+For a best-effort batch read — user-supplied ids, a cache that may be stale — filter instead, and you get back whatever exists:
+
+```pycon
+>>> Book.search(Book.id.one_of([3, 1, 999]))
+[Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True),
+  Book(id=3, title='Snow Crash', author='Stephenson', year=1992, in_stock=True)]
 
 ```
 
@@ -165,12 +193,12 @@ To sort, paginate, or reuse a query — or to update/delete a sorted, limited se
 
 ### `contains`
 
-[contains()][tinydantic.TinydanticModel.contains] reports whether any matching document exists, by condition or by `doc_id=`.
+[contains()][tinydantic.TinydanticModel.contains] reports whether any matching document exists. There is no by-id variant: an existence check has nothing to assert, so an id condition is the id spelling.
 
 ```pycon
 >>> Book.contains(Book.title == "Dune")
 True
->>> Book.contains(doc_id=999)
+>>> Book.contains(Book.id == 999)
 False
 
 ```
@@ -291,13 +319,37 @@ tinydantic._errors.DocumentIDUpdateError: update() cannot set 'id'
 
 ```
 
-`update()` requires exactly one selector — a condition or explicit `doc_ids=`. TinyDB's own `update()` treats a bare call as "update every document" and silently prefers `doc_ids` when both are given; tinydantic raises [SelectorError][tinydantic.SelectorError] in both cases, so a dropped condition can never quietly rewrite the whole table:
+`update()` requires a condition. TinyDB's own `update()` treats a bare call as "update every document"; tinydantic raises [SelectorError][tinydantic.SelectorError] and names the two explicit spellings, so a dropped condition can never quietly rewrite the whole table:
 
 ```pycon
 >>> Book.update({"in_stock": False})
 Traceback (most recent call last):
   ...
-tinydantic._errors.SelectorError: update() needs a selector ...
+tinydantic._errors.SelectorError: update() needs a query condition ...
+
+```
+
+### `update_by_ids`
+
+A condition filters; [update_by_ids()][tinydantic.TinydanticModel.update_by_ids] asserts. Naming ids declares they exist, so a batch containing an id the table does not hold is refused whole, before anything is written:
+
+```pycon
+>>> Book.update_by_ids({"in_stock": False}, [1, 2])
+[1, 2]
+>>> Book.update_by_ids({"in_stock": True}, [1, 999])
+Traceback (most recent call last):
+  ...
+tinydantic._errors.DocumentNotFoundError: No document with id 999 in table 'books' (model 'Book')
+>>> Book.get_by_id(1).in_stock  # the valid id was left alone
+False
+
+```
+
+That is the difference from TinyDB, which skips missing ids and reports only the ones it touched — a partial write that looks like success. Where you do want best-effort, use a condition:
+
+```pycon
+>>> Book.update({"in_stock": True}, Book.id.one_of([1, 999]))
+[1]
 
 ```
 
@@ -313,12 +365,12 @@ Updating every document is spelled [update_all()][tinydantic.TinydanticModel.upd
 
 Mappings and transform callables get exactly the treatment `update()` gives them — per-value validation, merged-result validation, atomic all-or-nothing writes, and the same `extra_keys=` escape (all described below).
 
-### `update_multiple`
+### `update_many`
 
-[update_multiple()][tinydantic.TinydanticModel.update_multiple] applies several `(fields, cond)` updates in one call and returns all updated ids.
+[update_many()][tinydantic.TinydanticModel.update_many] applies several `(fields, cond)` updates in one call and returns all updated ids.
 
 ```pycon
->>> Book.update_multiple(
+>>> Book.update_many(
 ...     [
 ...         ({"in_stock": True}, Book.title == "Dune"),
 ...         ({"in_stock": True}, Book.author == "Gibson"),
@@ -331,7 +383,7 @@ Mappings and transform callables get exactly the treatment `update()` gives them
 Pairs may use conditions on `Book.id` (see [Queries](queries.md)) and mix them freely with field conditions — the whole batch still runs as one atomic write:
 
 ```pycon
->>> Book.update_multiple(
+>>> Book.update_many(
 ...     [
 ...         ({"in_stock": False}, Book.id == 1),
 ...     ]
@@ -397,7 +449,7 @@ tinydantic._errors.UnknownUpdateFieldError: update() mapping for 'Book' ...
 
 > [!NOTE]
 >
-> Keys written via `extra_keys="allow"` are stored **unvalidated** (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the `validate_writes=False` class kwarg; per-field value validation (the `datetime` example above) always applies to mappings. `update()`, `update_all()`, and `update_multiple()` also do **not** enforce [unique fields](models.md#unique-fields) — they are the deliberate loose path; every other write verb checks uniqueness. Never pass a raw request payload through `extra_keys="allow"` — see [Security considerations](security.md#untrusted-input-in-updates).
+> Keys written via `extra_keys="allow"` are stored **unvalidated** (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the `validate_writes=False` class kwarg; per-field value validation (the `datetime` example above) always applies to mappings. `update()`, `update_all()`, and `update_many()` also do **not** enforce [unique fields](models.md#unique-fields) — they are the deliberate loose path; every other write verb checks uniqueness. Never pass a raw request payload through `extra_keys="allow"` — see [Security considerations](security.md#untrusted-input-in-updates).
 
 ### `patch`
 
@@ -460,18 +512,30 @@ Reach for `patch()` when you mean "change these fields of this document" — it 
 ```pycon
 >>> snow = Book.get(Book.title == "Snow Crash")
 >>> snow.delete()
->>> print(Book.get(Book.title == "Snow Crash"))
+>>> print(Book.get_or_none(Book.title == "Snow Crash"))
 None
 
 ```
 
 ### `remove`
 
-[remove()][tinydantic.TinydanticModel.remove] deletes every document matching a condition (or a list of `doc_ids=`) and returns the removed ids.
+[remove()][tinydantic.TinydanticModel.remove] deletes every document matching a condition and returns the removed ids.
 
 ```pycon
 >>> Book.remove(Book.year < 1970)
 [1]
+
+```
+
+Its asserting counterpart is [remove_by_ids()][tinydantic.TinydanticModel.remove_by_ids], which refuses the whole batch if any id is absent:
+
+```pycon
+>>> Book.remove_by_ids([2, 999])
+Traceback (most recent call last):
+  ...
+tinydantic._errors.DocumentNotFoundError: No document with id 999 in table 'books' (model 'Book')
+>>> Book.contains(Book.id == 2)  # nothing was removed
+True
 
 ```
 
@@ -498,7 +562,7 @@ The last sharp edge is about what happens when an instance's document has disapp
 >>> note = Note(text="draft").insert()
 >>> note
 Note(id=1, text='draft')
->>> Note.remove(doc_ids=[note.id])  # the document vanishes out of band
+>>> Note.remove_by_ids([note.id])  # the document vanishes out of band
 [1]
 >>> Note.all()
 []
@@ -512,7 +576,7 @@ Note(id=1, text='draft')
 `replace()` and `delete()` are strict: they require the document to still exist and raise when it does not.
 
 ```pycon
->>> Note.remove(doc_ids=[note.id])  # vanish it again
+>>> Note.remove_by_ids([note.id])  # vanish it again
 [1]
 >>> note.delete()
 Traceback (most recent call last):

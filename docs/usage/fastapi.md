@@ -32,7 +32,7 @@ The setup below is everything the API needs: an in-memory database (see [Storage
 >>>
 >>> @app.get("/users/{user_id}")
 ... async def read_user(user_id: int) -> User:
-...     user = User.get_by_id(user_id)
+...     user = User.get_or_none(User.id == user_id)
 ...     if user is None:
 ...         raise HTTPException(status_code=404, detail="User not found")
 ...     return user
@@ -48,7 +48,7 @@ The setup below is everything the API needs: an in-memory database (see [Storage
 A few things worth calling out:
 
 - **The request body is a separate schema.** `UserCreate` has no `id`, so clients cannot set one — the server assigns it. Returning a `User` (which _does_ expose `id`) means the response echoes the created resource, id included.
-- **`get_by_id` returns `None` when nothing matches**, which the handler turns into a `404`. This is the precisely-typed read variant from the [CRUD tour](crud.md); it returns `User | None`, so the `is None` check is exactly what a type checker expects.
+- **`get_or_none` returns `None` when nothing matches**, which the handler turns into a `404`. A client asking for a user that does not exist is an expected outcome, not a bug, so this is the lenient half of the [strict/lenient rule](crud.md#the-one-rule-the-plain-form-asserts); it returns `User | None`, so the `is None` check is exactly what a type checker expects. The asserting spellings — `User.get(...)` and `User.get_by_id(...)` — raise [DocumentNotFoundError][tinydantic.DocumentNotFoundError] instead, which you can map to a `404` with an app-wide exception handler if you prefer that shape.
 - **The endpoints are `async def`, calling `tinydantic` inline** — Pattern A from the last section, which keeps every database operation on a single thread by construction.
 
 ### `POST /users` — create
@@ -89,7 +89,7 @@ Fetching an existing id returns the document; the `id` in the path maps straight
 
 ```
 
-A missing id returns `404` with the handler's detail message, because `get_by_id` returned `None`:
+A missing id returns `404` with the handler's detail message, because `get_or_none` returned `None`:
 
 ```pycon
 >>> response = client.get("/users/999")
@@ -158,7 +158,7 @@ async def in_db_thread(func, /, *args, **kwargs):
 
 @app.get("/users/{user_id}")
 async def read_user(user_id: int) -> User:
-    user = await in_db_thread(User.get_by_id, user_id)
+    user = await in_db_thread(User.get_or_none, User.id == user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user

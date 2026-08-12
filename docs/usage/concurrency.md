@@ -101,7 +101,7 @@ When last-write-wins is genuinely what you want — an admin override, a migrati
 - **Patch what you decided.** `book.patch(title="Dune (1965)")` — the value came from outside the document; no read went stale.
 - **Save what you derived.** `stock - 1` was computed _from_ a read; route it through the load-mutate-`save()` loop above, where the check lives.
 
-The table-level verbs — `update()`, `update_all()`, `update_multiple()`, `upsert()` — hold no instance and no token, so they cannot check; they rotate every document they touch, correctly invalidating tokens held elsewhere. Writing `revision_id` yourself through any update path raises [RevisionUpdateError][tinydantic.RevisionUpdateError] — a forged token could mask concurrent writes.
+The table-level verbs — `update()`, `update_all()`, `update_many()`, `upsert()` — hold no instance and no token, so they cannot check; they rotate every document they touch, correctly invalidating tokens held elsewhere. Writing `revision_id` yourself through any update path raises [RevisionUpdateError][tinydantic.RevisionUpdateError] — a forged token could mask concurrent writes.
 
 ### Tokens travel: the ETag pattern
 

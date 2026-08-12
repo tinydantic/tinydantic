@@ -147,7 +147,7 @@ User(id=1, name='Alice', age=37)
 
 > [!TIP]
 >
-> Reach for `q()` rather than silencing the error. `get()`, `get_or_raise()`, and `find()` are overloaded, and when no overload matches, `mypy` gives up on the whole call and types the result `Any` — so a `# type: ignore` hides the message and leaves you with an unchecked value where a `User` should be.
+> Reach for `q()` rather than silencing the error. `find()` is overloaded, and when no overload matches, `mypy` gives up on the whole call and types the result `Any` — so a `# type: ignore` hides the message and leaves you with an unchecked value where a `User` should be.
 
 See [Queries → Static type checking](https://tinydantic.github.io/tinydantic/latest/usage/queries/#static-type-checking) for what `q()` does and does not fix.
 
@@ -170,7 +170,7 @@ Call [delete()](https://tinydantic.github.io/tinydantic/latest/reference/api/tin
 
 ```pycon
 >>> alice.delete()
->>> print(User.get(User.name == "Alice"))
+>>> print(User.get_or_none(User.name == "Alice"))
 None
 
 ```

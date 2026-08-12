@@ -372,8 +372,11 @@ class FindQuery(Generic[ModelT]):
         """Get the first document of the window, or raise.
 
         The strict counterpart to
-        [first][tinydantic.FindQuery.first], mirroring
-        [get_or_raise][tinydantic.TinydanticModel.get_or_raise].
+        [first][tinydantic.FindQuery.first], raising the same
+        error [get][tinydantic.TinydanticModel.get] does. The
+        default is lenient here, unlike ``get``: ``first()``
+        samples a window that may legitimately be empty, where
+        ``get()`` asserts one specific document.
 
         Raises:
             DocumentNotFoundError: If the window is empty.

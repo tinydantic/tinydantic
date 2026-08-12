@@ -222,7 +222,7 @@ Every terminal answers about the same windowed, ordered result that [all()][tiny
 
 ```
 
-[first_or_raise()][tinydantic.FindQuery.first_or_raise] is the strict variant for call sites where an empty window is an error — the chain counterpart to [get_or_raise()][tinydantic.TinydanticModel.get_or_raise], raising the same [DocumentNotFoundError][tinydantic.DocumentNotFoundError]:
+[first_or_raise()][tinydantic.FindQuery.first_or_raise] is the strict variant for call sites where an empty window is an error — the chain counterpart to [get()][tinydantic.TinydanticModel.get], raising the same [DocumentNotFoundError][tinydantic.DocumentNotFoundError]:
 
 ```pycon
 >>> User.find(field(User, "age") > 100).first_or_raise()
