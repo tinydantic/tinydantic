@@ -29,6 +29,7 @@ from tinydantic._query import (
     DocIdCondition,
     DocIdQuery,
     has_id_condition,
+    id_from_condition,
 )
 
 if TYPE_CHECKING:
@@ -519,3 +520,35 @@ class TestIdConditionWrites:
             users.update_multiple(
                 [({"id": 99}, where("name") == "Alice")],
             )
+
+
+class TestIdFromCondition:
+    """Tests for extracting a document id from a condition."""
+
+    def test_bare_equality_yields_the_id(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """A bare ``id == n`` condition yields ``n``."""
+        assert id_from_condition(users.id == 3) == 3
+
+    def test_other_operators_yield_none(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """Only equality names a single document."""
+        assert id_from_condition(users.id != 3) is None
+        assert id_from_condition(users.id > 3) is None
+        assert id_from_condition(users.id.one_of([1, 2])) is None
+
+    def test_composed_condition_yields_none(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """A composition may match more than the named id."""
+        cond = (users.id == 3) & (where("name") == "Alice")
+        assert id_from_condition(cond) is None
+
+    def test_field_condition_yields_none(self) -> None:
+        """A body-field condition names no document id."""
+        assert id_from_condition(where("name") == "Alice") is None
