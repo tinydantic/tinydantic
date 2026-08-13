@@ -101,7 +101,7 @@ When last-write-wins is genuinely what you want — an admin override, a migrati
 - **Patch what you decided.** `book.patch(title="Dune (1965)")` — the value came from outside the document; no read went stale.
 - **Save what you derived.** `stock - 1` was computed _from_ a read; route it through the load-mutate-`save()` loop above, where the check lives.
 
-The table-level verbs — `update()`, `update_all()`, `update_many()`, `upsert()` — hold no instance and no token, so they cannot check; they rotate every document they touch, correctly invalidating tokens held elsewhere. Writing `revision_id` yourself through any update path raises [RevisionUpdateError][tinydantic.RevisionUpdateError] — a forged token could mask concurrent writes.
+The update verbs — `update()`, `update_by_ids()`, `update_all()`, `update_many()`, `FindQuery.update()` — hold no instance and no token, so they cannot check. `upsert()` does take an instance, and on a revisioned model that instance carries a token, but its contract is "write this regardless of current state", so it deliberately does not check either. All six rotate every document they touch, correctly invalidating tokens held elsewhere. Writing `revision_id` yourself through any update path raises [RevisionUpdateError][tinydantic.RevisionUpdateError] — a forged token could mask concurrent writes.
 
 ### Tokens travel: the ETag pattern
 
@@ -117,7 +117,7 @@ The token's real power is that it survives the round trip through a client. A we
 >>>
 >>> @app.get("/books/{book_id}")
 ... async def read_book(book_id: int, response: Response) -> Book:
-...     book = Book.get_by_id(book_id)
+...     book = Book.get_or_none(Book.id == book_id)
 ...     if book is None:
 ...         raise HTTPException(status_code=404)
 ...     response.headers["ETag"] = str(book.revision_id)
@@ -129,7 +129,7 @@ The token's real power is that it survives the round trip through a client. A we
 ...     payload: dict,
 ...     if_match: Annotated[str, Header()],
 ... ) -> Book:
-...     book = Book.get_by_id(book_id)
+...     book = Book.get_or_none(Book.id == book_id)
 ...     if book is None:
 ...         raise HTTPException(status_code=404)
 ...     book.revision_id = UUID(if_match)  # adopt the client's token

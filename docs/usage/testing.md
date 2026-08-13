@@ -45,10 +45,10 @@ class User(TinydanticModel):
 
 @pytest.fixture
 def user_model():
-    """Yield a User subclass bound to a fresh in-memory database."""
+    """Return a User subclass bound to a fresh in-memory database."""
     db = TinyDB(storage=MemoryStorage)
 
-    class BoundUser(User, table_name="users"):
+    class BoundUser(User, database=db, table_name="users"):
         """A per-test subclass bound to its own database."""
 
     return BoundUser

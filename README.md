@@ -118,11 +118,13 @@ User(id=1, name='Alice', age=37)
 
 ### Read it back
 
-Query the table by building a condition from a model field. [get()](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.get) returns a single validated model instance (or `None`).
+Query the table by building a condition from a model field. [get()](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.get) returns a single validated model instance, and raises [DocumentNotFoundError](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.DocumentNotFoundError) when nothing matches. Use [get_or_none()](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.get_or_none) when a miss is an expected outcome rather than a bug.
 
 ```pycon
 >>> User.get(User.name == "Alice")
 User(id=1, name='Alice', age=37)
+>>> print(User.get_or_none(User.name == "Nobody"))
+None
 
 ```
 
@@ -147,7 +149,7 @@ User(id=1, name='Alice', age=37)
 
 > [!TIP]
 >
-> Reach for `q()` rather than silencing the error. `find()` is overloaded, and when no overload matches, `mypy` gives up on the whole call and types the result `Any` — so a `# type: ignore` hides the message and leaves you with an unchecked value where a `User` should be.
+> Reach for `q()` rather than silencing the error. A `# type: ignore` hides the message and leaves the mistake in place, and on the overloaded [find()](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.find) it costs more: when no overload matches, `mypy` gives up on the whole call and types the result `Any`, so everything you chain onto it goes unchecked.
 
 See [Queries → Static type checking](https://tinydantic.github.io/tinydantic/latest/usage/queries/#static-type-checking) for what `q()` does and does not fix.
 
@@ -166,7 +168,7 @@ User(id=1, name='Alice', age=38)
 
 ### Delete it
 
-Call [delete()](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.delete) to remove the document. Querying for it afterwards returns `None`.
+Call [delete()](https://tinydantic.github.io/tinydantic/latest/reference/api/tinydantic/#tinydantic.TinydanticModel.delete) to remove the document. Querying for it afterwards with `get_or_none()` returns `None` (`get()` would raise).
 
 ```pycon
 >>> alice.delete()

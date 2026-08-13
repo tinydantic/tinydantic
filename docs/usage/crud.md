@@ -261,7 +261,7 @@ pydantic_core._pydantic_core.ValidationError: 1 validation error for Book
 
 ```
 
-Every whole-model write path (`insert()`, `save()`, `replace()`, `upsert()`) shares this boundary check. Models can opt out with the `validate_writes=False` class kwarg — the escape hatch for performance-critical bulk writes; see [Configuration](configuration.md).
+Every whole-model write path (`insert()`, `insert_many()`, `save()`, `replace()`, `upsert()`) shares this boundary check. Models can opt out with the `validate_writes=False` class kwarg — the escape hatch for performance-critical bulk writes; see [Configuration](configuration.md).
 
 ### `replace`
 
@@ -323,6 +323,8 @@ with update_by_ids() or a query condition instead.
 
 ```
 
+Per-value validation, merged-result validation, and the `extra_keys=` escape are shared by every update verb and covered in [The shared update contract](#the-shared-update-contract) below.
+
 `update()` requires a condition. TinyDB's own `update()` treats a bare call as "update every document"; tinydantic raises [SelectorError][tinydantic.SelectorError] and names the two explicit spellings, so a dropped condition can never quietly rewrite the whole table:
 
 ```pycon
@@ -367,7 +369,7 @@ Updating every document is spelled [update_all()][tinydantic.TinydanticModel.upd
 
 ```
 
-Mappings and transform callables get exactly the treatment `update()` gives them — per-value validation, merged-result validation, atomic all-or-nothing writes, and the same `extra_keys=` escape (all described below).
+Mappings and transform callables get exactly the treatment `update()` gives them — per-value validation, merged-result validation, atomic all-or-nothing writes, and the same `extra_keys=` escape. See [The shared update contract](#the-shared-update-contract).
 
 ### `update_many`
 
@@ -395,6 +397,10 @@ Pairs may use conditions on `Book.id` (see [Queries](queries.md)) and mix them f
 [1]
 
 ```
+
+### The shared update contract
+
+Everything below holds for all five update verbs — [update()][tinydantic.TinydanticModel.update], [update_by_ids()][tinydantic.TinydanticModel.update_by_ids], [update_all()][tinydantic.TinydanticModel.update_all], [update_many()][tinydantic.TinydanticModel.update_many], and [FindQuery.update()][tinydantic.FindQuery.update]. The examples use `update()` because it is the shortest spelling; the contract is the same for each.
 
 Field values in the mapping get the same treatment `insert()` and `save()` give whole models: each value is validated against its field's type and serialized to a JSON-safe primitive before it reaches storage. A rich value such as a `datetime` lands in storage as the same ISO string an `insert()` would have written:
 
@@ -453,7 +459,7 @@ tinydantic._errors.UnknownUpdateFieldError: update() mapping for 'Book' ...
 
 > [!NOTE]
 >
-> Keys written via `extra_keys="allow"` are stored **unvalidated** (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the `validate_writes=False` class kwarg; per-field value validation (the `datetime` example above) always applies to mappings. `update()`, `update_all()`, and `update_many()` also do **not** enforce [unique fields](models.md#unique-fields) — they are the deliberate loose path; every other write verb checks uniqueness. Never pass a raw request payload through `extra_keys="allow"` — see [Security considerations](security.md#untrusted-input-in-updates).
+> Keys written via `extra_keys="allow"` are stored **unvalidated** (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the `validate_writes=False` class kwarg; per-field value validation (the `datetime` example above) always applies to mappings. No update verb enforces [unique fields](models.md#unique-fields) — they are the deliberate loose path. Uniqueness is checked by the six writes that carry a model instance: `insert()`, `insert_many()`, `save()`, `replace()`, `patch()`, and `upsert()`. Never pass a raw request payload through `extra_keys="allow"` — see [Security considerations](security.md#untrusted-input-in-updates).
 
 ### `patch`
 
@@ -491,7 +497,7 @@ tinydantic._errors.UnknownUpdateFieldError: update() mapping ...
 
 ```
 
-An empty `patch()` writes nothing but still verifies the document exists, so its error behavior does not depend on the payload — handy for HTTP PATCH endpoints fed `model_dump(exclude_unset=True)`. Being instance-level, `patch()` fires [before_write()][tinydantic.TinydanticModel.before_write], so a model that stamps `updated_at` in the hook keeps stamping it here — an empty patch writes nothing and so hooks nothing. The table-level `update()` and `update_all()` below have no instance and fire no hook; see [Lifecycle hooks](models.md#lifecycle-hooks).
+An empty `patch()` writes nothing but still verifies the document exists, so its error behavior does not depend on the payload — handy for HTTP PATCH endpoints fed `model_dump(exclude_unset=True)`. Being instance-level, `patch()` fires [before_write()][tinydantic.TinydanticModel.before_write], so a model that stamps `updated_at` in the hook keeps stamping it here — an empty patch writes nothing and so hooks nothing. The five update verbs above (`update()`, `update_by_ids()`, `update_all()`, `update_many()`, and `FindQuery.update()`) hold no instance and fire no hook; see [Lifecycle hooks](models.md#lifecycle-hooks).
 
 ### Choosing a write verb
 

@@ -100,7 +100,7 @@ The query object also exposes TinyDB's own methods. `.matches` anchors a regular
 
 ## Logical composition
 
-Combine conditions with `&` (and), `|` (or), and `~` (not). Parenthesize each operand — Python's bitwise operators bind more loosely than comparisons. The keywords `and`, `or`, and `not` are _not_ substitutes — they discard half the query, and raise rather than doing so silently; see [A condition is never a boolean](#a-condition-is-never-a-boolean).
+Combine conditions with `&` (and), `|` (or), and `~` (not). Parenthesize each operand — Python's bitwise operators bind more _tightly_ than comparisons, so without parentheses `User.age >= 30 & User.address.country == "US"` parses as a chained comparison over `30 & User.address.country`, which is not the query you wrote. The keywords `and`, `or`, and `not` are _not_ substitutes — they discard half the query, and raise rather than doing so silently; see [A condition is never a boolean](#a-condition-is-never-a-boolean).
 
 ```pycon
 >>> User.search((User.age >= 30) & (User.address.country == "US"))
@@ -192,7 +192,7 @@ The wording is CPython's own, not tinydantic's: the assignment is handed to the 
 
 ## Escaping to a raw TinyDB query
 
-The field syntax covers the common cases, but TinyDB's [Query][tinydb.queries.Query] has more: `one_of`, `any`, `all`, `fragment`, and friends. Build a raw query and pass it to any read method — `search()`, `get()`, `count()`, and so on all accept it.
+`Model.field` already exposes TinyDB's whole condition vocabulary — `one_of`, `any`, `all`, `fragment`, `test`, and the rest — so the escape hatch is not about missing methods. It is for keys the model does not declare: `extra="allow"` documents, legacy keys left by an older schema, or a database shared with another tool. Build a raw query and pass it to any read method — `search()`, `get()`, `count()`, and so on all accept it. (For a field the model _does_ declare but whose name is shadowed by a method, the answer is [field()](#sharp-edge-fields-that-shadow-query-methods), not a raw query.)
 
 ```pycon
 >>> from tinydb import Query
@@ -235,20 +235,23 @@ To query a field by name, use [field()][tinydantic.field] — see [Sharp edge: f
 
 ### Prefer `q()` to suppressing the error
 
-A suppressed error is not equivalent to a fixed one. `search()` takes a single condition, so `mypy` reports the argument and still knows the return type — but `find()` is overloaded, and when no overload matches `mypy` falls back to `Any` for the whole call:
+A suppressed error is not equivalent to a fixed one. On a method with a single signature — `search()`, `get()`, `contains()` — `mypy` reports the bad argument and still knows the return type. On the overloaded [find()][tinydantic.TinydanticModel.find] it does not: when no overload matches, `mypy` falls back to `Any` for the whole call.
 
 ```text
 a = User.search(User.name == "Alice")   # error: incompatible type "bool"
-reveal_type(a)                          # list[User]      — return type survives
+reveal_type(a)                          # list[User]        — return type survives
 
-b = User.get(User.name == "Alice")      # error: no overload variant matches
-reveal_type(b)                          # Any             — return type lost
+b = User.get(User.name == "Alice")      # error: incompatible type "bool"
+reveal_type(b)                          # User              — return type survives
 
-c = User.get(q(User.name) == "Alice")   # no error
-reveal_type(c)                          # User | None
+d = User.find(User.name == "Alice")     # error: no overload variant matches
+reveal_type(d)                          # Any               — return type lost
+
+e = User.find(q(User.name) == "Alice")  # no error
+reveal_type(e)                          # FindQuery[User]
 ```
 
-Silence the `get()` error with `# type: ignore` and everything downstream of `b` goes unchecked. `pyright` is better behaved here — it reports the argument and keeps `User | None` — but under either checker the `q()` form is the one that leaves you with the types you came for.
+Silence the `find()` error with `# type: ignore` and every method you chain onto `d` goes unchecked. `pyright` is better behaved here — it reports the argument and keeps `FindQuery[User]` — but under either checker the `q()` form is the one that leaves you with the types you came for.
 
 ### What `q()` does not fix
 
@@ -303,10 +306,11 @@ An id condition only accepts an int. Anything else raises immediately — includ
 ...     email="dana@example.com",
 ...     address=Address(city="Oslo", country="NO"),
 ... )
->>> User.get(User.id == draft.id)
+>>> User.get(User.id == draft.id)  # doctest: -IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
   ...
-TypeError: id conditions require an int document id, got None
+TypeError: id conditions require an int document id, got None. An id of None
+means the model was never inserted — insert() or save() it first.
 
 ```
 
@@ -325,10 +329,13 @@ tinydantic._errors.QueryFieldError: 'id' is not a queryable field of 'User': it 
 Because TinyDB's own query evaluator only ever sees the document body, an id condition that bypasses the model methods fails loudly rather than silently matching nothing:
 
 ```pycon
->>> db.table("users").search(User.id == 1)
+>>> db.table("users").search(User.id == 1)  # doctest: -IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
   ...
-tinydantic._errors.DocumentIDConditionError: An id condition reached TinyDB's raw query evaluator
+tinydantic._errors.DocumentIDConditionError: An id condition reached TinyDB's
+raw query evaluator, which only ever sees the document body (never doc_id).
+Pass id conditions to tinydantic model methods, or select documents by id with
+get_by_ids(), update_by_ids(), or remove_by_ids() instead.
 
 ```
 
@@ -399,7 +406,7 @@ False
 
 ```
 
-[contains()][tinydantic.TinydanticModel.contains] when a bool is the whole answer, [get()][tinydantic.TinydanticModel.get] when you want the document too, and [exists()][tinydantic.FindQuery.exists] when you already hold a chain.
+[contains()][tinydantic.TinydanticModel.contains] when a bool is the whole answer, [get_or_none()][tinydantic.TinydanticModel.get_or_none] when you want the document too, and [exists()][tinydantic.FindQuery.exists] when you already hold a chain. Not `get()`: it raises on a miss, which is the case an existence check is asking about.
 
 ### Combining conditions
 
