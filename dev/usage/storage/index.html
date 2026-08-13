@@ -988,6 +988,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#counting-storage-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Counting storage operations
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2140,6 +2151,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#counting-storage-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Counting storage operations
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2315,6 +2337,26 @@
 </span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">tmpdir</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
 </span></code></pre></div>
 <p>Without it, that file would open with <code>1</code>, <code>10</code>, <code>2</code>. The trade-off is in the name: the middleware hands integer keys to the storage below it, which is fine for JSON and YAML but may break a storage that can only serialize string keys.</p>
+<h3 id="counting-storage-operations">Counting storage operations<a class="headerlink" href="#counting-storage-operations" title="Permanent link">¤</a></h3>
+<p>TinyDB has no indexes, so costs are paid in whole-table reads and writes — and when something is slow, the first question is how many of those an operation triggered. <a class="autorefs autorefs-internal" title="            ProfilingMiddleware" href="../../reference/api/tinydantic/tinydb/middlewares/#tinydantic.tinydb.middlewares.ProfilingMiddleware">ProfilingMiddleware</a> counts every <code>read()</code> and <code>write()</code> that reaches the storage it wraps. Keep a reference to the middleware — it is the same object TinyDB uses:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tinydantic.tinydb.middlewares</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProfilingMiddleware</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">storage</span> <span class="o">=</span> <span class="n">ProfilingMiddleware</span><span class="p">(</span><span class="n">MemoryStorage</span><span class="p">)</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">TinyDB</span><span class="p">(</span><span class="n">storage</span><span class="o">=</span><span class="n">storage</span><span class="p">)</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Event</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;events&quot;</span><span class="p">):</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="gp">... </span>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;boot&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="go">Event(id=1, name=&#39;boot&#39;)</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">storage</span><span class="o">.</span><span class="n">read_count</span><span class="p">,</span> <span class="n">storage</span><span class="o">.</span><span class="n">write_count</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="go">(2, 1)</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Event</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="go">[Event(id=1, name=&#39;boot&#39;)]</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">storage</span><span class="o">.</span><span class="n">read_count</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="go">3</span>
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">storage</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">storage</span><span class="o">.</span><span class="n">read_count</span><span class="p">,</span> <span class="n">storage</span><span class="o">.</span><span class="n">write_count</span>
+</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="go">(0, 0)</span>
+</span></code></pre></div>
+<p>The counters are exact where timings are noisy, which makes them the right evidence for a performance bug report — an issue's measurement harness can state "3 storage reads" and be reproducible on any machine. Middlewares stack, and the position in the stack is what gets measured: <code>ProfilingMiddleware(CachingMiddleware(JSONStorage))</code> counts only what the cache lets through to disk, while <code>CachingMiddleware(ProfilingMiddleware(JSONStorage))</code> counts what the database asks for before caching.</p>
 <h2 id="beyond-the-built-ins">Beyond the built-ins<a class="headerlink" href="#beyond-the-built-ins" title="Permanent link">¤</a></h2>
 <p>TinyDB's <a href="https://tinydb.readthedocs.io/en/latest/usage.html#storage-types">storage documentation</a> lists more options, and third-party packages add backends such as SQLite. Any storage that presents the TinyDB <code>Storage</code> interface works with <code>tinydantic</code> unchanged, because <code>tinydantic</code> only ever hands the storage layer JSON-safe primitives.</p>
 <div class="admonition note">
