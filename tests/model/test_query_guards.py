@@ -122,6 +122,27 @@ class TestBooleanContext:
         with pytest.raises(QueryTypeError, match="query builder"):
             bool(User.name)
 
+    def test_existence_advice_is_runnable(self) -> None:
+        """Every existence check the message names actually runs.
+
+        The message used to recommend ``Model.get(cond) is not
+        None``, which raises ``DocumentNotFoundError`` on a miss
+        instead of evaluating to ``False`` — advice that fails on
+        exactly the input it is offered for. Running all three
+        spellings against a miss pins that they return a bool.
+        """
+        cond = User.name == "nobody by this name"
+        with pytest.raises(QueryTypeError) as excinfo:
+            bool(cond)
+        message = str(excinfo.value)
+
+        assert "Model.get_or_none(cond) is not None" in message
+        assert "Model.get(cond) is not None" not in message
+
+        assert User.contains(cond) is False
+        assert (User.get_or_none(cond) is not None) is False
+        assert User.find(cond).exists() is False
+
     def test_id_condition_is_guarded(self) -> None:
         """DocIdCondition inherits the guard."""
         with pytest.raises(QueryTypeError):

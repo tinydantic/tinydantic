@@ -343,7 +343,7 @@ Traceback (most recent call last):
   ...
 tinydantic._errors.QueryTypeError: A query condition has no truth value
 (it is a lazy description of a test, not a comparison). For an existence check
-use Model.contains(cond), Model.get(cond) is not None, or
+use Model.contains(cond), Model.get_or_none(cond) is not None, or
 Model.find(cond).exists(). To combine conditions use & | ~ — and/or/not
 evaluate truthiness and silently discard half the query. To compare a value
 you already hold, reach through an instance (user.name == x), not the class

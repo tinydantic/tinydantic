@@ -73,7 +73,8 @@ _ESCAPED_MSG = (
     "An id condition reached TinyDB's raw query evaluator, which "
     "only ever sees the document body (never doc_id). Pass id "
     "conditions to tinydantic model methods, or select documents "
-    "with doc_id=/doc_ids= instead."
+    "by id with get_by_ids(), update_by_ids(), or "
+    "remove_by_ids() instead."
 )
 
 
@@ -101,11 +102,12 @@ def _validate_doc_id(value: object) -> int:
 _BOOL_COND_MSG = (
     "A query condition has no truth value (it is a lazy "
     "description of a test, not a comparison). For an existence "
-    "check use Model.contains(cond), Model.get(cond) is not None, "
-    "or Model.find(cond).exists(). To combine conditions use & | ~ "
-    "— and/or/not evaluate truthiness and silently discard half "
-    "the query. To compare a value you already hold, reach through "
-    "an instance (user.name == x), not the class (User.name == x). "
+    "check use Model.contains(cond), Model.get_or_none(cond) is "
+    "not None, or Model.find(cond).exists(). To combine "
+    "conditions use & | ~ — and/or/not evaluate truthiness and "
+    "silently discard half the query. To compare a value you "
+    "already hold, reach through an instance (user.name == x), "
+    "not the class (User.name == x). "
     "To test whether a condition variable was set, write "
     "'cond is not None'."
 )
