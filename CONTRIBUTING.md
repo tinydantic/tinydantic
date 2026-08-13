@@ -9,7 +9,7 @@ Thanks for your interest in contributing to `tinydantic`!
 - [I have a question](#i-have-a-question)
 - [I found a bug](#i-found-a-bug)
 - [I want to contribute](#i-want-to-contribute)
-  - [Development Guide](#development-guide)
+- [Development Guide](#development-guide)
 
 <!-- toc-end -->
 
@@ -49,7 +49,7 @@ If you are new to the project, check out <https://github.com/tinydantic/tinydant
 >
 > Before submitting a larger pull request (e.g. new features or breaking changes), consider creating an [issue](https://github.com/tinydantic/tinydantic/issues/new) to outline your proposed changes.
 
-The next section describes how to set up a development environment and create a pull request to submit your changes for review.
+The **Development Guide** describes how to set up a development environment and create a pull request to submit your changes for review.
 
 <!-- development-guide-start -->
 
@@ -238,7 +238,7 @@ uv run poe docs-build-check
 >
 > The documentation build downloads Sphinx object inventories so that cross-references to external documentation (Python, Pydantic, TinyDB) resolve to links.
 >
-> However, [Read the Docs](https://about.readthedocs.com/) has put the site behind a Cloudflare bot challenge which blocks mkdocstrings' `mkdocstrings/0.15.0` user agent, rejecting the TinyDB inventory download (this shows up as `mkdocstrings: Couldn't load inventory ... HTTP Error 429: Too Many Requests`).
+> However, [Read the Docs](https://about.readthedocs.com/) has put the site behind a Cloudflare bot challenge which blocks mkdocstrings' `mkdocstrings/0.15.0` user agent, rejecting the TinyDB inventory download (this shows up as `mkdocstrings: Couldn't load inventory ... HTTP Error 429: Too Many Requests`). This workaround is tracked in [#146](https://github.com/tinydantic/tinydantic/issues/146).
 >
 > If that happens (to any of the inventories), set the corresponding environment variable in your shell to point the build at a downloaded copy of the `objects.inv` inventory instead, then run the docs task as usual (from the repo root). The `file:` URL is resolved against the current working directory, so build from the repo root (the `poe docs...` tasks already require this).
 >

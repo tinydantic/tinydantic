@@ -130,6 +130,7 @@ Spyder
 spyderproject
 spyproject
 squeezy
+Starlette
 subclassing
 subpackages
 superfences

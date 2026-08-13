@@ -274,11 +274,11 @@ Returned values are validated like any other write, persisted, and set on the in
 
     Assigning to `self` inside `before_write()` happens to work on whole-model writes, because they serialize from the instance. `patch()` writes **only** the fields it was given, so anything you set on `self` there is silently dropped. Always return the mapping.
 
-`fields` holds every model field on a whole-model write and only the caller's fields on `patch()`; it never contains `id` or `revision_id`, and returning either of those raises. Because the hook is instance-level, the table-level [update()][tinydantic.TinydanticModel.update] and [update_all()][tinydantic.TinydanticModel.update_all] do **not** fire it — they write by condition, with no model instance to hook. A mass write will not bump your `updated_at`:
+`fields` holds every model field on a whole-model write and only the caller's fields on `patch()`; it never contains `id` or `revision_id`, and returning either of those raises. Because the hook is instance-level, the five update verbs — [update()][tinydantic.TinydanticModel.update], [update_by_ids()][tinydantic.TinydanticModel.update_by_ids], [update_all()][tinydantic.TinydanticModel.update_all], [update_many()][tinydantic.TinydanticModel.update_many], and [FindQuery.update()][tinydantic.FindQuery.update] — do **not** fire it: they apply a mapping to stored documents, with no model instance to hook. A mass write will not bump your `updated_at`:
 
 ```pycon
 >>> _ = Note.update_by_ids({"updated_at": None}, [note.id])
->>> Note.get_by_id(note.id).updated_at is None  # update(): no hook
+>>> Note.get_by_id(note.id).updated_at is None  # update_by_ids(): no hook
 True
 >>> _ = note.patch(text="final")
 >>> Note.get_by_id(note.id).updated_at is None  # patch(): hook fired
@@ -289,8 +289,8 @@ False
 [after_read()][tinydantic.TinydanticModel.after_read] runs after a stored document is validated into an instance — on every materializing read, with the real `id` set. Changes made there affect only the in-memory instance; reads never write. A sketch:
 
 ```python
-class Session(TinydanticModel, database=db):
-    token: str
+class Session(TinydanticModel, database=db, table_name="sessions"):
+    user: str
 
     def after_read(self) -> None:
         """Track which sessions this process touched."""
@@ -321,7 +321,7 @@ The contract, in full:
 
 - Enforced on create-style and instance-level writes: `insert()`, `insert_many()` (including duplicates inside one batch), `save()`, `replace()`, `upsert()`, and `patch()`. A write that would clash raises [UniqueConstraintError][tinydantic.UniqueConstraintError] before anything reaches storage; rewriting a document's own value is never a clash.
 - `None` values are exempt — several documents may all leave a unique field unset, mirroring SQL's `NULL` under `UNIQUE`.
-- The table-level bulk path (`update()`/`update_all()`/`update_many()`) deliberately does **not** enforce uniqueness — it is the documented loose escape, like `extra_keys="allow"`.
+- No update verb — `update()`, `update_by_ids()`, `update_all()`, `update_many()`, or `FindQuery.update()` — enforces uniqueness. That is the documented loose escape, like `extra_keys="allow"`. The six writes that carry a model instance (`insert()`, `insert_many()`, `save()`, `replace()`, `patch()`, `upsert()`) are the ones that check.
 - The check is check-then-write within one process. That is sound under tinydantic's documented single-process, serialized-writes scope, but it is not a database constraint: another process writing the same file concurrently can still create duplicates.
 - Enforcement costs a table scan. TinyDB has no indexes, so an enforcing write reads the whole table and compares it document by document — O(documents), on top of the read the write itself performs. `insert_many()` scans once for the entire batch rather than once per document, so a bulk load stays linear in the batch size; a loop of `insert()` calls does not. If a single write is slow, the table has outgrown what TinyDB is for.
 
@@ -382,13 +382,13 @@ The single-field marker takes the same parameter — `email: Annotated[str, Uniq
 
 The `key=` contract:
 
-- The callable receives the constraint's **serialized** field values (what storage holds — a `datetime` arrives as an ISO-format string), positionally, in declared field order, and must return a hashable result. Sorting-adjacent recipes follow from this — one entry per user per calendar _day_: `key=lambda uid, ts: (uid, ts[:10])`.
+- The callable receives the constraint's **serialized** field values (what storage holds — a `datetime` arrives as an ISO-format string), positionally, in declared field order, and must return a hashable result. Serialization-adjacent recipes follow from this — one entry per user per calendar _day_: `key=lambda uid, ts: (uid, ts[:10])`.
 - It must be pure and deterministic — this is documented, not policed; an impure key silently breaks enforcement, and an exception it raises propagates as-is.
 - It is never called with `None`: a constraint participates in a check only when **all** of its fields are non-`None` (the composite generalization of SQL's `NULL` under `UNIQUE`), and exempt rows skip the key entirely.
 - Case-insensitivity across every string member is `key=lambda *vs: tuple(v.casefold() if isinstance(v, str) else v for v in vs)`. When canonical storage is acceptable (emails, slugs), prefer normalizing at the boundary instead — `Annotated[str, StringConstraints(to_lower=True), Unique()]` stores the lowercased value and needs no key.
 - When a key produced the match, the error message shows the computed comparison key alongside the raw values, so a normalized clash (candidate `'chris'` vs stored `'Chris'`) never looks like a phantom collision.
 
-The rest of the single-field contract carries over unchanged: same write-path coverage, same `update()`/`update_all()`/`update_many()` bypass, same in-process check-then-write scope. Two more rules specific to declarations:
+The rest of the single-field contract carries over unchanged: same write-path coverage, the same bypass on all five update verbs, same in-process check-then-write scope. Two more rules specific to declarations:
 
 - Constraints resolve like every other config key — nearest class in the MRO wins, so a subclass's `constraints=` **replaces** its parent's — and merge with `Unique()` markers. Exact duplicates (same field _set_, same `key` callable or both key-less) collapse to one; the same field set with _different_ keys is legal and every constraint must hold — declaring both `UniqueConstraint("v")` and `UniqueConstraint("v", key=str.casefold)` enforces exact **and** case-insensitive uniqueness.
 - A constraint naming a non-field or `id` raises [ConstraintFieldError][tinydantic.ConstraintFieldError] at class definition (or `bind()`) time. Both would otherwise be silent: an unknown field reads as `None` in every body and never enforces, and `id` is never stored in the document body at all — ids are unique already.

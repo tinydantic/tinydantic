@@ -1,6 +1,6 @@
 # Schema evolution
 
-Your model class is your schema — but the documents in a TinyDB file can predate it. An older version of your app may have written them, another tool may share the file, or someone may have hand-edited a YAML table. Because a `tinydantic` read is a validation, this page answers the question that raises: what happens when the stored document and the current model disagree — and how do you migrate data deliberately instead of by accident?
+Your model class is your schema — but the documents in a TinyDB file can predate it. An older version of your app may have written them, another tool may share the file, or someone may have hand-edited a YAML table. Because a `tinydantic` read is a validation, this page answers the question that arises: what happens when the stored document and the current model disagree — and how do you migrate data deliberately instead of by accident?
 
 The examples share state top to bottom, so run them in order.
 

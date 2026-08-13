@@ -7,7 +7,7 @@ The examples share state top to bottom, so run them in order.
 ```pycon
 >>> from tinydb import TinyDB
 >>> from tinydb.storages import MemoryStorage
->>> from tinydantic import TinydanticModel, field, q
+>>> from tinydantic import TinydanticModel, field
 >>> db = TinyDB(storage=MemoryStorage)
 >>> class User(TinydanticModel, database=db, table_name="users"):
 ...     name: str
@@ -148,7 +148,7 @@ Sort keys are **Python field names** (what you would pass to `getattr`), with a 
 
 ```
 
-Ties preserve document order (Python's sort is stable), so equal-key documents come out in doc-id order. And because sorting runs on **validated model instances** — never on raw stored bodies — a `datetime` field compares chronologically, custom types compare by their real values, and every field is guaranteed to exist.
+Ties preserve table order (Python's sort is stable), so equal-key documents come out in the order the table holds them. That is usually ascending doc-id order, but not by guarantee: an `insert()` with an explicit lower id, or a `save()` that re-inserts a [vanished document](crud.md#sharp-edge-save-vs-replacedelete-on-a-vanished-document), appends at the end. Add an explicit tiebreaker (`sort("age", "id")`) when the order of equal keys matters. And because sorting runs on **validated model instances** — never on raw stored bodies — a `datetime` field compares chronologically, custom types compare by their real values, and every field is guaranteed to exist.
 
 An unknown name fails at the `.sort()` call itself, not three stack frames later at the terminal, and storage aliases are not sort keys — the attribute name is:
 
@@ -228,7 +228,7 @@ Every terminal answers about the same windowed, ordered result that [all()][tiny
 >>> User.find(field(User, "age") > 100).first_or_raise()
 Traceback (most recent call last):
     ...
-tinydantic._errors.DocumentNotFoundError: No 'User' document in table 'users'
+tinydantic._errors.DocumentNotFoundError: No document matching the given query in table 'users' (model 'User')
 
 ```
 
@@ -293,10 +293,10 @@ Deleting or updating the _whole table_ through a bare `find()` is legal — the 
 >>> listing.skip(9 * PER_PAGE).limit(PER_PAGE).first_or_raise()
 Traceback (most recent call last):
     ...
-tinydantic._errors.DocumentNotFoundError: No 'User' document in table 'users'
+tinydantic._errors.DocumentNotFoundError: No document matching the given query in table 'users' (model 'User')
 
 ```
 
 ## When a chain is overkill
 
-A one-shot condition read needs no chain: [search()][tinydantic.TinydanticModel.search], [get()][tinydantic.TinydanticModel.get], [count()][tinydantic.TinydanticModel.count], and [contains()][tinydantic.TinydanticModel.contains] remain the direct spellings, and `find(cond).all()` is exactly `search(cond)`. Reach for `find()` when ordering, windowing, or a reusable base query enters the picture — the conditions themselves are the same ones described on the [Queries](queries.md) page, including [querying by id](queries.md).
+A one-shot condition read needs no chain: [search()][tinydantic.TinydanticModel.search], [get()][tinydantic.TinydanticModel.get], [count()][tinydantic.TinydanticModel.count], and [contains()][tinydantic.TinydanticModel.contains] remain the direct spellings, and `find(cond).all()` is exactly `search(cond)`. Reach for `find()` when ordering, windowing, or a reusable base query enters the picture — the conditions themselves are the same ones described on the [Queries](queries.md) page, including [querying by id](queries.md#querying-by-id).

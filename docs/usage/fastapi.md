@@ -129,7 +129,7 @@ The trade to understand: a blocking call on the event loop stalls _all_ request 
 > Two easy ways to break Pattern A's guarantee, both of which reintroduce the threadpool:
 >
 > - **Plain `def` endpoints.** FastAPI runs those in a _multi-threaded_ pool — several can run at once, racing on the database. If a handler touches `tinydantic`, make it `async def`.
-> - **`asyncio.to_thread` / `run_in_threadpool`.** Wrapping calls this way sends them to the same multi-threaded pool. Don't offload `tinydantic` calls piecemeal; if the loop stall genuinely hurts, adopt Pattern B wholesale.
+> - **`asyncio.to_thread` / `run_in_threadpool`.** Both send the call to a multi-threaded pool — `run_in_threadpool` (from Starlette) to the same AnyIO worker pool that runs plain `def` endpoints, `asyncio.to_thread` to the event loop's default `ThreadPoolExecutor`. Either way several database calls can run at once, and mixing the two makes it worse: the two pools interleave with each other as well. Don't offload `tinydantic` calls piecemeal; if the loop stall genuinely hurts, adopt Pattern B wholesale.
 
 ### Pattern B: one dedicated database thread
 
@@ -178,7 +178,7 @@ As rough guidance: an operation stalling the loop for 1 ms caps you around a tho
 
 ### Concurrent _requests_ still interleave
 
-Both patterns serialize database _operations_; neither serializes _user intent_. Two users can still load the same document into edit forms and submit conflicting saves minutes apart — no threads involved, just time. That is what `use_revision=True` optimistic concurrency is for, including the `ETag` / `If-Match` / `412` flow for exactly this API shape — see [Concurrency](concurrency.md#optimistic-concurrency-use_revision). And for partial updates, prefer [patch()][tinydantic.TinydanticModel.patch]: `user.patch(**payload.model_dump(exclude_unset=True))` writes only the named fields, so concurrent edits to unrelated fields survive. Like the other instance-level writes, `patch()` fires [before_write()][tinydantic.TinydanticModel.before_write], so audit timestamps stamped in that hook keep working on PATCH endpoints — the table-level `update()` and `update_all()` are the ones that fire no hook.
+Both patterns serialize database _operations_; neither serializes _user intent_. Two users can still load the same document into edit forms and submit conflicting saves minutes apart — no threads involved, just time. That is what `use_revision=True` optimistic concurrency is for, including the `ETag` / `If-Match` / `412` flow for exactly this API shape — see [Concurrency](concurrency.md#optimistic-concurrency-use_revision). And for partial updates, prefer [patch()][tinydantic.TinydanticModel.patch]: `user.patch(**payload.model_dump(exclude_unset=True))` writes only the named fields, so concurrent edits to unrelated fields survive. Like the other instance-level writes, `patch()` fires [before_write()][tinydantic.TinydanticModel.before_write], so audit timestamps stamped in that hook keep working on PATCH endpoints — the five update verbs (`update()`, `update_by_ids()`, `update_all()`, `update_many()`, and `FindQuery.update()`) are the ones that fire no hook.
 
 **Run a single process.** Never put a TinyDB file behind multiple workers (`uvicorn --workers 4`, Gunicorn workers) — each process rewrites the whole file from its own view and they destroy each other's writes. Add [ProcessLockMiddleware][tinydantic.tinydb.middlewares.ProcessLockMiddleware] to your storage so that misconfiguration fails at startup instead of corrupting slowly.
 
