@@ -33,6 +33,16 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 - When a review turns up something not already tracked, open an issue for it. Re-verify the finding against the current tree first, and record the evidence in the body: what you ran, at which commit, on what date. A finding that no longer reproduces is not filed.
 - Every issue carries a type label (`bug`, `enhancement`, `documentation`) plus a topic label where one fits (`performance`, `api-design`, `polish`). Priority, size, and status live on the [project board](https://github.com/orgs/tinydantic/projects/1), not in labels. Milestones name the release the work is intended for.
 - A PR that addresses an issue must link it with a closing keyword (`Closes #123`, `Fixes #123`) in the PR body, so merging the PR closes the issue.
+- **Any issue an agent helped write or investigate carries the `ai-assisted` label and an `Assisted-by:` trailer**, following the [kernel's convention](https://docs.kernel.org/process/coding-assistants.html). Last line of the body, own paragraph:
+
+  ```text
+  Assisted-by: AGENT_NAME:MODEL_VERSION [TOOL1] [TOOL2]
+  ```
+
+  `AGENT_NAME` is the agent or harness (`Claude`, `Codex`), `MODEL_VERSION` the model that did the work. The bracketed tools are optional and space-separated — the brackets mark optionality, they are not typed. List only named analysis tools that produced evidence in the body (`pytest`, `mypy`, `ruff`, `pyright`); an ad-hoc repro script is not a tool, so most issues carry none. Drop any bracketed context-window or deployment suffix from the model id, since literal brackets would read as the tool syntax — `Claude:claude-opus-5`, not `Claude:claude-opus-5[1m]`.
+
+- Agents **MUST NOT** add a `Signed-off-by` trailer anywhere. Only a human can certify the DCO. `Assisted-by:` records help; it never signs for anyone. Commits keep the separate co-author trailer described in `CLAUDE.md` — don't put `Assisted-by:` on a commit or a PR body.
+- Say what you could _not_ do. An agent-filed issue states plainly whether the reproduction was actually run, whether a fix was built or tested, and what remains unverified. An unverified report that reads as verified costs a maintainer more than no report.
 - Connect issues with GitHub's relationships rather than restating context: `gh issue edit <n> --add-blocking <m>`, `--add-blocked-by`, and `--parent` / `--add-sub-issue` for a genuine parent-child breakdown.
 
 ### Upstream dependencies
