@@ -20,6 +20,8 @@ All observations in this section were verified against TinyDB 4.9.0 (the minimum
 
 ### Query conditions never see the document id
 
+**Tracking issue:** [#133](https://github.com/tinydantic/tinydantic/issues/133)
+
 **Limitation.** TinyDB evaluates every query condition against the raw document _body_ mapping — the value in the `{doc_id: body}` table dict — never against a [`Document`](https://tinydb.readthedocs.io/en/latest/api.html#tinydb.table.Document) carrying `doc_id`. All five evaluation sites behave this way: `Table.search()`, `Table.get(cond=...)`, and the updater loops inside `Table.update(cond=...)`, `Table.update_multiple()`, and `Table.remove(cond=...)`. (`Table._update_table()`'s docstring notes that skipping the `Document` wrap is a deliberate optimization.) Only `Table.__iter__` yields `Document` instances. Consequently, no query object — however it is constructed — can express "document id equals 1": the id is structurally invisible to the condition, even though it sits right there as the dict key in every evaluation loop.
 
 **Why it matters to an ODM.** Every mainstream document ODM lets users query by the model's id attribute (Beanie and ODMantic translate `Model.id` to MongoDB's `_id`; Firestore special-cases `FieldPath.documentId()` because — exactly like TinyDB — its document key is not a body field). `tinydantic` maps its `id` field to `doc_id`, so supporting `User.get(User.id == 1)` required a translation layer: id-bearing conditions are detected in every model method and executed via `doc_id=`/`doc_ids=` operations or by iterating the table (the one API that yields `Document`s). See `src/tinydantic/_query.py` and the id-condition branches in `src/tinydantic/_model.py`.
@@ -34,6 +36,8 @@ Existing queries and third-party `QueryLike` objects pay nothing (the `getattr` 
 
 ### `update_many()` cannot select documents by id
 
+**Tracking issue:** [#134](https://github.com/tinydantic/tinydantic/issues/134)
+
 **Limitation.** `Table.update(fields, cond, doc_ids)` and `Table.remove(cond, doc_ids)` both accept a `doc_ids` selector, but `Table.update_multiple(updates)` accepts only `(fields, cond)` pairs. Combined with the evaluation limitation above, there is no way to run a batched update that targets documents by id — neither via a condition (conditions cannot see ids) nor via an explicit selector (the parameter does not exist).
 
 **Why it matters to an ODM.** `update_many()` is TinyDB's only batched write — the whole batch runs in one atomic read-modify-write cycle (`Table._update_table()`), which is the reason to use it over looping `update()`. `tinydantic` translates id conditions to `doc_ids=` operations where a public landing spot exists, but `update_many()` offers none, so supporting id conditions there (without sacrificing the batch's single-write atomicity) required the private-API use recorded in the [registry below](#tinydb-private-api-usage-registry).
@@ -44,6 +48,8 @@ Existing queries and third-party `QueryLike` objects pay nothing (the `getattr` 
 - Ship the `needs_doc_id`/`DocId` improvement above, which subsumes this: id conditions would then work in `update_many()`'s existing signature.
 
 ### `Table.update(doc_ids=…)` and `Table.remove(doc_ids=…)` skip missing ids silently
+
+**Tracking issue:** [#135](https://github.com/tinydantic/tinydantic/issues/135)
 
 **Limitation.** As of TinyDB 4.9.0 ([#591](https://github.com/msiemens/tinydb/issues/591)), `Table.update(fields, doc_ids=…)` and `Table.remove(doc_ids=…)` filter the requested ids down to those present in the table, operate on that subset, and return only the ids they actually touched. An id that does not exist is not reported in any way. Before 4.9.0 the same call raised a bare `KeyError` partway through the updater — which was its own problem (an uncurated exception, raised after some documents had already been mutated in the working copy).
 
@@ -57,6 +63,8 @@ Existing queries and third-party `QueryLike` objects pay nothing (the `getattr` 
 
 ### Document ids are stringified before reaching storages
 
+**Tracking issue:** [#136](https://github.com/tinydantic/tinydantic/issues/136)
+
 **Limitation.** Before table data is handed to the storage layer, document ids are converted to strings (`{str(doc_id): doc}` in `Table._update_table()`), because the reference JSON storage requires string keys. Storages and middlewares therefore never see the native int ids, and serialized output sorts ids lexicographically (`"10"` before `"2"`). See the upstream discussion [msiemens/tinydb#466](https://github.com/msiemens/tinydb/discussions/466).
 
 **Why it matters.** Human-readable storage output (a design goal of `tinydantic`'s YAML storage) lists documents in confusing lexicographic order. `tinydantic` ships `SortIntDocIDsMiddleware` (`src/tinydantic/tinydb/middlewares.py`) purely to undo the stringification — it converts keys back to ints, pre-sorted numerically — and that middleware has to pass ints where the `Storage` protocol declares strings, an acknowledged hack.
@@ -64,6 +72,8 @@ Existing queries and third-party `QueryLike` objects pay nothing (the `getattr` 
 **Suggested improvement.** Let storages opt into native id keys (for example, a class attribute on `Storage` declaring whether keys must be strings), or perform the stringification inside `JSONStorage` rather than in `Table`, so key formatting becomes a storage concern.
 
 ### Query objects answer `bool()` and `in` silently
+
+**Tracking issue:** [#137](https://github.com/tinydantic/tinydantic/issues/137)
 
 **Limitation.** `QueryInstance` defines no `__bool__` and no `__len__`, so every condition is truthy — `bool(where("name") == "Alice")` is `True`, and so is the same expression for a value no document holds. `Query` additionally defines `__getitem__` (the alternate spelling for nested keys) but no `__iter__`, so Python's legacy sequence protocol makes `x in Query().name` iterate the query and report `True` for any `x`. A non-string path step is read as a callable to apply (`_generate_test`'s runner), so `Query().tags[0] == "red"` raises internally, is swallowed by the runner's `except (KeyError, TypeError)`, and matches nothing.
 
@@ -77,8 +87,8 @@ Every approved use of a TinyDB internal/private API in `tinydantic` is recorded 
 
 | TinyDB internal | Used by | Status | Reason | Upstream change that would remove it |
 | --- | --- | --- | --- | --- |
-| `QueryInstance._hash` (read-only attribute access) | `tinydantic._query.has_id_condition()` — detecting id conditions inside composed queries | **In use** (approved 2026-08-02; shipped with the original id-query work) | Composing queries (`&`/`\|`/`~`) produces plain `QueryInstance` objects, so a custom condition type cannot survive composition — the hashval tree is the only place a marker does. The access is read-only via `getattr(cond, "_hash", None)` and degrades loudly, never silently: if a future TinyDB renames the attribute, bare id conditions are still detected by `isinstance`, and undetected compositions raise `DocumentIDConditionError` when TinyDB's evaluator runs them. | The `needs_doc_id`/`DocId` evaluator improvement above (composition would propagate a public flag); alternatively, a public accessor for a query's hash tree. |
-| `Table._update_table(updater)` | `TinydanticModel._run_write_cycle()` — all `update()`/`update_many()` writes (which validate each matched document's merged result unless `validate_writes=False`), plus the id-condition paths of `remove()` and `upsert()` | **In use** (approved 2026-07-13 for id-condition writes; scope extended 2026-08-02 to all validated update writes) | The only way to select write targets by id inside one atomic read-modify-write cycle, and the only way to validate-then-write atomically: `update_many()` has no `doc_ids` parameter, conditions cannot see ids (the two limitations above), and a public two-pass validate-then-update has a read-modify-write race between passes. The custom updater evaluates every condition against `Document(body, doc_id)` wrappers inside upstream's own read → mutate → write → cache-clear lifecycle, validates merged bodies before the write, applies mutations copy-on-write (so an aborted or validation-failed cycle leaks nothing, even on `MemoryStorage`, whose `read()` shares body dicts by reference), and skips the storage write entirely when nothing matched. Benchmarked ~23% faster than the two-pass public-API alternative on a 5,000-document JSONStorage table (one full file read saved per write). | Either `update_many()` improvement above plus an atomic validate-hook, or the `needs_doc_id`/`DocId` evaluator change combined with a public batched read-modify-write API. |
+| `QueryInstance._hash` (read-only attribute access) | `tinydantic._query.has_id_condition()` — detecting id conditions inside composed queries | **In use** (approved 2026-08-02; shipped with the original id-query work). Tracking: [#133](https://github.com/tinydantic/tinydantic/issues/133) | Composing queries (`&`/`\|`/`~`) produces plain `QueryInstance` objects, so a custom condition type cannot survive composition — the hashval tree is the only place a marker does. The access is read-only via `getattr(cond, "_hash", None)` and degrades loudly, never silently: if a future TinyDB renames the attribute, bare id conditions are still detected by `isinstance`, and undetected compositions raise `DocumentIDConditionError` when TinyDB's evaluator runs them. | The `needs_doc_id`/`DocId` evaluator improvement above (composition would propagate a public flag); alternatively, a public accessor for a query's hash tree. |
+| `Table._update_table(updater)` | `TinydanticModel._run_write_cycle()` — all `update()`/`update_many()` writes (which validate each matched document's merged result unless `validate_writes=False`), plus the id-condition paths of `remove()` and `upsert()` | **In use** (approved 2026-07-13 for id-condition writes; scope extended 2026-08-02 to all validated update writes). Tracking: [#134](https://github.com/tinydantic/tinydantic/issues/134) | The only way to select write targets by id inside one atomic read-modify-write cycle, and the only way to validate-then-write atomically: `update_many()` has no `doc_ids` parameter, conditions cannot see ids (the two limitations above), and a public two-pass validate-then-update has a read-modify-write race between passes. The custom updater evaluates every condition against `Document(body, doc_id)` wrappers inside upstream's own read → mutate → write → cache-clear lifecycle, validates merged bodies before the write, applies mutations copy-on-write (so an aborted or validation-failed cycle leaks nothing, even on `MemoryStorage`, whose `read()` shares body dicts by reference), and skips the storage write entirely when nothing matched. Benchmarked ~23% faster than the two-pass public-API alternative on a 5,000-document JSONStorage table (one full file read saved per write). | Either `update_many()` improvement above plus an atomic validate-hook, or the `needs_doc_id`/`DocId` evaluator change combined with a public batched read-modify-write API. |
 
 ### Resolved upstream in TinyDB
 
@@ -112,6 +122,8 @@ All observations in this section were verified against Pydantic 2.11 (the minimu
 
 ### `model_config` merges across bases in "last wins" order, not MRO
 
+**Tracking issue:** [#138](https://github.com/tinydantic/tinydantic/issues/138)
+
 **Limitation.** Pydantic builds a model's effective [`model_config`][pydantic.BaseModel.model_config] by walking the bases left to right and letting each one overwrite what came before, so the _last_ base to set a key wins. Python's MRO says the _first_ one does. The two orderings are exact opposites, and nothing warns when they disagree ([pydantic#9992](https://github.com/pydantic/pydantic/issues/9992), open, carrying the v3 milestone):
 
 ```python
@@ -142,6 +154,8 @@ The cost of the workaround is real but small: `tinydantic` config does not show 
 **Suggested improvement.** Merge `model_config` in MRO order — `for base in reversed(cls.__mro__)` rather than left-to-right over `bases` — so config resolution matches every other attribute on the class. That is a breaking change for models that today depend on the inverted order, which is presumably why it carries the v3 milestone. A non-breaking interim step would help downstream libraries regardless: warn at class-creation time when two bases set the same `model_config` key to different values, which is exactly the case where the current order is doing something the reader did not ask for.
 
 ### `protected_namespaces` replaces the default instead of extending it
+
+**Tracking issue:** [#139](https://github.com/tinydantic/tinydantic/issues/139)
 
 **Limitation.** `protected_namespaces` is an ordinary `ConfigDict` key, so setting it on a subclass _replaces_ the inherited value rather than adding to it. A library that wants to reserve its own prefix has to restate Pydantic's defaults alongside it, and there is no public constant to restate them from — the value lives in `pydantic._internal._config.config_defaults`. Forgetting to restate them is silent: nothing warns that a model just gave up namespace protection.
 
@@ -177,8 +191,8 @@ Every approved use of a Pydantic internal/private API in `tinydantic` is recorde
 
 | Pydantic internal | Used by | Status | Reason | Upstream change that would remove it |
 | --- | --- | --- | --- | --- |
-| `pydantic._internal._model_construction.ModelMetaclass` (name only, under `TYPE_CHECKING`) | `TinydanticModelMetaclass`, the metaclass of `TinydanticModel` (`src/tinydantic/_model.py`) | **In use** (shipped with the original model work; recorded here 2026-08-08) | `tinydantic` must run at class-creation time — to capture `database=`/`table_name=` class keywords, resolve `__tinydantic_config__`, and detect shadowed fields — which requires subclassing `BaseModel`'s metaclass. Pydantic exports no public name for it. The exposure is limited to type-checking: the import sits in an `if TYPE_CHECKING` block and the runtime branch resolves the same class as `type(BaseModel)`, so no Pydantic internal is imported at runtime and moving the module would not break an installed `tinydantic`. | A public re-export, e.g. `pydantic.ModelMetaclass`, so the type-checking import can name a supported path. |
-| `pydantic._internal._config.config_defaults["protected_namespaces"]` (test-only) | `tests/model/test_model_config.py` — asserting `tinydantic`'s reservations still cover Pydantic's defaults | **In use** (added with the `protected_namespaces` fix above) | The default has no public accessor, and the alternative to reading it is hard-coding the same tuple in the test that is supposed to catch it drifting. Test-only, so no shipped code depends on it; if Pydantic moves the attribute the test fails loudly rather than silently passing. | The `DEFAULT_PROTECTED_NAMESPACES` constant suggested above. |
+| `pydantic._internal._model_construction.ModelMetaclass` (name only, under `TYPE_CHECKING`) | `TinydanticModelMetaclass`, the metaclass of `TinydanticModel` (`src/tinydantic/_model.py`) | **In use** (shipped with the original model work; recorded here 2026-08-08). Tracking: [#140](https://github.com/tinydantic/tinydantic/issues/140) | `tinydantic` must run at class-creation time — to capture `database=`/`table_name=` class keywords, resolve `__tinydantic_config__`, and detect shadowed fields — which requires subclassing `BaseModel`'s metaclass. Pydantic exports no public name for it. The exposure is limited to type-checking: the import sits in an `if TYPE_CHECKING` block and the runtime branch resolves the same class as `type(BaseModel)`, so no Pydantic internal is imported at runtime and moving the module would not break an installed `tinydantic`. | A public re-export, e.g. `pydantic.ModelMetaclass`, so the type-checking import can name a supported path. |
+| `pydantic._internal._config.config_defaults["protected_namespaces"]` (test-only) | `tests/model/test_model_config.py` — asserting `tinydantic`'s reservations still cover Pydantic's defaults | **In use** (added with the `protected_namespaces` fix above). Tracking: [#139](https://github.com/tinydantic/tinydantic/issues/139) | The default has no public accessor, and the alternative to reading it is hard-coding the same tuple in the test that is supposed to catch it drifting. Test-only, so no shipped code depends on it; if Pydantic moves the attribute the test fails loudly rather than silently passing. | The `DEFAULT_PROTECTED_NAMESPACES` constant suggested above. |
 
 ### Resolved upstream in Pydantic
 
