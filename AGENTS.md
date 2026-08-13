@@ -5,21 +5,21 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 ## Setup
 
 - `uv sync --all-groups` — installs the venv and every dependency group.
-- `npm ci` — cspell/prettier/markdownlint run via `npx` from local `node_modules`; spell-check (and therefore `poe check`) fails without it.
+- `npm ci` — installs cspell and markdownlint into `node_modules`, where `npx` finds them; spell-check (and therefore `poe check`) fails without it. Prettier is _not_ installed here — it runs from its own [pre-commit hook](https://github.com/rbubley/mirrors-prettier), which manages its own node environment.
 - `uv run pre-commit install` — installs the pre-commit and commit-msg hooks.
 
 ## Conventions
 
 - Conventional commits (commit-msg hook enforces).
-- uv + poethepoet: `uv run poe test | lint | types | check | docs-build`. Also `fmt` (ruff autofix + format) and `pre-commit` (all hooks, all files).
+- uv + poethepoet: `uv run poe test | lint | types | check | docs-build`. Also `fmt` (ruff autofix + format) and `pre-commit` (all hooks, all files). `check` is lint + sbom-check + spell-check + types — it does **not** run tests, so `poe test` is a separate call before claiming a change is green.
 - Windows/macOS/Linux are all first-class; no shell-isms in poe tasks.
 - Python 3.10 is the floor (`requires-python`; mypy and ruff target py310) — no syntax newer than 3.10.
 - Ruff runs with `select = ALL`: 79-char code lines, Google-style docstrings wrapped at 72 chars (W505 `max-doc-length`), relative imports banned.
 - Tests include doctests in README, CONTRIBUTING, and docs — a lying example fails CI.
-- Tests run shuffled (pytest-randomly) and parallel (pytest-xdist) — don't write order-dependent tests.
+- Tests run shuffled (pytest-randomly, on by default) — don't write order-dependent tests. CI adds `--numprocesses auto` (pytest-xdist) and `--reruns 2`; local `poe test` is serial, so a test that depends on process-local state can pass locally and fail in CI.
 - Markdown: prettier enforces `proseWrap: never` (don't hard-wrap prose); markdownlint requires an H1 on line 1.
 - REUSE licensing: new code files need SPDX headers; `**.md` and listed files are covered by `REUSE.toml` aggregates.
-- cspell gates commits: new legit words go in `project-words.txt` (case-insensitive sorted). Only words that appear in checked-in files belong there — cspell skips `untracked/`, so never add a word for scratch or agent collateral.
+- cspell gates commits: new legit words go in `project-words.txt`, which must stay globally case-insensitive sorted. `poe update-project-words` helps, but it _appends_ a sorted batch to the end rather than merging — re-sort the whole file afterwards, and read what it added. Only words that appear in checked-in files belong there — cspell skips `untracked/`, so never add a word for scratch or agent collateral.
 - interrogate demands 100% docstring coverage.
 - `untracked/` (repo root) is git-ignored scratch space for drafts, notes, and review collateral; linters and formatters are configured to skip it. Never put anything there that the repo should keep.
 - Agent-workflow collateral (superpowers specs and plans, review reports, scratch analysis) is NEVER committed — it lives in `untracked/` only. Superpowers specs go in `untracked/superpowers/specs/`, plans in `untracked/superpowers/plans/`. Committing them drags their vocabulary into `project-words.txt`, which is meant to cover the shipped repo. If a decision in a spec matters to the project, restate it where the project keeps decisions: a module or method docstring, `docs/contributing/`, or the changelog.
@@ -47,7 +47,8 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 
 ## Docs
 
-- Built by properdocs in strict mode — a broken link fails `poe docs-build`. Use `poe docs-serve` for live preview; mike handles versioned deploys.
+- Built by properdocs in strict mode — a broken internal link fails `poe docs-build`. Use `poe docs-serve` for live preview; mike handles versioned deploys.
+- External links are a separate gate: `poe docs-check` runs linkchecker over the built `site/`, and `poe docs-build-check` chains the build and the check.
 - The API reference is generated at build time by `scripts/gen_api_docs.py` (mkdocs-gen-files) — `docs/reference/` is intentionally sparse on disk; don't hand-write pages there.
 
 ## CI
