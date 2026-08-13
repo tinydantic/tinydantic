@@ -115,7 +115,7 @@ class DocumentAlreadyExistsError(TinydanticError, ValueError):
 
 
 class UniqueConstraintError(TinydanticError):
-    """A write would duplicate a unique value (tuple).
+    """A write would duplicate a unique value, or value tuple.
 
     Raised by create-style and instance-level writes when a field
     marked [Unique][tinydantic.Unique] — or the field tuple of a
@@ -223,24 +223,31 @@ class UnknownUpdateFieldError(TinydanticUserError):
 
 
 class SelectorError(TinydanticUserError, ValueError):
-    """A method got no selector, or conflicting selectors.
+    """A method needed a way to pick documents and got none.
 
-    Selector-taking methods (``get()``, ``contains()``,
-    ``update()``, ``remove()``, ``get_or_raise()``, ``upsert()``)
-    need exactly one way to pick documents. This covers *how many*
-    were given — none, or several — not what they are: a selector
-    of the wrong kind is a
-    [QueryTypeError][tinydantic.QueryTypeError].
+    Raised by ``update()`` and ``remove()`` when their optional
+    ``cond`` is omitted, and by ``upsert()`` when ``cond`` is
+    omitted and the document's ``id`` is ``None`` too. Each of the
+    three has a whole-table or by-id spelling that the message
+    names, so a dropped condition can never quietly become "every
+    document".
+
+    This covers *whether* a selector was given, not what it is: a
+    selector of the wrong kind is a
+    [QueryTypeError][tinydantic.QueryTypeError]. Methods whose
+    ``cond`` is a required positional — ``search()``, ``get()``,
+    ``get_or_none()``, ``contains()`` — never raise this; omitting
+    the argument is an ordinary ``TypeError``.
 
     It stays separate from
     [QueryValueError][tinydantic.QueryValueError], despite sharing
-    a base, because a selector is not always a query:
-    ``get(doc_id=1, doc_ids=[1])`` names no query at all.
+    a base, because a selector is not always a query: ``upsert()``
+    can be selected by the document's own ``id``.
 
-    ``ValueError`` is the base for the same reason
-    ``subprocess.run(capture_output=True, stdout=...)`` raises one
-    — the arguments are individually well-typed and wrong in
-    combination. tinydantic raises it instead of letting TinyDB's
+    ``ValueError`` is the base because the arguments are
+    individually well-typed and wrong in combination, the same
+    reason ``subprocess.run(capture_output=True, stdout=...)``
+    raises one. tinydantic raises it instead of letting TinyDB's
     ``RuntimeError`` (which nothing catches deliberately) or its
     hints about TinyDB internals leak through.
     """
@@ -425,8 +432,8 @@ class DocumentIDRequiredError(TinydanticError):
     """Required document ID is missing.
 
     Raised by instance operations that address a stored document by
-    its id (``replace()``, ``delete()``) when the instance was never
-    inserted, so its ``id`` is still ``None``.
+    its id (``replace()``, ``delete()``, ``patch()``) when the
+    instance was never inserted, so its ``id`` is still ``None``.
     """
 
     def __init__(self, *, model_name: str, operation: str) -> None:

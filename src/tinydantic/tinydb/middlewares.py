@@ -126,10 +126,13 @@ class ProfilingMiddleware(Middleware):
     to zero them between measurements.
 
     Middlewares stack, and the position in the stack is what gets
-    measured: ``ProfilingMiddleware(CachingMiddleware(JSONStorage))``
-    counts only the operations the cache lets through, while
+    measured. TinyDB talks to the **outermost** wrapper, so
+    ``ProfilingMiddleware(CachingMiddleware(JSONStorage))`` counts
+    what the database asks for *before* caching, while
     ``CachingMiddleware(ProfilingMiddleware(JSONStorage))`` counts
-    what the database asks for before caching.
+    only the operations the cache lets through to the file. Wrap
+    outermost to measure the database's demand; wrap innermost to
+    measure real disk traffic.
 
     Attributes:
         read_count: Number of ``read()`` calls seen so far.

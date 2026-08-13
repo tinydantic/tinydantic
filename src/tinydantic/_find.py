@@ -15,7 +15,7 @@ Design decisions (spelled out on the docs "Fluent queries" page):
 -   The pipeline is fixed — match, sort, skip, limit — regardless
     of modifier call order, following the unanimous SQL/MongoDB/
     ODM convention.
--   Each clause is stated once; repeating a modifier raises
+-   Ordering and window are stated once; repeating either raises
     [QueryUsageError][tinydantic.QueryUsageError] because the wider
     ecosystem disagrees on what repetition means (Beanie appends a
     tiebreaker, Python's stable-sort idiom and pandas make the
@@ -71,7 +71,7 @@ _REPEAT_MSG = (
 def _validated_window(name: str, n: object) -> int:
     """Check that a skip/limit operand is a non-negative int.
 
-    Bools are rejected like the id-condition operand rule.
+    Bools are rejected, matching the id-condition operand rule.
 
     Raises:
         QueryTypeError: If ``n`` is not an int (bools included).
@@ -114,11 +114,14 @@ class FindQuery(Generic[ModelT]):
     """An immutable, lazy fluent query over a model's table.
 
     Built by [find][tinydantic.TinydanticModel.find]; not meant to
-    be constructed directly. Modifiers (``sort``/``skip``/
-    ``limit``) return new chains and validate eagerly; terminals
+    be constructed directly. Chain-returning methods (``filter``,
+    and the ``sort``/``skip``/``limit`` modifiers) return new
+    chains and validate eagerly; terminals
     (``all``/``first``/``first_or_raise``/``count``/``exists``/
     iteration/``delete``/``update``) execute a fresh read against
     the current binding — results are never cached on the chain.
+    ``filter()`` is repeatable and ANDs into the condition; the
+    three modifiers each state their clause once.
 
     The pipeline is fixed: match, then sort, then skip, then
     limit, regardless of the order modifiers are called in. Every
@@ -433,7 +436,7 @@ class FindQuery(Generic[ModelT]):
 
         Condition writes report ids in table order, but a chain
         promises the order its own read pipeline produced — the
-        whole point of honouring ``sort``/``skip``/``limit``.
+        whole point of honoring ``sort``/``skip``/``limit``.
         """
         touched = set(written)
         return [doc_id for doc_id in window if doc_id in touched]
@@ -456,11 +459,17 @@ class FindQuery(Generic[ModelT]):
         concrete ids first and removes those — unlike Beanie,
         which silently ignores sort/skip/limit on delete. Under
         the documented single-process, single-threaded contract
-        the two paths are observably identical.
+        the two paths remove the same documents and return the
+        same ids.
 
-        An empty window is a no-op returning ``[]`` with zero
-        storage writes. Deleting the whole table via ``find()``
-        with no condition is legal (the spelling is explicit);
+        They differ in storage cost on an empty window: the
+        resolved-ids path returns ``[]`` without writing, while
+        the condition-only path reaches TinyDB's
+        ``Table.remove(cond=…)``, which writes the table back
+        whether or not anything matched. Tracked in issue #145.
+
+        Deleting the whole table via ``find()`` with no condition
+        is legal (the spelling is explicit);
         [truncate][tinydantic.TinydanticModel.truncate] remains
         the idiomatic one-pass spelling.
 
@@ -511,6 +520,8 @@ class FindQuery(Generic[ModelT]):
         Raises:
             DocumentIDUpdateError: If a mapping contains
                 ``id``.
+            RevisionUpdateError: If a mapping contains
+                ``revision_id`` on a ``use_revision=True`` model.
             UnknownUpdateFieldError: If a mapping has non-field
                 keys and ``extra_keys`` is ``"reject"``.
             pydantic.ValidationError: If a value or a merged

@@ -51,7 +51,11 @@ class YAMLStorage(Storage):
         access mode is appropriate for writing.
 
         Note: Using an access mode other than `r` or `r+` will probably
-        lead to data loss or data corruption!
+        lead to data loss or data corruption! The binary modes `rb`
+        and `rb+` are accepted without a warning — inherited from
+        TinyDB's `JSONStorage`, whose check this mirrors — but they
+        do not work here: `write` writes a `str`, which raises
+        `TypeError` on a binary handle.
 
         Args:
             path: Where to store the YAML data.
@@ -60,7 +64,7 @@ class YAMLStorage(Storage):
             encoding: The encoding used to open the storage file.
             access_mode: Mode in which the file is opened (`r`, `r+`).
             **kwargs: Additional keyword arguments passed to
-                `yaml.dump()` when writing data.
+                `yaml.safe_dump()` when writing data.
 
         Raises:
             ImportError: If PyYAML is not installed — it ships in
