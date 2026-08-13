@@ -121,10 +121,10 @@ class TestNotFlagged:
 
 
 class TestOptOut:
-    """shadowed_fields= permits listed names, q() queries them."""
+    """shadowed_fields= permits listed names, field() queries them."""
 
-    def test_opt_out_allows_and_q_queries(self, db: TinyDB):
-        """A listed field stores, loads, and queries via q()."""
+    def test_opt_out_allows_and_field_queries(self, db: TinyDB):
+        """A listed field stores, loads, and queries via field()."""
 
         class Command(
             TinydanticModel,

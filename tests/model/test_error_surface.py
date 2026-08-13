@@ -179,7 +179,7 @@ class TestMissingDocIDs:
     """Explicit doc_ids misses raise DocumentNotFoundError."""
 
     def test_update_missing_doc_id(self, db: TinyDB):
-        """update(doc_ids=[missing]) names the missing id."""
+        """update_by_ids() names the missing id."""
 
         class User(TinydanticModel, database=db):
             """Test model."""
@@ -222,7 +222,7 @@ class TestMissingDocIDs:
             Loose.update_by_ids({"name": "y"}, [999])
 
     def test_remove_missing_doc_id(self, db: TinyDB):
-        """remove(doc_ids=[missing]) names the missing id."""
+        """remove_by_ids() names the missing id."""
 
         class User(TinydanticModel, database=db):
             """Test model."""

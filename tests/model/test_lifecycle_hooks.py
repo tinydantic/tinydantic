@@ -161,8 +161,8 @@ class TestBeforeWriteCoverage:
         assert hooked.writes == ["a", "b"]
         assert [doc.stamped for doc in docs] == [1, 1]
 
-    def test_update_does_not_fire(self, hooked: type[Hooked]):
-        """Table-level update() has no instance, so no hook."""
+    def test_update_by_ids_does_not_fire(self, hooked: type[Hooked]):
+        """update_by_ids() has no instance, so no hook."""
         doc = hooked(name="a").insert()
         hooked.writes.clear()
         assert doc.id is not None

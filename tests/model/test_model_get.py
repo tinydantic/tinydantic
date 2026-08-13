@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class TestModelGet:
-    """Tests for TinydanticModel.get."""
+    """Tests for TinydanticModel.get_by_id."""
 
     def test_get_return_type(self, user_class: type[UserBase]):
         """Return an instance of the model class."""

@@ -442,7 +442,7 @@ class TestCompositeEnforcement:
             second.replace()
 
     def test_update_bypass_pinned(self, db: TinyDB) -> None:
-        """The table-level bulk path stays the documented bypass."""
+        """update() stays a documented bypass."""
 
         class M(
             TinydanticModel,
