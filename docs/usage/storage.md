@@ -63,7 +63,7 @@ A file-backed TinyDB holds an open file handle. Call [close()][tinydb.database.T
 
 > [!TIP]
 >
-> `TinyDB` supports the context-manager protocol: `with TinyDB('db.json') as db:` closes the file on exit. TinyDB flushes on every write, so an unclosed handle will not lose data — but closing it releases the OS file handle promptly, which matters for long-running processes and on Windows, where an open handle blocks other openers.
+> `TinyDB` supports the context-manager protocol: `with TinyDB('db.json') as db:` closes the file on exit. TinyDB flushes on every write, so an unclosed handle will not lose data — but closing it releases the OS file handle promptly, which matters for long-running processes and on Windows, where an open handle blocks deleting or renaming the file.
 
 ## YAML files
 
@@ -125,7 +125,7 @@ Log(id=1, msg='cached')
 
 ### Keeping document ids in numeric order
 
-TinyDB stores document ids as strings, so a table with ten documents serializes `"1"`, `"10"`, `"2"` — lexicographic order, which undoes much of the reason to choose a human-readable format in the first place. [SortIntDocIDsMiddleware][tinydantic.tinydb.middlewares.SortIntDocIDsMiddleware] converts the ids back to integers on write and inserts them in ascending numeric order:
+TinyDB stringifies document ids before handing a table to the storage layer, so whether ten documents serialize in numeric or lexicographic order is up to the serializer. `JSONStorage` preserves insertion order and writes `"1"` … `"10"`; a serializer that sorts its keys — notably `yaml.safe_dump`, which sorts by default — writes `"1"`, `"10"`, `"2"`, which undoes much of the reason to choose a human-readable format in the first place. [SortIntDocIDsMiddleware][tinydantic.tinydb.middlewares.SortIntDocIDsMiddleware] converts the ids back to integers on write and inserts them in ascending numeric order, so both kinds of serializer agree:
 
 ```pycon
 >>> from tinydantic.tinydb.middlewares import SortIntDocIDsMiddleware
@@ -147,7 +147,7 @@ tickets:
 
 ```
 
-Without it, that file would open with `1`, `10`, `2`. The trade-off is in the name: the middleware hands integer keys to the storage below it, which is fine for JSON and YAML but may break a storage that can only serialize string keys.
+Without it, that YAML file would open with `'1'`, `'10'`, `'2'`. The trade-off is in the name: the middleware hands integer keys to the storage below it, which is fine for JSON and YAML but may break a storage that can only serialize string keys.
 
 ### Counting storage operations
 
@@ -173,7 +173,9 @@ Event(id=1, name='boot')
 
 ```
 
-The counters are exact where timings are noisy, which makes them the right evidence for a performance bug report — an issue's measurement harness can state "3 storage reads" and be reproducible on any machine. Middlewares stack, and the position in the stack is what gets measured: `ProfilingMiddleware(CachingMiddleware(JSONStorage))` counts only what the cache lets through to disk, while `CachingMiddleware(ProfilingMiddleware(JSONStorage))` counts what the database asks for before caching.
+The counters are exact where timings are noisy, which makes them the right evidence for a performance bug report — an issue's measurement harness can state "3 storage reads" and be reproducible on any machine.
+
+Middlewares stack, and the position in the stack is what gets measured. TinyDB talks to the **outermost** wrapper, so `ProfilingMiddleware(CachingMiddleware(JSONStorage))` counts what the database asks for _before_ caching, while `CachingMiddleware(ProfilingMiddleware(JSONStorage))` counts only what the cache lets through to disk. Wrap outermost to answer "how many operations did this call make?", innermost to answer "how much disk traffic did it cause?" — for one insert followed by five `all()` calls, the outer profiler reports 7 reads and 1 write, the inner one 2 reads and 0 writes.
 
 ## Beyond the built-ins
 
@@ -181,7 +183,7 @@ TinyDB's [storage documentation](https://tinydb.readthedocs.io/en/latest/usage.h
 
 > [!NOTE]
 >
-> `YAMLStorage` and the other helpers under `tinydantic.tinydb` are kept free of any dependency on `tinydantic`'s core, so they can later be extracted into a standalone TinyDB-extensions package. Import them from `tinydantic.tinydb.storages` today; if that extraction happens, the import path is the only thing that would change.
+> `YAMLStorage` and the other helpers under `tinydantic.tinydb` are meant to be extractable into a standalone TinyDB-extensions package, so they depend on `tinydantic`'s core as little as possible. The one dependency today is `ProcessLockMiddleware`, which raises [DatabaseLockedError][tinydantic.DatabaseLockedError] and [TinydanticUserError][tinydantic.TinydanticUserError] from `tinydantic._errors`; an extraction would have to give those errors a home. Everything else — `YAMLStorage`, `SortIntDocIDsMiddleware`, `ProfilingMiddleware`, and the operations — imports nothing from `tinydantic` at all. Import them from `tinydantic.tinydb.storages` and `tinydantic.tinydb.middlewares` today.
 
 ## Where next
 

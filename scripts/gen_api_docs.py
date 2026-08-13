@@ -4,7 +4,7 @@
 
 """Generate API documentation pages and navigation.
 
-This script is an adaption of the recipe described in
+This script is an adaptation of the recipe described in
 <https://mkdocstrings.github.io/recipes/#automatic-code-reference-pages>
 for use with the [mkdocs-awesome-pages-plugin][1].
 

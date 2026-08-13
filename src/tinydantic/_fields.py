@@ -46,15 +46,16 @@ if TYPE_CHECKING:
 class Unique:
     """Mark a field's values as unique within the model's table.
 
-    Enforced with a check-then-write scan on create-style and
-    instance-level writes (``insert``, ``insert_many``,
-    ``save``, ``replace``, ``upsert``, ``patch``); violations
-    raise
+    Enforced with a check-then-write scan by the six writes that
+    carry a model instance (``insert``, ``insert_many``, ``save``,
+    ``replace``, ``patch``, ``upsert``); violations raise
     [UniqueConstraintError][tinydantic.UniqueConstraintError].
-    ``None`` values are exempt (SQL ``NULL`` semantics), the
-    table-level bulk ``update()``/``update_many()`` path is a
-    documented bypass, and the check is in-process only — see the
-    models guide for the full contract.
+    ``None`` values are exempt (SQL ``NULL`` semantics), the five
+    update verbs (``update()``, ``update_by_ids()``,
+    ``update_all()``, ``update_many()``, and
+    ``FindQuery.update()``) are a documented bypass, and the check
+    is in-process only — see the models guide for the full
+    contract.
 
     Attributes:
         key: Optional comparison-key callable. When set,
@@ -87,9 +88,10 @@ class UniqueConstraint:
     [UniqueConstraintError][tinydantic.UniqueConstraintError].
     A row participates in the check only when **all** of the
     constraint's fields are non-``None`` (SQL composite
-    ``UNIQUE``/``NULL`` semantics); the table-level bulk
-    ``update()``/``update_many()`` path is a documented
-    bypass, and the check is in-process only.
+    ``UNIQUE``/``NULL`` semantics); the five update verbs
+    (``update()``, ``update_by_ids()``, ``update_all()``,
+    ``update_many()``, and ``FindQuery.update()``) are a
+    documented bypass, and the check is in-process only.
 
     Attributes:
         fields: The constrained field names, in declared order.
@@ -103,13 +105,15 @@ class UniqueConstraint:
             must be pure and deterministic and return a hashable
             result. It is never called when any field value is
             ``None``. Example — slug unique per author, ignoring
-            case::
+            case:
 
-                UniqueConstraint(
-                    "author_id",
-                    "slug",
-                    key=lambda a, s: (a, s.casefold()),
-                )
+            ```python
+            UniqueConstraint(
+                "author_id",
+                "slug",
+                key=lambda a, s: (a, s.casefold()),
+            )
+            ```
     """
 
     fields: tuple[str, ...]
