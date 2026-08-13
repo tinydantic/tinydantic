@@ -5,7 +5,7 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 ## Setup
 
 - `uv sync --all-groups` — installs the venv and every dependency group.
-- `npm ci` — installs cspell and markdownlint into `node_modules`, where `npx` finds them; spell-check (and therefore `poe check`) fails without it. Prettier is _not_ installed here — it runs from its own [pre-commit hook](https://github.com/rbubley/mirrors-prettier), which manages its own node environment.
+- `npm ci` — installs cspell, markdownlint, and prettier into `node_modules`, where `npx` finds them; spell-check (and therefore `poe check`) fails without it. Prettier is pinned exactly (`--save-exact`) to the version its [pre-commit hook](https://github.com/rbubley/mirrors-prettier) uses — if that hook's `rev` moves, move `package.json` with it, or `npx prettier` and the hook will disagree about formatting.
 - `uv run pre-commit install` — installs the pre-commit and commit-msg hooks.
 
 ## Conventions
@@ -16,14 +16,22 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 - Python 3.10 is the floor (`requires-python`; mypy and ruff target py310) — no syntax newer than 3.10.
 - Ruff runs with `select = ALL`: 79-char code lines, Google-style docstrings wrapped at 72 chars (W505 `max-doc-length`), relative imports banned.
 - Tests include doctests in README, CONTRIBUTING, and docs — a lying example fails CI.
-- Tests run shuffled (pytest-randomly, on by default) — don't write order-dependent tests. CI adds `--numprocesses auto` (pytest-xdist) and `--reruns 2`; local `poe test` is serial, so a test that depends on process-local state can pass locally and fail in CI.
+- Tests run shuffled (pytest-randomly, on by default) — don't write order-dependent tests. CI adds `--numprocesses auto` (pytest-xdist) and `--reruns 2`; local `poe test` is serial and single-version, so a test that depends on process-local state or on a newer Python can pass locally and fail in CI.
+- **Run `poe test-matrix` before pushing a PR.** It runs the suite under every supported Python (3.10–3.14) and combines coverage, which is what CI does across 15 job combinations — catching a version-specific break locally is far cheaper than a red PR. `poe test` alone only proves the interpreter you happen to be on.
 - Markdown: prettier enforces `proseWrap: never` (don't hard-wrap prose); markdownlint requires an H1 on line 1.
 - REUSE licensing: new code files need SPDX headers; `**.md` and listed files are covered by `REUSE.toml` aggregates.
 - cspell gates commits: new legit words go in `project-words.txt`, which must stay globally case-insensitive sorted. `poe update-project-words` helps, but it _appends_ a sorted batch to the end rather than merging — re-sort the whole file afterwards, and read what it added. Only words that appear in checked-in files belong there — cspell skips `untracked/`, so never add a word for scratch or agent collateral.
 - interrogate demands 100% docstring coverage.
 - `untracked/` (repo root) is git-ignored scratch space for drafts, notes, and review collateral; linters and formatters are configured to skip it. Never put anything there that the repo should keep.
 - Agent-workflow collateral (superpowers specs and plans, review reports, scratch analysis) is NEVER committed — it lives in `untracked/` only. Superpowers specs go in `untracked/superpowers/specs/`, plans in `untracked/superpowers/plans/`. Committing them drags their vocabulary into `project-words.txt`, which is meant to cover the shipped repo. If a decision in a spec matters to the project, restate it where the project keeps decisions: a module or method docstring, `docs/contributing/`, or the changelog.
-- Prefer the public API of every upstream dependency (TinyDB, pydantic). Internal/private APIs (underscore-prefixed, or in a private module) may be used ONLY when the needed behavior is impossible through the public API; every such use must be explicitly called out and approved during planning/review, and documented — reason plus proposed upstream fix — in that project's registry on `docs/contributing/upstream_limitations.md`. Keep that page current whenever upstream friction is found, worked around, or resolved. Forking or vendoring TinyDB was considered and rejected (2026-07-13) — don't propose it as a fallback.
+- Prefer the public API of every upstream dependency (TinyDB, pydantic). Internal/private APIs (underscore-prefixed, or in a private module) may be used ONLY when the needed behavior is impossible through the public API, and only when explicitly called out and approved during planning/review.
+- **Upstream friction always produces two artifacts, not one.** Whenever friction is found, worked around, or resolved — and whenever a private API is used — do _both_ of these in the same change:
+  1. **File a tracking issue** in this repo with the `upstream` label (see [Upstream dependencies](#upstream-dependencies)). This is required, not optional, and it is required even when the decision is to live with the workaround indefinitely. Whether anything is ever filed with the upstream project is a separate, later, maintainer-only call — but the friction is tracked here from the moment it is found.
+  2. **Record it on `docs/contributing/upstream_limitations.md`** — the limitation, why it matters to an ODM, the workaround we carry, the change that would remove it, and a **link to the tracking issue**. Private-API uses additionally get a row in that project's registry on the same page.
+
+  The page is the durable explanation; the issue is the unit of work. Neither substitutes for the other, and a registry row or limitation section without a linked issue is incomplete.
+
+- Forking or vendoring TinyDB was considered and rejected (2026-07-13) — don't propose it as a fallback.
 - Do not store tinydantic config in pydantic's `model_config` (pydantic#9992) — see the `src/tinydantic/_config.py` module docstring.
 
 ## Issues and reviews
@@ -41,7 +49,7 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 
   `AGENT_NAME` is the agent or harness (`Claude`, `Codex`), `MODEL_VERSION` the model that did the work. The bracketed tools are optional and space-separated — the brackets mark optionality, they are not typed. List only named analysis tools that produced evidence in the body (`pytest`, `mypy`, `ruff`, `pyright`); an ad-hoc repro script is not a tool, so most issues carry none. Drop any bracketed context-window or deployment suffix from the model id, since literal brackets would read as the tool syntax — `Claude:claude-opus-5`, not `Claude:claude-opus-5[1m]`.
 
-- Agents **MUST NOT** add a `Signed-off-by` trailer anywhere. Only a human can certify the DCO. `Assisted-by:` records help; it never signs for anyone. Commits keep the separate co-author trailer described in `CLAUDE.md` — don't put `Assisted-by:` on a commit or a PR body.
+- The same `Assisted-by:` trailer goes on **commits** an agent wrote — last line of the message body, same format. Agents **MUST NOT** add a `Signed-off-by` trailer anywhere: only a human can certify the DCO. `Assisted-by:` records help; it never signs for anyone.
 - Say what you could _not_ do. An agent-filed issue states plainly whether the reproduction was actually run, whether a fix was built or tested, and what remains unverified. An unverified report that reads as verified costs a maintainer more than no report.
 - Connect issues with GitHub's relationships rather than restating context: `gh issue edit <n> --add-blocking <m>`, `--add-blocked-by`, and `--parent` / `--add-sub-issue` for a genuine parent-child breakdown.
 
@@ -52,7 +60,7 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 - An `upstream`-labelled issue in this repo is a **drafting workspace**: where an agent and a maintainer iterate on the text of an upstream report until it is good enough to send. It is also the one place that context lives, so tinydantic issues held up by the upstream fix point at it with a relationship instead of each repeating the problem.
 - The draft carries what filing needs: target repo, affected version, reproduction, expected behavior, and the ready-to-post title and body — plus the patch or draft reply where one applies. Fence the ready-to-post text under a clear "do not post without approval" heading, so no reader mistakes a draft for something already sent.
 - **Once it is filed upstream, decide case by case whether the tracking issue still has work to do.** If the draft is spent, close it and re-point the dependent tinydantic issues at the upstream URL directly — one less place to keep current. Keep it open only when something here is still being iterated on: a follow-up reply in progress, a workaround to land, or several tinydantic issues whose shared context lives in it. While it stays open, mirror upstream state into it (filed, answered, merged, closed) — one-directional, and our issue is never written back to upstream.
-- **Do not manufacture work for upstream maintainers.** A tinydantic maintainer drives every upstream interaction; an agent's job ends at a draft worth sending. Prefer one well-prepared report over a series of partial ones, don't propose an upstream issue where a comment on an existing thread would do, and don't propose one at all for friction we have already chosen to work around.
+- **Do not manufacture work for upstream maintainers.** A tinydantic maintainer drives every upstream interaction; an agent's job ends at a draft worth sending. Prefer one well-prepared report over a series of partial ones, and don't propose an upstream issue where a comment on an existing thread would do. This restraint is about what reaches _upstream_ — it is never a reason to skip the tracking issue here, which is required for all friction including friction we have chosen to work around.
 - `docs/contributing/upstream_limitations.md` remains the registry of friction tinydantic works _around_ — the reason, the workaround, and the upstream change that would remove it. The tracking issue is where a _filing_ is drafted; link the two while both exist.
 
 ## Docs

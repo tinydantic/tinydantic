@@ -7,7 +7,8 @@ There is one section per upstream project — [TinyDB](#tinydb) and [Pydantic](#
 Two project policies anchor this page (see `AGENTS.md`):
 
 - `tinydantic` prefers each upstream project's public API. An internal/private API (underscore-prefixed, or living in a module marked private) may be used only when the needed behavior is impossible through the public API, only with explicit approval during planning/review, and every such use must be documented in that project's registry ([TinyDB](#tinydb-private-api-usage-registry), [Pydantic](#pydantic-private-api-usage-registry)) with its reason and the upstream change that would make it unnecessary.
-- Proposals to an upstream project are drafted in `untracked/upstream/` (git-ignored scratch space at the repository root) and are never filed on that project's issue tracker without explicit approval.
+- Every limitation and every private-API use also has a **tracking issue** in the `tinydantic` repository, labelled `upstream`, linked from its section or registry row here. Filing that issue is required as soon as the friction is found — including when the decision is to carry the workaround indefinitely. This page is the durable explanation; the issue is the unit of work.
+- Proposals to an upstream project are drafted **in that tracking issue** and are never filed on the upstream project's tracker without explicit maintainer approval. Agents never write to an upstream repository at all.
 
 This page must be kept current: whenever upstream friction is found, worked around, or resolved, update the relevant section here in the same change.
 
