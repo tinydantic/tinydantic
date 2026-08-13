@@ -149,6 +149,32 @@ tickets:
 
 Without it, that file would open with `1`, `10`, `2`. The trade-off is in the name: the middleware hands integer keys to the storage below it, which is fine for JSON and YAML but may break a storage that can only serialize string keys.
 
+### Counting storage operations
+
+TinyDB has no indexes, so costs are paid in whole-table reads and writes — and when something is slow, the first question is how many of those an operation triggered. [ProfilingMiddleware][tinydantic.tinydb.middlewares.ProfilingMiddleware] counts every `read()` and `write()` that reaches the storage it wraps. Keep a reference to the middleware — it is the same object TinyDB uses:
+
+```pycon
+>>> from tinydantic.tinydb.middlewares import ProfilingMiddleware
+>>> storage = ProfilingMiddleware(MemoryStorage)
+>>> db = TinyDB(storage=storage)
+>>> class Event(TinydanticModel, database=db, table_name="events"):
+...     name: str
+>>> Event(name="boot").insert()
+Event(id=1, name='boot')
+>>> storage.read_count, storage.write_count
+(2, 1)
+>>> Event.all()
+[Event(id=1, name='boot')]
+>>> storage.read_count
+3
+>>> storage.reset()
+>>> storage.read_count, storage.write_count
+(0, 0)
+
+```
+
+The counters are exact where timings are noisy, which makes them the right evidence for a performance bug report — an issue's measurement harness can state "3 storage reads" and be reproducible on any machine. Middlewares stack, and the position in the stack is what gets measured: `ProfilingMiddleware(CachingMiddleware(JSONStorage))` counts only what the cache lets through to disk, while `CachingMiddleware(ProfilingMiddleware(JSONStorage))` counts what the database asks for before caching.
+
 ## Beyond the built-ins
 
 TinyDB's [storage documentation](https://tinydb.readthedocs.io/en/latest/usage.html#storage-types) lists more options, and third-party packages add backends such as SQLite. Any storage that presents the TinyDB `Storage` interface works with `tinydantic` unchanged, because `tinydantic` only ever hands the storage layer JSON-safe primitives.

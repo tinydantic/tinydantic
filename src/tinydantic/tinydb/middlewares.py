@@ -101,6 +101,69 @@ class SortIntDocIDsMiddleware(Middleware):
         self.storage.write(data=int_keys_data)  # type: ignore[arg-type]
 
 
+class ProfilingMiddleware(Middleware):
+    """Middleware that counts the storage operations under it.
+
+    Wraps any [Storage][tinydb.storages.Storage] and counts each
+    ``read()`` and ``write()`` call that reaches it, so the storage
+    cost of an operation can be measured instead of guessed. TinyDB
+    has no indexes — costs are paid in whole-table reads and
+    writes — so the two counters are the numbers that matter when
+    asking why something is slow, and they are exact where timings
+    are noisy. Keep a reference to the middleware; it is the same
+    object TinyDB uses:
+
+    ```python
+    storage = ProfilingMiddleware(JSONStorage)
+    db = TinyDB("db.json", storage=storage)
+    ...
+    storage.read_count, storage.write_count
+    ```
+
+    Counters start at zero, live on the instance, and only ever
+    count operations on the storage this instance wraps. Call
+    [reset()][tinydantic.tinydb.middlewares.ProfilingMiddleware.reset]
+    to zero them between measurements.
+
+    Middlewares stack, and the position in the stack is what gets
+    measured: ``ProfilingMiddleware(CachingMiddleware(JSONStorage))``
+    counts only the operations the cache lets through, while
+    ``CachingMiddleware(ProfilingMiddleware(JSONStorage))`` counts
+    what the database asks for before caching.
+
+    Attributes:
+        read_count: Number of ``read()`` calls seen so far.
+        write_count: Number of ``write()`` calls seen so far.
+    """
+
+    def __init__(self, storage_cls: type[Storage] | Middleware) -> None:
+        """Wrap ``storage_cls`` with operation counting.
+
+        Args:
+            storage_cls: The storage class — or another middleware,
+                such as ``CachingMiddleware(JSONStorage)`` — to
+                wrap.
+        """
+        super().__init__(storage_cls)
+        self.read_count: int = 0
+        self.write_count: int = 0
+
+    def read(self) -> Any:
+        """Count the read, then forward it to the wrapped storage."""
+        self.read_count += 1
+        return self.storage.read()
+
+    def write(self, data: Any) -> None:
+        """Count the write, then forward it to the wrapped storage."""
+        self.write_count += 1
+        self.storage.write(data)
+
+    def reset(self) -> None:
+        """Zero both counters."""
+        self.read_count = 0
+        self.write_count = 0
+
+
 def _acquire_lock(fd: int) -> None:
     """Take a non-blocking exclusive OS lock on ``fd``.
 
