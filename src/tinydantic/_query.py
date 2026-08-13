@@ -15,8 +15,10 @@ GuardedQuery ── GuardedCondition
     └── DocIdQuery ── DocIdCondition
 ```
 
-**Guarded queries** are what ``Model.field``, ``q()``, and
-``field()`` return. They behave exactly like TinyDB's own types —
+**Guarded queries** are what ``Model.field`` and ``field()``
+return. (``q()`` is an identity cast for the type checkers: it
+returns whatever it was handed, so a raw ``tinydb.where(...)``
+comes back unguarded.) They behave exactly like TinyDB's own types —
 same tests, same hashvals, same equality, so they stay
 interchangeable with raw TinyDB conditions — except that the three
 protocols TinyDB leaves silently wrong raise
@@ -185,11 +187,11 @@ class GuardedCondition(QueryInstance):
         raise QueryTypeError(_BOOL_COND_MSG)
 
     def __and__(self, other: QueryInstance) -> QueryInstance:
-        """Compose with ``and``, keeping the guard."""
+        """Compose with ``&``, keeping the guard."""
         return _guarded(super().__and__(other))
 
     def __or__(self, other: QueryInstance) -> QueryInstance:
-        """Compose with ``or``, keeping the guard."""
+        """Compose with ``|``, keeping the guard."""
         return _guarded(super().__or__(other))
 
     def __invert__(self) -> QueryInstance:
@@ -288,11 +290,19 @@ class GuardedQuery(Query):
     __hash__ = Query.__hash__
 
     def exists(self) -> Any:
-        """Build an "key is present" condition."""
+        """Build a "key is present" condition."""
         return _guarded(super().exists())
 
     def matches(self, regex: str, flags: int = 0) -> Any:
-        """Build a whole-value regex condition."""
+        r"""Build a prefix-anchored regex condition.
+
+        TinyDB implements this with ``re.match``, which anchors at
+        the start of the value only — so a pattern like
+        ``.*@example\.com`` also matches
+        ``'alice@example.com.evil'``. End the pattern with ``$``
+        for a whole-value match. TinyDB's own docstring says
+        "whole string"; see the Upstream Limitations docs page.
+        """
         return _guarded(super().matches(regex, flags))
 
     def search(self, regex: str, flags: int = 0) -> Any:

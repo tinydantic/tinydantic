@@ -60,7 +60,7 @@ User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city
 
 ```
 
-The query object also exposes TinyDB's own methods. `.matches` tests the _whole_ value against a regular expression, `.search` looks for the pattern _anywhere_ in the value, and `.test` runs an arbitrary predicate:
+The query object also exposes TinyDB's own methods. `.matches` anchors a regular expression at the _start_ of the value, `.search` looks for the pattern _anywhere_ in the value, and `.test` runs an arbitrary predicate:
 
 ```pycon
 >>> User.search(User.email.matches(r".*@example\.com"))
@@ -71,6 +71,26 @@ The query object also exposes TinyDB's own methods. `.matches` tests the _whole_
 >>> User.search(User.age.test(lambda v: v >= 30))
 [User(id=1, name='Alice', age=30, email='alice@example.com', address=Address(city='Portland', country='US')),
   User(id=3, name='Carol', age=35, email='carol@example.com', address=Address(city='Berlin', country='DE'))]
+
+```
+
+> [!WARNING]
+>
+> `.matches()` is anchored at the start only — it runs `re.match`, not `re.fullmatch`, so the pattern above also matches `alice@example.com.evil`. End the pattern with `$` when you mean the whole value. (TinyDB's own docstring says "whole string has to match"; that is the wording, not the behavior — tracked in [#144](https://github.com/tinydantic/tinydantic/issues/144).)
+
+```pycon
+>>> mallory = User(
+...     name="Mallory",
+...     age=40,
+...     email="mallory@example.com.evil",
+...     address=Address(city="Berlin", country="DE"),
+... )
+>>> _ = mallory.insert()
+>>> [u.name for u in User.search(User.email.matches(r".*@example\.com"))]
+['Alice', 'Carol', 'Mallory']
+>>> [u.name for u in User.search(User.email.matches(r".*@example\.com$"))]
+['Alice', 'Carol']
+>>> mallory.delete()
 
 ```
 

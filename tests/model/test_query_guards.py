@@ -131,7 +131,7 @@ class TestBooleanContext:
         exactly the input it is offered for. Running all three
         spellings against a miss pins that they return a bool.
         """
-        cond = User.name == "nobody by this name"
+        cond = q(User.name) == "nobody by this name"
         with pytest.raises(QueryTypeError) as excinfo:
             bool(cond)
         message = str(excinfo.value)
