@@ -101,12 +101,6 @@ _FIELD_ADAPTERS_ATTR = "__tinydantic_field_adapters__"
 _MANAGED_FIELDS = frozenset({"id", "revision_id"})
 
 
-# Sentinel distinguishing "no condition was passed" from an
-# accidental None value. Every optional-``cond`` method defaults to
-# it, so an explicitly passed None is always reported as the wrong
-# kind of object rather than as a missing selector.
-
-
 # Name of the per-class attribute caching unique field names
 # (computed once in __pydantic_init_subclass__).
 _UNIQUE_MARKERS_ATTR = "__tinydantic_unique_markers__"
@@ -341,9 +335,13 @@ def field(model: type[TinydanticModel], name: str) -> Query:
     ```
 
     The model is a build-time lookup table only — it never enters
-    the returned object, so the condition is an ordinary TinyDB
-    query, equal to (and hashing as) ``where(name)``. It composes
-    with raw queries and with ``Model.field`` conditions freely.
+    the returned object, so the condition is a ``GuardedQuery`` on
+    that key alone: equal to (and hashing as) ``where(name)``, and
+    composing with raw queries and with ``Model.field`` conditions
+    freely. Exactly like ``Model.field`` access, it raises
+    [QueryTypeError][tinydantic.QueryTypeError] where TinyDB is
+    silently wrong (boolean context, iteration, non-string path
+    steps).
 
     Accepted names are the model's fields plus its computed fields,
     which pydantic serializes and which therefore reach storage.
@@ -472,9 +470,15 @@ class TinydanticModelMetaclass(ModelMetaclass):
     """Metaclass providing class-level field queries.
 
     Accessing a model *field* on the model *class* (not an instance)
-    returns ``tinydb.queries.where(field_name)``, so expressions like
+    returns a ``GuardedQuery`` on that field, so expressions like
     ``User.name == "Alice"`` build TinyDB queries directly from the
-    model definition.
+    model definition. A guarded query tests, hashes, and compares
+    exactly like ``tinydb.queries.where(field_name)`` — it stays
+    interchangeable with raw TinyDB conditions — and differs only
+    in raising
+    [QueryTypeError][tinydantic.QueryTypeError] for the three
+    protocols TinyDB leaves silently wrong: boolean context,
+    iteration, and non-string path steps.
 
     The ``id`` field is special-cased: it maps to TinyDB's
     ``doc_id``, which never appears in the stored document body, so
@@ -687,10 +691,14 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         Always *return* the fields you want written — assigning to
         ``self`` here is silently dropped by ``patch()``, which
         writes only named fields. Raising aborts the write with
-        nothing written. The table-level ``update()`` and
-        ``update_all()`` write by condition with no instance, so
-        they never call this. The default does nothing; overrides
-        can chain with ``super().before_write(fields)``.
+        nothing written.
+
+        The five update verbs — ``update()``, ``update_by_ids()``,
+        ``update_all()``, ``update_many()``, and
+        ``FindQuery.update()`` — apply a mapping to stored
+        documents with no instance in hand, so none of them call
+        this. The default does nothing; overrides can chain with
+        ``super().before_write(fields)``.
         """
         return None
 
@@ -853,6 +861,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 existing class attribute (the ``Model.field``
                 query sugar would silently break) and is not
                 listed in the ``shadowed_fields=`` class kwarg.
+            ConstraintFieldError: If a ``constraints=`` entry names
+                ``id`` or a name that is not a model field (see
+                ``_validate_constraints``).
         """
         super().__pydantic_init_subclass__(**kwargs)
         check_config_ambiguity(cls)
@@ -951,11 +962,34 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         User.bind(database=TinyDB("db.json"))
         ```
 
-        Every [TinydanticConfig][tinydantic.TinydanticConfig] key
-        can be bound late. Only the keys passed are updated; other
-        keys keep their current (possibly inherited) values.
-        Binding a subclass never affects its parents. The inverse
-        is [unbind][tinydantic.TinydanticModel.unbind].
+        Five of the six
+        [TinydanticConfig][tinydantic.TinydanticConfig] keys can be
+        bound late — ``database``, ``table_name``,
+        ``validate_writes``, ``shadowed_fields``, and
+        ``constraints``. ``use_revision`` cannot: it injects a
+        ``revision_id`` field, and pydantic collects fields from
+        the class namespace during class creation, so it is
+        settable only as a class keyword.
+
+        Only the keys passed are updated; other keys keep their
+        current (possibly inherited) values. Binding a subclass
+        never affects its parents. The inverse is
+        [unbind][tinydantic.TinydanticModel.unbind].
+
+        Args:
+            database: The TinyDB instance to store documents in.
+            table_name: The table to use (defaults to the
+                snake_cased class name).
+            validate_writes: Whether write paths validate the
+                merged document before storing it.
+            shadowed_fields: Field names allowed to shadow class
+                attributes, queried with
+                [field()][tinydantic.field].
+            constraints: Multi-field uniqueness constraints.
+
+        Raises:
+            ConstraintFieldError: If a ``constraints`` entry names
+                ``id`` or a name that is not a model field.
         """
         config = cast(
             "TinydanticConfig",
@@ -1106,6 +1140,15 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             DocumentAlreadyExistsError: If any model's ``id`` is
                 already stored, or repeated within the batch;
                 nothing is inserted.
+            UniqueConstraintError: If any model would duplicate a
+                [Unique][tinydantic.Unique] field value or a
+                [UniqueConstraint][tinydantic.UniqueConstraint]
+                field tuple — held by a stored document, or by an
+                earlier model in the same batch; nothing is
+                inserted.
+            pydantic.ValidationError: If any model's serialized
+                body fails validation on a
+                ``validate_writes=True`` model (the default).
         """
         docs = list(documents)
         for doc in docs:
@@ -1226,12 +1269,14 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
     @classmethod
     def _check_doc_ids_exist(cls, doc_ids: list[int]) -> None:
-        """Raise for explicit doc_ids that are not in the table.
+        """Raise for explicit doc ids that are not in the table.
 
-        TinyDB >= 4.9 *silently skips* missing ids in
-        ``update(doc_ids=...)``/``remove(doc_ids=...)``, updating the
-        ids that do exist and returning only those (upstream #591;
-        before 4.9 it raised a bare ``KeyError``). Either way the
+        TinyDB >= 4.9 *silently skips* missing ids in its own
+        ``Table.update(doc_ids=...)``/``Table.remove(doc_ids=...)``,
+        updating the ids that do exist and returning only those
+        (upstream #591; before 4.9 it raised a bare ``KeyError``).
+        tinydantic's ``update_by_ids()`` and ``remove_by_ids()``
+        are what call this. Either way the
         caller learns nothing useful, and the 4.9 behavior is the
         more dangerous of the two: a typo'd id in a batch is a
         partial write that reports success.
@@ -1263,10 +1308,17 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         Merges per-field [Unique][tinydantic.Unique] markers
         (collected at class definition) with the ``constraints``
         config key (resolved here, so late ``bind()`` works).
-        Exact duplicates — same field *set* and same ``key``
-        callable (or both key-less) — collapse to one; the same
-        field set with different keys yields distinct constraints
-        that all enforce.
+        Constraints collapse to one when they name the same field
+        *set* and carry the same ``key`` callable (or are both
+        key-less); the same field set with different keys yields
+        distinct constraints that all enforce.
+
+        Field *order* is not part of that identity, even though a
+        ``key`` callable receives values in field order — so
+        ``UniqueConstraint("a", "b", key=f)`` swallows
+        ``UniqueConstraint("b", "a", key=f)`` although the two
+        compute different keys whenever ``f`` is order-sensitive.
+        Tracked in issue #142.
         """
         markers: tuple[UniqueConstraint, ...] = getattr(
             cls,
@@ -1655,9 +1707,20 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         TinyDB's own evaluator only ever sees the document body,
         which does not contain the id.
 
+        Args:
+            cond: The query condition selecting documents. To read
+                the whole table, use
+                [all][tinydantic.TinydanticModel.all].
+
+        Returns:
+            The matching documents as validated models, in table
+            order. An empty list when nothing matched.
+
         Raises:
             QueryTypeError: If ``cond`` is not something TinyDB
                 can evaluate as a condition.
+            pydantic.ValidationError: If a stored body fails
+                validation against the model.
         """
         _require_condition(
             cond,
@@ -1957,10 +2020,17 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         A ``fields`` mapping gets the same treatment ``insert()`` and
         ``save()`` give whole models: each value that belongs to a
         model field is validated against that field's type and
-        serialized to a JSON-safe primitive before it reaches storage
-        (keys that are not model fields pass through unchanged). A
-        transform callable is handed to TinyDB as-is — what it writes
-        is up to you.
+        serialized to a JSON-safe primitive before it reaches
+        storage. Keys that are not model fields are rejected, and
+        pass through unchanged only with ``extra_keys="allow"``.
+
+        A transform callable runs inside tinydantic's own write
+        cycle: it mutates a copy of each matched body,
+        ``revision_id`` rotates *after* it (so a transform can
+        never forge a token), and its output is validated like any
+        other merge. Only on the ``validate_writes=False`` fast
+        path, and only when the selector is not an id condition, is
+        the callable handed to TinyDB unmediated.
 
         Unless the model opts out via ``validate_writes=False``,
         each matched document's merged result — stored body plus
@@ -1968,11 +2038,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         before anything is written, so an update can never persist
         a body its next read would reject. Cross-field
         ``model_validator(mode="after")`` invariants run against
-        the merge with the real document id visible; stored keys
-        the model does not know are ignored by validation and
-        preserved in the written body. The whole batch is one
-        atomic read-modify-write cycle (see ``_run_write_cycle``):
-        a validation failure on any matched document means nothing
+        the merge with the real document id visible. Stored keys
+        the model does not know are preserved in the written body;
+        under pydantic's default ``extra="ignore"`` they are also
+        invisible to the check, while an ``extra="forbid"`` model
+        rejects the merge. The whole batch is one atomic
+        read-modify-write cycle (see ``_run_write_cycle``): a
+        validation failure on any matched document means nothing
         is written.
 
         A condition is required — TinyDB's own ``update()`` treats
@@ -1995,9 +2067,14 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         [Document][tinydb.table.Document] wrappers so they can
         read ``doc_id``.
 
-        As the deliberate table-level loose path, ``update()``
-        does NOT enforce [Unique][tinydantic.Unique] field
-        markers; every other write verb does.
+        [Unique][tinydantic.Unique] markers and
+        [UniqueConstraint][tinydantic.UniqueConstraint]s are
+        enforced by the six writes that carry a model instance —
+        ``insert()``, ``insert_many()``, ``save()``, ``replace()``,
+        ``patch()``, and ``upsert()``. The five update verbs —
+        ``update()``, ``update_by_ids()``, ``update_all()``,
+        ``update_many()``, and ``FindQuery.update()`` — are the
+        deliberate loose path and enforce none of them.
 
         Args:
             fields: A mapping of new field values, or a transform
@@ -2017,8 +2094,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             SelectorError: If ``cond`` is not provided — use
                 [update_all][tinydantic.TinydanticModel.update_all]
                 to update every document.
+            QueryTypeError: If ``cond`` is ``None`` or is not a
+                usable query condition.
             DocumentIDUpdateError: If a mapping contains an ``id``
                 key.
+            RevisionUpdateError: If a mapping contains a
+                ``revision_id`` key on a ``use_revision=True``
+                model.
             UnknownUpdateFieldError: If a mapping contains keys
                 that are not model fields and ``extra_keys`` is
                 ``"reject"`` (the default).
@@ -2085,6 +2167,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 table; nothing is written.
             DocumentIDUpdateError: If a mapping contains an ``id``
                 key.
+            RevisionUpdateError: If a mapping contains a
+                ``revision_id`` key on a ``use_revision=True``
+                model.
             UnknownUpdateFieldError: If a mapping contains keys
                 that are not model fields and ``extra_keys`` is
                 ``"reject"`` (the default).
@@ -2191,8 +2276,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         them, including merged-result validation (unless the model
         opts out via ``validate_writes=False``) as one atomic
         cycle: a validation failure on any document means nothing
-        is written. Like ``update()``, this loose path does NOT
-        enforce [Unique][tinydantic.Unique] field markers.
+        is written. Like every update verb, this loose path does
+        NOT enforce [Unique][tinydantic.Unique] field markers or
+        [UniqueConstraint][tinydantic.UniqueConstraint]s.
 
         Args:
             fields: A mapping of new field values, or a transform
@@ -2208,6 +2294,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         Raises:
             DocumentIDUpdateError: If a mapping contains an ``id``
                 key.
+            RevisionUpdateError: If a mapping contains a
+                ``revision_id`` key on a ``use_revision=True``
+                model.
             UnknownUpdateFieldError: If a mapping contains keys
                 that are not model fields and ``extra_keys`` is
                 ``"reject"`` (the default).
@@ -2253,17 +2342,19 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         """Apply several (fields_or_transform, cond) updates at once.
 
         Each update's fields mapping is validated and serialized
-        exactly as in [update][tinydantic.TinydanticModel.update];
-        transform callables pass through as-is.
+        exactly as in [update][tinydantic.TinydanticModel.update],
+        and transform callables run inside tinydantic's own write
+        cycle on the same terms.
 
         Unless the model opts out via ``validate_writes=False``,
         each matched document's merged result is validated exactly
         as in [update][tinydantic.TinydanticModel.update], and the
         whole batch is one atomic read-modify-write cycle (see
         ``_run_write_cycle``): a validation failure on any matched
-        document means nothing is written. Like ``update()``, this
-        loose path does NOT enforce
-        [Unique][tinydantic.Unique] field markers.
+        document means nothing is written. Like every update verb,
+        this loose path does NOT enforce
+        [Unique][tinydantic.Unique] field markers or
+        [UniqueConstraint][tinydantic.UniqueConstraint]s.
 
         Pairs may use conditions on ``Model.id`` (bare or composed
         with field conditions) and mix freely with plain
@@ -2286,8 +2377,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             The ids of all updated documents.
 
         Raises:
+            QueryTypeError: If a pair's ``cond`` is not a usable
+                query condition.
             DocumentIDUpdateError: If a mapping contains an ``id``
                 key.
+            RevisionUpdateError: If a mapping contains a
+                ``revision_id`` key on a ``use_revision=True``
+                model.
             UnknownUpdateFieldError: If a mapping contains keys
                 that are not model fields and ``extra_keys`` is
                 ``"reject"`` (the default).
@@ -2359,6 +2455,11 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         documents match, linking ``document`` to any one of them
         would be arbitrary, so its ``id`` is left untouched.
 
+        Args:
+            document: The model instance to write.
+            cond: The query condition selecting documents to
+                update. Omit it to update by ``document.id``.
+
         Returns:
             The ids of the updated (or inserted) documents.
 
@@ -2368,6 +2469,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 is nothing to select the document to update by.
             QueryTypeError: If ``cond`` is given but is not
                 something TinyDB can evaluate as a condition.
+            UniqueConstraintError: If the write would duplicate a
+                [Unique][tinydantic.Unique] field value or a
+                [UniqueConstraint][tinydantic.UniqueConstraint]
+                field tuple held by another document.
+            pydantic.ValidationError: If the serialized document
+                fails validation on a
+                ``validate_writes=True`` model (the default).
         """
         selector = _checked_cond(
             cond,
@@ -2473,6 +2581,8 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             SelectorError: If ``cond`` is not provided — removing
                 every document must be spelled
                 [truncate][tinydantic.TinydanticModel.truncate].
+            QueryTypeError: If ``cond`` is ``None`` or is not a
+                usable query condition.
         """
         selector = _checked_cond(
             cond,
@@ -2768,6 +2878,13 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         Raises:
             DocumentAlreadyExistsError: If ``id`` is set to an id
                 that already exists in the table.
+            UniqueConstraintError: If the write would duplicate a
+                [Unique][tinydantic.Unique] field value or a
+                [UniqueConstraint][tinydantic.UniqueConstraint]
+                field tuple held by another document.
+            pydantic.ValidationError: If the serialized body fails
+                validation on a ``validate_writes=True`` model (the
+                default).
         """
         self._before_write_whole_model()
         cls = type(self)
@@ -2823,6 +2940,14 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 document was modified since this instance read it
                 (``deleted=True`` when it was deleted and this
                 instance had read it); nothing is written.
+            UniqueConstraintError: If the replacement would
+                duplicate a [Unique][tinydantic.Unique] field value
+                or a
+                [UniqueConstraint][tinydantic.UniqueConstraint]
+                field tuple held by another document.
+            pydantic.ValidationError: If the serialized body fails
+                validation on a ``validate_writes=True`` model (the
+                default).
         """
         if self.id is None:
             raise DocumentIDRequiredError(
@@ -2963,6 +3088,11 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 the token rotates automatically.
             UnknownUpdateFieldError: If a key is not a model
                 field.
+            UniqueConstraintError: If the merged result would
+                duplicate a [Unique][tinydantic.Unique] field value
+                or a
+                [UniqueConstraint][tinydantic.UniqueConstraint]
+                field tuple held by another document.
             pydantic.ValidationError: If a value fails validation
                 or the merged document violates a model invariant;
                 nothing is written.
@@ -3077,6 +3207,15 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
             StaleDocumentError: If ``use_revision=True`` and the
                 document was modified or deleted since this
                 instance read it; nothing is written.
+            UniqueConstraintError: If the write would duplicate a
+                [Unique][tinydantic.Unique] field value or a
+                [UniqueConstraint][tinydantic.UniqueConstraint]
+                field tuple held by another document.
+            pydantic.ValidationError: If the serialized body fails
+                validation on a ``validate_writes=True`` model (the
+                default).
+            DocumentAlreadyExistsError: If ``id`` is unset and the
+                insert path hits an id already in the table.
         """
         if self.id is None:
             return self.insert()
