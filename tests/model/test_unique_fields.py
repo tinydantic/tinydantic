@@ -225,10 +225,14 @@ class TestUpsert:
 
 
 class TestDocumentedBypass:
-    """The table-level bulk path deliberately skips the check."""
+    """The update verbs deliberately skip the check."""
 
-    def test_update_bypasses_uniqueness(self, db: TinyDB):
-        """update() is the documented loose path — pinned here."""
+    def test_update_by_ids_bypasses_uniqueness(self, db: TinyDB):
+        """update_by_ids() is a documented loose path.
+
+        update()'s own bypass is pinned in
+        ``test_unique_constraints.py``.
+        """
 
         class User(TinydanticModel, database=db):
             """Test model."""

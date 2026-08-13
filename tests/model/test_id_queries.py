@@ -184,11 +184,11 @@ class TestIdConditionReads:
         assert user.id == 2
         assert user.name == "Bob"
 
-    def test_get_missing_id_returns_none(
+    def test_get_or_none_missing_id_returns_none(
         self,
         users: type[UserBase],
     ) -> None:
-        """A get with an unknown id returns None."""
+        """get_or_none() with an unknown id returns None."""
         assert users.get_or_none(q(users.id) == 999) is None
 
     @pytest.mark.parametrize(
@@ -235,11 +235,11 @@ class TestIdConditionReads:
         found = users.search(~(q(users.id) == 2))
         assert {user.id for user in found} == {1, 3}
 
-    def test_get_by_cond_and_get_or_raise(
+    def test_get_by_condition(
         self,
         users: type[UserBase],
     ) -> None:
-        """The get() delegates inherit translation."""
+        """get() with an id condition inherits translation."""
         by_cond = users.get(q(users.id) == 3)
         assert by_cond is not None
         assert by_cond.name == "Carol"

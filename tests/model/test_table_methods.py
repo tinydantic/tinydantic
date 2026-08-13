@@ -81,8 +81,8 @@ class TestUpdate:
         assert fetched is not None
         assert fetched.age == 38
 
-    def test_update_by_doc_ids(self, user_class: type[UserBase]):
-        """doc_ids form."""
+    def test_update_by_ids(self, user_class: type[UserBase]):
+        """update_by_ids() form."""
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
         user_class.update_by_ids({"age": 40}, [user.id])
@@ -272,8 +272,8 @@ class TestRemove:
         assert removed == [user.id]
         assert user_class.count(user_class.name == "Bob") == 1  # type: ignore[arg-type]
 
-    def test_remove_by_doc_ids(self, user_class: type[UserBase]):
-        """doc_ids form."""
+    def test_remove_by_ids(self, user_class: type[UserBase]):
+        """remove_by_ids() form."""
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
         removed = user_class.remove_by_ids([user.id])
@@ -283,7 +283,7 @@ class TestRemove:
 
 
 class TestMissingDocIDsRefuseWholeBatch:
-    """A doc_ids batch naming a missing id writes nothing.
+    """An id batch naming a missing id writes nothing.
 
     TinyDB >= 4.9 silently skips ids that are not in the table and
     reports only the ids it touched (upstream #591), so the raw
@@ -298,7 +298,7 @@ class TestMissingDocIDsRefuseWholeBatch:
         self,
         user_class: type[UserBase],
     ):
-        """update() leaves the existing id alone as well."""
+        """update_by_ids() leaves the existing id alone as well."""
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
         with pytest.raises(DocumentNotFoundError):
@@ -311,7 +311,7 @@ class TestMissingDocIDsRefuseWholeBatch:
         self,
         user_class: type[UserBase],
     ):
-        """remove() leaves the existing document in place."""
+        """remove_by_ids() leaves the existing document in place."""
         user = user_class(name="Alice", age=37).insert()
         assert user.id is not None
         with pytest.raises(DocumentNotFoundError):
