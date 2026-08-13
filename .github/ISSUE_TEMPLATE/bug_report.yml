@@ -1,0 +1,107 @@
+name: Bug report
+description: tinydantic does something other than what it says it does
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Please search
+        [open and closed issues](https://github.com/tinydantic/tinydantic/issues?q=is%3Aissue)
+        first — if this is already reported, comment there rather than
+        opening a duplicate.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happens
+      description: >-
+        One or two sentences. What did tinydantic do, and what did you
+        expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: >-
+        A **complete, minimal, runnable** script — imports, model
+        definitions, database setup, and the calls that show the
+        behavior. Someone must be able to paste this into a file and
+        run it unchanged.
+
+
+        Minimal means minimal: cut every model, field, and call that
+        is not required to show the behavior. Prefer `MemoryStorage`
+        unless the point is on-disk state, one model over two, one
+        field over three.
+      render: python
+      placeholder: |
+        from tinydb import TinyDB
+        from tinydb.storages import MemoryStorage
+
+        from tinydantic import TinydanticModel
+
+        db = TinyDB(storage=MemoryStorage)
+
+
+        class User(TinydanticModel, database=db):
+            name: str
+
+
+        User.insert(User(name="Alice"))
+        print(User.all())
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      description: How you ran it.
+      placeholder: python repro.py
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual output
+      description: >-
+        What the script printed, verbatim — copied, not retyped.
+        Include the traceback if it raised.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected output
+      description: >-
+        What it should have printed instead, and why you expected
+        that.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      value: |
+        - tinydantic:
+        - Python:
+        - TinyDB:
+        - pydantic:
+        - OS:
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: >-
+        Why it matters, what you have ruled out, what you were unable
+        to check.

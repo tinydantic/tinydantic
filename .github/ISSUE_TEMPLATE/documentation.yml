@@ -1,0 +1,45 @@
+name: Documentation
+description: Something in the docs is wrong, missing, or misleading
+labels:
+  - documentation
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Please search
+        [open and closed issues](https://github.com/tinydantic/tinydantic/issues?q=is%3Aissue)
+        first — if this is already reported, comment there rather than
+        opening a duplicate.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What is wrong or missing
+      description: >-
+        One or two sentences, with a link to the page if it exists.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: >-
+        Show it rather than assert it.
+
+
+        If the docs describe behavior that does not match the code,
+        put a **complete, minimal, runnable** script here with the
+        output it printed. If a page is missing entirely, give the
+        command you searched, the paths it covered, and its output.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What it should say
+      description: >-
+        Draft wording is welcome — the closer to final, the faster it
+        lands.

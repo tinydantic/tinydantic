@@ -1,0 +1,79 @@
+name: Enhancement
+description: A change to what tinydantic does or how it performs
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Please search
+        [open and closed issues](https://github.com/tinydantic/tinydantic/issues?q=is%3Aissue)
+        first — if this is already reported, comment there rather than
+        opening a duplicate.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What is missing
+      description: >-
+        One or two sentences on the gap, and what you want instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction — the behavior today
+      description: >-
+        A **complete, minimal, runnable** script showing what
+        tinydantic does now, so the gap can be seen rather than taken
+        on trust. For a cost or complexity finding this is the
+        measurement harness: the storage, the table size, the number
+        of runs.
+
+
+        If there is genuinely nothing to run — a feature that does not
+        exist at all — say so here and give the evidence instead: the
+        command you searched, the paths it covered, and its output.
+      render: python
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Output
+      description: >-
+        What the script printed, verbatim — copied, not retyped. For a
+        measurement, the numbers it produced.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      value: |
+        - tinydantic:
+        - Python:
+        - TinyDB:
+        - pydantic:
+        - OS:
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: Who hits this, and what it costs them.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What to do
+      description: >-
+        The change you have in mind, and any alternatives you weighed.

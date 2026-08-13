@@ -1,0 +1,103 @@
+name: Upstream friction
+description: >-
+  A limitation in TinyDB, pydantic, or another dependency that
+  tinydantic has to work around
+labels:
+  - upstream
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        This issue is a **drafting workspace**, not a report to the
+        upstream project. Nothing here is filed anywhere else unless a
+        tinydantic maintainer decides to send it. See the
+        [limitations](https://github.com/tinydantic/tinydantic/blob/main/docs/contributing/upstream_limitations.md)
+        page for the friction already recorded.
+
+
+        Please also add a type label — `bug`, `enhancement`, or
+        `documentation` — alongside `upstream`.
+
+  - type: input
+    id: project
+    attributes:
+      label: Upstream project
+      placeholder: msiemens/tinydb
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Affected version
+      description: >-
+        The version you observed this on. If you checked whether a
+        newer release fixes it, say which.
+      placeholder: TinyDB 4.9.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: limitation
+    attributes:
+      label: The limitation
+      description: >-
+        What upstream does, stated so that a maintainer of that
+        project can read it without knowing anything about tinydantic.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: >-
+        A **complete, minimal, runnable** script that shows the
+        upstream behavior — ideally using only the upstream project,
+        with no tinydantic import at all. That is what makes it
+        sendable.
+
+
+        Cut every model, field, and call not required to show the
+        behavior.
+      render: python
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual output
+      description: >-
+        What the script printed, verbatim — copied, not retyped.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What it should do instead, and why.
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What tinydantic carries because of it
+      description: >-
+        The workaround, where it lives, and what it costs. Note any
+        private-API use — it needs a row in the registry on the
+        upstream limitations page.
+    validations:
+      required: true
+
+  - type: textarea
+    id: fix
+    attributes:
+      label: What would remove the workaround
+      description: >-
+        The upstream change that would close this. A patch or a draft
+        of the report is welcome — fence it under a heading that says
+        it has not been sent.
