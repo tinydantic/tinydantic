@@ -312,10 +312,12 @@ Book(id=3, title='Snow Crash', author='Stephenson', year=1993, in_stock=True)
 Update mappings cannot set `id` — it maps to TinyDB's `doc_id`, which an update cannot change. Trying raises [DocumentIDUpdateError][tinydantic.DocumentIDUpdateError]:
 
 ```pycon
->>> Book.update({"id": 99}, Book.title == "Dune")
+>>> Book.update({"id": 99}, Book.title == "Dune")  # doctest: -IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
   ...
-tinydantic._errors.DocumentIDUpdateError: update() cannot set 'id'
+tinydantic._errors.DocumentIDUpdateError: update() cannot set 'id' on 'Book'
+— id maps to TinyDB's doc_id, which updates cannot change. Select documents
+with update_by_ids() or a query condition instead.
 
 ```
 

@@ -517,6 +517,25 @@ class TestIdConditionWrites:
                 [({"id": 99}, where("name") == "Alice")],
             )
 
+    def test_id_update_hint_names_a_live_selector(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """The hint names update_by_ids(), and it works.
+
+        It used to name the ``doc_ids=`` parameter, removed this
+        cycle in favor of ``update_by_ids()`` — advice pointing at
+        an API that no longer exists.
+        """
+        with pytest.raises(DocumentIDUpdateError) as excinfo:
+            users.update({"id": 99}, where("name") == "Alice")
+        message = str(excinfo.value)
+
+        assert "update_by_ids()" in message
+        assert "doc_ids=" not in message
+
+        assert users.update_by_ids({"age": 41}, [1]) == [1]
+
 
 class TestIdFromCondition:
     """Tests for extracting a document id from a condition."""
