@@ -172,5 +172,5 @@ def db(db_session):
 ## Where next
 
 - [Configuration](configuration.md) — how `bind()` and config inheritance resolve across a class hierarchy.
-- [Storage](storage.md) — in-memory versus file-backed backends and their lifecycle.
+- [Storage](storage.md) — in-memory versus file-backed backends and their lifecycle, including [counting storage operations](storage.md#counting-storage-operations) in a test with `ProfilingMiddleware`.
 - [FastAPI](fastapi.md) — the application-factory and `bind()` patterns applied to a real API, tested with `TestClient`.
