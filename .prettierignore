@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Chris Wilson <christopher.david.wilson@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
+# Prettier does not read .gitignore, so without this a bare
+# `npx prettier --check .` walks build output and scratch space and
+# reports failures on files nothing else in the toolchain checks.
+# Mirrors what the rest of the tooling already skips — see
+# `gitignore: true` in .markdownlint-cli2.yaml, `exclude` in ruff.toml,
+# and `ignorePaths` in cspell.config.yaml.
+#
+# The pre-commit hook is unaffected: it only ever passes staged files,
+# and everything listed here is git-ignored.
+
+.superpowers/
+.venv/
+node_modules/
+site/
+untracked/
