@@ -194,8 +194,8 @@ class DocumentIDUpdateError(TinydanticUserError):
         super().__init__(
             f"update() cannot set 'id' on {model_name!r} — id "
             "maps to TinyDB's doc_id, which updates cannot "
-            "change. Use doc_ids=[...] or a query condition to "
-            "select documents instead.",
+            "change. Select documents with update_by_ids() or a "
+            "query condition instead.",
         )
 
 
