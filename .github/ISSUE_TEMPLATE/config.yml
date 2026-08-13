@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question about using tinydantic
+    url: https://github.com/tinydantic/tinydantic/discussions
+    about: >-
+      Ask in Discussions. Issues are for defects, enhancements, and
+      documentation gaps.
+  - name: A defect in TinyDB or pydantic
+    url: https://github.com/tinydantic/tinydantic/issues/new?template=upstream.yml
+    about: >-
+      File it here as upstream friction. Nothing is reported to an
+      upstream project without a maintainer sending it.
