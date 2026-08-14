@@ -1009,6 +1009,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-shared-update-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The shared update contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#patch" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2522,6 +2533,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-shared-update-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The shared update contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#patch" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2864,7 +2886,7 @@
 </span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">year</span>
 </span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="go">1965</span>
 </span></code></pre></div>
-<p>Every whole-model write path (<code>insert()</code>, <code>save()</code>, <code>replace()</code>, <code>upsert()</code>) shares this boundary check. Models can opt out with the <code>validate_writes=False</code> class kwarg — the escape hatch for performance-critical bulk writes; see <a href="../configuration/">Configuration</a>.</p>
+<p>Every whole-model write path (<code>insert()</code>, <code>insert_many()</code>, <code>save()</code>, <code>replace()</code>, <code>upsert()</code>) shares this boundary check. Models can opt out with the <code>validate_writes=False</code> class kwarg — the escape hatch for performance-critical bulk writes; see <a href="../configuration/">Configuration</a>.</p>
 <h3 id="replace"><code>replace</code><a class="headerlink" href="#replace" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            replace" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.replace">replace()</a> overwrites the entire stored document with the instance's current state — fields absent from the model are removed. It returns nothing and requires an existing document.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">dune</span><span class="o">.</span><span class="n">year</span> <span class="o">=</span> <span class="mi">1966</span>
@@ -2898,11 +2920,16 @@
 </span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="go">Book(id=3, title=&#39;Snow Crash&#39;, author=&#39;Stephenson&#39;, year=1993, in_stock=True)</span>
 </span></code></pre></div>
 <p>Update mappings cannot set <code>id</code> — it maps to TinyDB's <code>doc_id</code>, which an update cannot change. Trying raises <a class="autorefs autorefs-internal" title="            DocumentIDUpdateError" href="../../reference/api/tinydantic/#tinydantic.DocumentIDUpdateError">DocumentIDUpdateError</a>:</p>
-<div class="language-pycon highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">99</span><span class="p">},</span> <span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s2">&quot;Dune&quot;</span><span class="p">)</span>
-</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="gt">Traceback (most recent call last):</span>
-</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">  </span><span class="c">...</span>
-</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="gr">tinydantic._errors.DocumentIDUpdateError</span>: <span class="n">update() cannot set &#39;id&#39;</span>
+<div class="language-pycon highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">99</span><span class="p">},</span> <span class="n">Book</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s2">&quot;Dune&quot;</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="gp">... </span><span class="p">)</span>  <span class="c1"># doctest: -IGNORE_EXCEPTION_DETAIL</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="gt">Traceback (most recent call last):</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">  </span><span class="c">...</span>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="gr">tinydantic._errors.DocumentIDUpdateError</span>: <span class="n">update() cannot set &#39;id&#39; on &#39;Book&#39;</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="x">— id maps to TinyDB&#39;s doc_id, which updates cannot change. Select documents</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="x">with update_by_ids() or a query condition instead.</span>
 </span></code></pre></div>
+<p>Per-value validation, merged-result validation, and the <code>extra_keys=</code> escape are shared by every update verb and covered in <a href="#the-shared-update-contract">The shared update contract</a> below.</p>
 <p><code>update()</code> requires a condition. TinyDB's own <code>update()</code> treats a bare call as "update every document"; tinydantic raises <a class="autorefs autorefs-internal" title="            SelectorError" href="../../reference/api/tinydantic/#tinydantic.SelectorError">SelectorError</a> and names the two explicit spellings, so a dropped condition can never quietly rewrite the whole table:</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;in_stock&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
 </span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="gt">Traceback (most recent call last):</span>
@@ -2939,7 +2966,7 @@
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">Book</span><span class="o">.</span><span class="n">update_all</span><span class="p">({</span><span class="s2">&quot;in_stock&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
 </span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="go">[1, 2, 3, 4]</span>
 </span></code></pre></div>
-<p>Mappings and transform callables get exactly the treatment <code>update()</code> gives them — per-value validation, merged-result validation, atomic all-or-nothing writes, and the same <code>extra_keys=</code> escape (all described below).</p>
+<p>Mappings and transform callables get exactly the treatment <code>update()</code> gives them — per-value validation, merged-result validation, atomic all-or-nothing writes, and the same <code>extra_keys=</code> escape. See <a href="#the-shared-update-contract">The shared update contract</a>.</p>
 <h3 id="update_many"><code>update_many</code><a class="headerlink" href="#update_many" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            update_many
 
@@ -2963,6 +2990,28 @@
 </span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="gp">... </span><span class="p">)</span>
 </span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="go">[1]</span>
 </span></code></pre></div>
+<h3 id="the-shared-update-contract">The shared update contract<a class="headerlink" href="#the-shared-update-contract" title="Permanent link">¤</a></h3>
+<p>Everything below holds for all five update verbs — <a class="autorefs autorefs-internal" title="            update
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.update">update()</a>, <a class="autorefs autorefs-internal" title="            update_by_ids
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.update_by_ids">update_by_ids()</a>, <a class="autorefs autorefs-internal" title="            update_all
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.update_all">update_all()</a>, <a class="autorefs autorefs-internal" title="            update_many
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.update_many">update_many()</a>, and <a class="autorefs autorefs-internal" title="            update" href="../../reference/api/tinydantic/#tinydantic.FindQuery.update">FindQuery.update()</a>. The examples use <code>update()</code> because it is the shortest spelling; the contract is the same for each.</p>
 <p>Field values in the mapping get the same treatment <code>insert()</code> and <code>save()</code> give whole models: each value is validated against its field's type and serialized to a JSON-safe primitive before it reaches storage. A rich value such as a <code>datetime</code> lands in storage as the same ISO string an <code>insert()</code> would have written:</p>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
 </span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Event</span><span class="p">(</span><span class="n">TinydanticModel</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;events&quot;</span><span class="p">):</span>
@@ -3004,7 +3053,7 @@
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Keys written via <code>extra_keys="allow"</code> are stored <strong>unvalidated</strong> (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the <code>validate_writes=False</code> class kwarg; per-field value validation (the <code>datetime</code> example above) always applies to mappings. <code>update()</code>, <code>update_all()</code>, and <code>update_many()</code> also do <strong>not</strong> enforce <a href="../models/#unique-fields">unique fields</a> — they are the deliberate loose path; every other write verb checks uniqueness. Never pass a raw request payload through <code>extra_keys="allow"</code> — see <a href="../security/#untrusted-input-in-updates">Security considerations</a>.</p>
+<p>Keys written via <code>extra_keys="allow"</code> are stored <strong>unvalidated</strong> (pydantic ignores keys it does not know), and stored extra keys are likewise ignored — but preserved — when updates validate merged documents. Models can opt out of merged-result validation entirely with the <code>validate_writes=False</code> class kwarg; per-field value validation (the <code>datetime</code> example above) always applies to mappings. No update verb enforces <a href="../models/#unique-fields">unique fields</a> — they are the deliberate loose path. Uniqueness is checked by the six writes that carry a model instance: <code>insert()</code>, <code>insert_many()</code>, <code>save()</code>, <code>replace()</code>, <code>patch()</code>, and <code>upsert()</code>. Never pass a raw request payload through <code>extra_keys="allow"</code> — see <a href="../security/#untrusted-input-in-updates">Security considerations</a>.</p>
 </div>
 <h3 id="patch"><code>patch</code><a class="headerlink" href="#patch" title="Permanent link">¤</a></h3>
 <p><a class="autorefs autorefs-internal" title="            patch" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.patch">patch()</a> is the instance-level partial update: it validates the given fields, writes <strong>only those fields</strong> to the stored document, and updates the instance to match — one call, no drift between object and storage.</p>
@@ -3034,7 +3083,7 @@
 </span><span id="__span-36-7"><a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a><span class="w">  </span><span class="c">...</span>
 </span><span id="__span-36-8"><a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a><span class="gr">tinydantic._errors.UnknownUpdateFieldError</span>: <span class="n">update() mapping ...</span>
 </span></code></pre></div>
-<p>An empty <code>patch()</code> writes nothing but still verifies the document exists, so its error behavior does not depend on the payload — handy for HTTP PATCH endpoints fed <code>model_dump(exclude_unset=True)</code>. Being instance-level, <code>patch()</code> fires <a class="autorefs autorefs-internal" title="            before_write" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.before_write">before_write()</a>, so a model that stamps <code>updated_at</code> in the hook keeps stamping it here — an empty patch writes nothing and so hooks nothing. The table-level <code>update()</code> and <code>update_all()</code> below have no instance and fire no hook; see <a href="../models/#lifecycle-hooks">Lifecycle hooks</a>.</p>
+<p>An empty <code>patch()</code> writes nothing but still verifies the document exists, so its error behavior does not depend on the payload — handy for HTTP PATCH endpoints fed <code>model_dump(exclude_unset=True)</code>. Being instance-level, <code>patch()</code> fires <a class="autorefs autorefs-internal" title="            before_write" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.before_write">before_write()</a>, so a model that stamps <code>updated_at</code> in the hook keeps stamping it here — an empty patch writes nothing and so hooks nothing. The five update verbs above (<code>update()</code>, <code>update_by_ids()</code>, <code>update_all()</code>, <code>update_many()</code>, and <code>FindQuery.update()</code>) hold no instance and fire no hook; see <a href="../models/#lifecycle-hooks">Lifecycle hooks</a>.</p>
 <h3 id="choosing-a-write-verb">Choosing a write verb<a class="headerlink" href="#choosing-a-write-verb" title="Permanent link">¤</a></h3>
 <p>Five verbs, five different contracts — in HTTP terms:</p>
 <table>

@@ -2245,7 +2245,7 @@
 
 
 <h1 id="schema-evolution">Schema evolution<a class="headerlink" href="#schema-evolution" title="Permanent link">¤</a></h1>
-<p>Your model class is your schema — but the documents in a TinyDB file can predate it. An older version of your app may have written them, another tool may share the file, or someone may have hand-edited a YAML table. Because a <code>tinydantic</code> read is a validation, this page answers the question that raises: what happens when the stored document and the current model disagree — and how do you migrate data deliberately instead of by accident?</p>
+<p>Your model class is your schema — but the documents in a TinyDB file can predate it. An older version of your app may have written them, another tool may share the file, or someone may have hand-edited a YAML table. Because a <code>tinydantic</code> read is a validation, this page answers the question that arises: what happens when the stored document and the current model disagree — and how do you migrate data deliberately instead of by accident?</p>
 <p>The examples share state top to bottom, so run them in order.</p>
 <h2 id="unknown-keys-and-extra">Unknown keys and <code>extra</code><a class="headerlink" href="#unknown-keys-and-extra" title="Permanent link">¤</a></h2>
 <p>Pydantic's default <code>extra='ignore'</code> policy applies to <code>tinydantic</code> models: keys in the stored document that the model does not declare are silently dropped when the document is read. Suppose an earlier version of your app stored a <code>rating</code> field that the current model no longer has:</p>

@@ -1780,10 +1780,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#update_many-cannot-select-documents-by-id" class="md-nav__link">
+  <a href="#tableupdate_multiple-cannot-select-documents-by-id" class="md-nav__link">
     <span class="md-ellipsis">
       
-        update_many() cannot select documents by id
+        Table.update_multiple() cannot select documents by id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#querymatches-is-documented-as-whole-value-and-anchors-only-at-the-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query.matches() is documented as whole-value and anchors only at the start
       
     </span>
   </a>
@@ -2202,10 +2213,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#update_many-cannot-select-documents-by-id" class="md-nav__link">
+  <a href="#tableupdate_multiple-cannot-select-documents-by-id" class="md-nav__link">
     <span class="md-ellipsis">
       
-        update_many() cannot select documents by id
+        Table.update_multiple() cannot select documents by id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#querymatches-is-documented-as-whole-value-and-anchors-only-at-the-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query.matches() is documented as whole-value and anchors only at the start
       
     </span>
   </a>
@@ -2437,24 +2459,35 @@
 <p>All observations in this section were verified against TinyDB 4.9.0 (the minimum version <code>tinydantic</code> requires).</p>
 <h3 id="query-conditions-never-see-the-document-id">Query conditions never see the document id<a class="headerlink" href="#query-conditions-never-see-the-document-id" title="Permanent link">¤</a></h3>
 <p><strong>Tracking issue:</strong> <a href="https://github.com/tinydantic/tinydantic/issues/133">#133</a></p>
-<p><strong>Limitation.</strong> TinyDB evaluates every query condition against the raw document <em>body</em> mapping — the value in the <code>{doc_id: body}</code> table dict — never against a <a href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.table.Document"><code>Document</code></a> carrying <code>doc_id</code>. All five evaluation sites behave this way: <code>Table.search()</code>, <code>Table.get(cond=...)</code>, and the updater loops inside <code>Table.update(cond=...)</code>, <code>Table.update_multiple()</code>, and <code>Table.remove(cond=...)</code>. (<code>Table._update_table()</code>'s docstring notes that skipping the <code>Document</code> wrap is a deliberate optimization.) Only <code>Table.__iter__</code> yields <code>Document</code> instances. Consequently, no query object — however it is constructed — can express "document id equals 1": the id is structurally invisible to the condition, even though it sits right there as the dict key in every evaluation loop.</p>
-<p><strong>Why it matters to an ODM.</strong> Every mainstream document ODM lets users query by the model's id attribute (Beanie and ODMantic translate <code>Model.id</code> to MongoDB's <code>_id</code>; Firestore special-cases <code>FieldPath.documentId()</code> because — exactly like TinyDB — its document key is not a body field). <code>tinydantic</code> maps its <code>id</code> field to <code>doc_id</code>, so supporting <code>User.get(User.id == 1)</code> required a translation layer: id-bearing conditions are detected in every model method and executed via <code>doc_id=</code>/<code>doc_ids=</code> operations or by iterating the table (the one API that yields <code>Document</code>s). See <code>src/tinydantic/_query.py</code> and the id-condition branches in <code>src/tinydantic/_model.py</code>.</p>
+<p><strong>Limitation.</strong> TinyDB evaluates every query condition against the raw document <em>body</em> mapping — the value in the <code>{doc_id: body}</code> table dict — never against a <a href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.table.Document"><code>Document</code></a> carrying <code>doc_id</code>. All five evaluation sites behave this way: <code>Table.search()</code>, <code>Table.get(cond=...)</code>, and the updater loops inside <code>Table.update(cond=...)</code>, <code>Table.update_multiple()</code>, and <code>Table.remove(cond=...)</code>. (<code>Table._update_table()</code>'s docstring notes that skipping the <code>Document</code> wrap is a deliberate optimization.) <code>Table.__iter__</code>, <code>search()</code>, <code>all()</code>, and <code>get()</code> all <em>return</em> <code>Document</code> instances — but none of them evaluate the condition against one. Consequently, no query object — however it is constructed — can express "document id equals 1": the id is structurally invisible to the condition, even though it sits right there as the dict key in every evaluation loop.</p>
+<p><strong>Why it matters to an ODM.</strong> Every mainstream document ODM lets users query by the model's id attribute (Beanie and ODMantic translate <code>Model.id</code> to MongoDB's <code>_id</code>; Firestore special-cases <code>FieldPath.documentId()</code> because — exactly like TinyDB — its document key is not a body field). <code>tinydantic</code> maps its <code>id</code> field to <code>doc_id</code>, so supporting <code>User.get(User.id == 1)</code> required a translation layer: id-bearing conditions are detected in every model method and executed via <code>Table.update(doc_ids=…)</code>/<code>Table.remove(doc_ids=…)</code> operations or by iterating the table (the one API that hands the condition a <code>Document</code>). See <code>src/tinydantic/_query.py</code> and the id-condition branches in <code>src/tinydantic/_model.py</code>.</p>
 <p><strong>Suggested improvement.</strong> An opt-in protocol that keeps the existing fast path free:</p>
 <ol>
 <li>Give <code>QueryInstance</code> a <code>needs_doc_id: bool = False</code> attribute, propagated through <code>__and__</code>/<code>__or__</code>/<code>__invert__</code> (<code>self.needs_doc_id or other.needs_doc_id</code>).</li>
 <li>Add a <code>DocId</code> query type to <code>tinydb.queries</code> whose comparisons build <code>QueryInstance</code>s with <code>needs_doc_id=True</code> and test <code>doc.doc_id</code>.</li>
 <li>At each of the five evaluation sites: <code>if getattr(cond, "needs_doc_id", False)</code>, wrap the body in <code>self.document_class(doc, self.document_id_class(doc_id))</code> before calling the condition; otherwise call it with the raw body exactly as today.</li>
 </ol>
-<p>Existing queries and third-party <code>QueryLike</code> objects pay nothing (the <code>getattr</code> default preserves current behavior); id queries work in every API including <code>update_many()</code>; the storage format is untouched. This would let <code>tinydantic</code> delete its entire translation layer.</p>
-<h3 id="update_many-cannot-select-documents-by-id"><code>update_many()</code> cannot select documents by id<a class="headerlink" href="#update_many-cannot-select-documents-by-id" title="Permanent link">¤</a></h3>
+<p>Existing queries and third-party <code>QueryLike</code> objects pay nothing (the <code>getattr</code> default preserves current behavior); id queries work in every API including <code>update_multiple()</code>; the storage format is untouched. This would let <code>tinydantic</code> delete its entire translation layer.</p>
+<h3 id="tableupdate_multiple-cannot-select-documents-by-id"><code>Table.update_multiple()</code> cannot select documents by id<a class="headerlink" href="#tableupdate_multiple-cannot-select-documents-by-id" title="Permanent link">¤</a></h3>
 <p><strong>Tracking issue:</strong> <a href="https://github.com/tinydantic/tinydantic/issues/134">#134</a></p>
 <p><strong>Limitation.</strong> <code>Table.update(fields, cond, doc_ids)</code> and <code>Table.remove(cond, doc_ids)</code> both accept a <code>doc_ids</code> selector, but <code>Table.update_multiple(updates)</code> accepts only <code>(fields, cond)</code> pairs. Combined with the evaluation limitation above, there is no way to run a batched update that targets documents by id — neither via a condition (conditions cannot see ids) nor via an explicit selector (the parameter does not exist).</p>
-<p><strong>Why it matters to an ODM.</strong> <code>update_many()</code> is TinyDB's only batched write — the whole batch runs in one atomic read-modify-write cycle (<code>Table._update_table()</code>), which is the reason to use it over looping <code>update()</code>. <code>tinydantic</code> translates id conditions to <code>doc_ids=</code> operations where a public landing spot exists, but <code>update_many()</code> offers none, so supporting id conditions there (without sacrificing the batch's single-write atomicity) required the private-API use recorded in the <a href="#tinydb-private-api-usage-registry">registry below</a>.</p>
+<p><strong>Why it matters to an ODM.</strong> <code>Table.update_multiple()</code> is TinyDB's only batched write — the whole batch runs in one atomic read-modify-write cycle (<code>Table._update_table()</code>), which is the reason to use it over looping <code>Table.update()</code>. <code>tinydantic</code> translates id conditions to <code>doc_ids=</code> operations where a public landing spot exists, but <code>Table.update_multiple()</code> offers none, so supporting id conditions in <code>tinydantic</code>'s own <a class="autorefs autorefs-internal" title="            update_many
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.update_many"><code>update_many()</code></a> wrapper (without sacrificing the batch's single-write atomicity) required the private-API use recorded in the <a href="#tinydb-private-api-usage-registry">registry below</a>.</p>
 <p><strong>Suggested improvement.</strong> Either of:</p>
 <ul>
-<li>Accept an optional per-pair id selector, e.g. <code>update_many(updates: Iterable[tuple[fields, cond | None, doc_ids | None]])</code> (or a parallel <code>update_multiple_by_ids()</code>), mirroring the <code>update()</code>/<code>remove()</code> signatures.</li>
-<li>Ship the <code>needs_doc_id</code>/<code>DocId</code> improvement above, which subsumes this: id conditions would then work in <code>update_many()</code>'s existing signature.</li>
+<li>Accept an optional per-pair id selector, e.g. <code>update_multiple(updates: Iterable[tuple[fields, cond | None, doc_ids | None]])</code> (or a parallel <code>update_multiple_by_ids()</code>), mirroring the <code>update()</code>/<code>remove()</code> signatures.</li>
+<li>Ship the <code>needs_doc_id</code>/<code>DocId</code> improvement above, which subsumes this: id conditions would then work in <code>update_multiple()</code>'s existing signature.</li>
 </ul>
+<h3 id="querymatches-is-documented-as-whole-value-and-anchors-only-at-the-start"><code>Query.matches()</code> is documented as whole-value and anchors only at the start<a class="headerlink" href="#querymatches-is-documented-as-whole-value-and-anchors-only-at-the-start" title="Permanent link">¤</a></h3>
+<p><strong>Tracking issue:</strong> <a href="https://github.com/tinydantic/tinydantic/issues/144">#144</a></p>
+<p><strong>Limitation.</strong> <a href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.queries.Query.matches"><code>Query.matches()</code></a> documents itself as "Run a regex test against a dict value (whole string has to match)" and implements the test with <code>re.match</code>, which anchors at the start of the value only. <code>matches(r".*@example\.com")</code> therefore matches <code>"alice@example.com.evil"</code>. <code>re.fullmatch</code> is the function the docstring describes; <code>Query.search()</code> (the deliberately unanchored spelling) uses <code>re.search</code>.</p>
+<p><strong>Why it matters to an ODM.</strong> The pattern users reach for is an allow-list — "this field must look like <em>this</em>" — and the docstring tells them it is one. It is not, and nothing about the result says so: the query returns rows, just more of them than intended. <code>tinydantic</code> presents these builders as its primary query API and had copied the upstream wording verbatim into <code>GuardedQuery.matches()</code> and the <a href="../../usage/queries/">Queries</a> page, so the same wrong contract was published twice more.</p>
+<p>There is no code workaround, and none is wanted: changing the behavior would silently narrow every existing caller's results. <code>tinydantic</code> carries the correction in prose instead — <code>GuardedQuery.matches()</code> (<code>src/tinydantic/_query.py</code>) and the Queries page both name the anchoring and point at <code>$</code>.</p>
+<p><strong>Suggested improvement.</strong> Correct the docstring — "the pattern is matched against the start of the value (<code>re.match</code>); end it with <code>$</code> to require a whole-value match" — and, optionally, add a <code>fullmatch=</code> flag or a <code>Query.fullmatch()</code> builder for the behavior the current wording promises. A behavior change to <code>re.fullmatch</code> is explicitly <em>not</em> proposed.</p>
 <h3 id="tableupdatedoc_ids-and-tableremovedoc_ids-skip-missing-ids-silently"><code>Table.update(doc_ids=…)</code> and <code>Table.remove(doc_ids=…)</code> skip missing ids silently<a class="headerlink" href="#tableupdatedoc_ids-and-tableremovedoc_ids-skip-missing-ids-silently" title="Permanent link">¤</a></h3>
 <p><strong>Tracking issue:</strong> <a href="https://github.com/tinydantic/tinydantic/issues/135">#135</a></p>
 <p><strong>Limitation.</strong> As of TinyDB 4.9.0 (<a href="https://github.com/msiemens/tinydb/issues/591">#591</a>), <code>Table.update(fields, doc_ids=…)</code> and <code>Table.remove(doc_ids=…)</code> filter the requested ids down to those present in the table, operate on that subset, and return only the ids they actually touched. An id that does not exist is not reported in any way. Before 4.9.0 the same call raised a bare <code>KeyError</code> partway through the updater — which was its own problem (an uncurated exception, raised after some documents had already been mutated in the working copy).</p>
@@ -2509,10 +2542,10 @@
 </tr>
 <tr>
 <td><code>Table._update_table(updater)</code></td>
-<td><code>TinydanticModel._run_write_cycle()</code> — all <code>update()</code>/<code>update_many()</code> writes (which validate each matched document's merged result unless <code>validate_writes=False</code>), plus the id-condition paths of <code>remove()</code> and <code>upsert()</code></td>
+<td><code>TinydanticModel._run_write_cycle()</code> — all <code>update()</code>/<code>update_by_ids()</code>/<code>update_all()</code>/<code>update_many()</code> writes (which validate each matched document's merged result unless <code>validate_writes=False</code>), plus the id-condition paths of <code>remove()</code> and <code>upsert()</code></td>
 <td><strong>In use</strong> (approved 2026-07-13 for id-condition writes; scope extended 2026-08-02 to all validated update writes). Tracking: <a href="https://github.com/tinydantic/tinydantic/issues/134">#134</a></td>
-<td>The only way to select write targets by id inside one atomic read-modify-write cycle, and the only way to validate-then-write atomically: <code>update_many()</code> has no <code>doc_ids</code> parameter, conditions cannot see ids (the two limitations above), and a public two-pass validate-then-update has a read-modify-write race between passes. The custom updater evaluates every condition against <code>Document(body, doc_id)</code> wrappers inside upstream's own read → mutate → write → cache-clear lifecycle, validates merged bodies before the write, applies mutations copy-on-write (so an aborted or validation-failed cycle leaks nothing, even on <code>MemoryStorage</code>, whose <code>read()</code> shares body dicts by reference), and skips the storage write entirely when nothing matched. Benchmarked ~23% faster than the two-pass public-API alternative on a 5,000-document JSONStorage table (one full file read saved per write).</td>
-<td>Either <code>update_many()</code> improvement above plus an atomic validate-hook, or the <code>needs_doc_id</code>/<code>DocId</code> evaluator change combined with a public batched read-modify-write API.</td>
+<td>The only way to select write targets by id inside one atomic read-modify-write cycle, and the only way to validate-then-write atomically: <code>Table.update_multiple()</code> has no <code>doc_ids</code> parameter, conditions cannot see ids (the two limitations above), and a public two-pass validate-then-update has a read-modify-write race between passes. The custom updater evaluates every condition against <code>Document(body, doc_id)</code> wrappers inside upstream's own read → mutate → write → cache-clear lifecycle, validates merged bodies before the write, applies mutations copy-on-write (so an aborted or validation-failed cycle leaks nothing, even on <code>MemoryStorage</code>, whose <code>read()</code> shares body dicts by reference), and skips the storage write entirely when nothing matched. Benchmarked ~23% faster than the two-pass public-API alternative on a 5,000-document JSONStorage table (one full file read saved per write).</td>
+<td>Either the <code>update_multiple()</code> improvement above plus an atomic validate-hook, or the <code>needs_doc_id</code>/<code>DocId</code> evaluator change combined with a public batched read-modify-write API.</td>
 </tr>
 </tbody>
 </table>

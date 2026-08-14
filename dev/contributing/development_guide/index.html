@@ -2377,15 +2377,15 @@
 
 
 <h1 id="development-guide">Development Guide<a class="headerlink" href="#development-guide" title="Permanent link">¤</a></h1>
-<h3 id="clone-the-repository">Clone the repository<a class="headerlink" href="#clone-the-repository" title="Permanent link">¤</a></h3>
+<h2 id="clone-the-repository">Clone the repository<a class="headerlink" href="#clone-the-repository" title="Permanent link">¤</a></h2>
 <p>Some of the setup steps below read files that ship with the repository (e.g. the pinned Python version in <code>.python-version</code> and the Node.js dependency lockfile <code>package-lock.json</code>), so the first step is to get a copy of the repository onto your development system.</p>
 <p><a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo">Fork</a> the <code>tinydantic</code> repository, clone your fork, and change directory to the project root.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:YOUR-USERNAME/tinydantic.git
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>tinydantic
 </span></code></pre></div>
 <p>The remainder of this guide assumes that commands are run from the project root unless otherwise noted.</p>
-<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">¤</a></h3>
-<h4 id="python">Python<a class="headerlink" href="#python" title="Permanent link">¤</a></h4>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">¤</a></h2>
+<h3 id="python">Python<a class="headerlink" href="#python" title="Permanent link">¤</a></h3>
 <p>This project is written in <a href="https://www.python.org/">Python</a> and requires a Python interpreter to be installed for development.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="python-install-python-with-uv" name="__tabbed_1" type="radio" /><input id="python-install-python-without-uv" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="python-install-python-with-uv">Install Python with uv</label><label for="python-install-python-without-uv">Install Python without uv</label></div>
 <div class="tabbed-content">
@@ -2407,13 +2407,13 @@
 </div>
 </div>
 </div>
-<h4 id="uv">uv<a class="headerlink" href="#uv" title="Permanent link">¤</a></h4>
+<h3 id="uv">uv<a class="headerlink" href="#uv" title="Permanent link">¤</a></h3>
 <p>This project uses <a href="https://docs.astral.sh/uv/">uv</a> for project management. This includes managing the project's dependencies, running project tasks (via <a href="https://poethepoet.natn.io/">poe</a>), running tests against multiple versions of Python, building the docs, creating new releases, etc.</p>
 <p>If you installed Python with uv in the previous section, you already have uv installed. Otherwise, follow the <a href="https://docs.astral.sh/uv/getting-started/installation/">Installing uv</a> documentation now.</p>
 <p>The important thing is that at this point, you should be able to run the <code>uv</code> command.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uv<span class="w"> </span>--version
 </span></code></pre></div>
-<h4 id="nodejs">Node.js<a class="headerlink" href="#nodejs" title="Permanent link">¤</a></h4>
+<h3 id="nodejs">Node.js<a class="headerlink" href="#nodejs" title="Permanent link">¤</a></h3>
 <p>Some of the project's development tools (e.g. the <a href="https://cspell.org/">cspell</a> spell checker that runs as part of <code>uv run poe check</code>) are distributed as <a href="https://www.npmjs.com/">npm</a> packages and require <a href="https://nodejs.org/">Node.js</a> to run. <a href="https://nodejs.org/en/download">Install Node.js</a> and make sure the <code>node</code> and <code>npm</code> commands are available in your shell.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>node<span class="w"> </span>--version
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>npm<span class="w"> </span>--version
@@ -2422,8 +2422,8 @@
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>npm<span class="w"> </span>ci
 </span></code></pre></div>
 <p>The <a href="https://docs.npmjs.com/cli/commands/npm-ci"><code>npm ci</code></a> command installs the exact versions of the tools recorded in <code>package-lock.json</code> into a <code>node_modules</code> directory at the project root. Some of the project's tasks invoke these tools via <a href="https://docs.npmjs.com/cli/commands/npx"><code>npx</code></a> — for example, <code>uv run poe check</code> runs the cspell spell checker with <code>npx cspell</code>.</p>
-<h3 id="pull-requests">Pull Requests<a class="headerlink" href="#pull-requests" title="Permanent link">¤</a></h3>
-<h4 id="installation-and-setup">Installation and setup<a class="headerlink" href="#installation-and-setup" title="Permanent link">¤</a></h4>
+<h2 id="pull-requests">Pull Requests<a class="headerlink" href="#pull-requests" title="Permanent link">¤</a></h2>
+<h3 id="installation-and-setup">Installation and setup<a class="headerlink" href="#installation-and-setup" title="Permanent link">¤</a></h3>
 <p>From the project root of the repository you cloned in <a href="#clone-the-repository">Clone the repository</a>, install the project along with all of its development dependencies.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--all-groups
 </span></code></pre></div>
@@ -2433,7 +2433,7 @@
 </span></code></pre></div>
 <div class="language-pycon highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">tinydantic</span>
 </span></code></pre></div>
-<h4 id="install-pre-commit-hooks">Install pre-commit hooks<a class="headerlink" href="#install-pre-commit-hooks" title="Permanent link">¤</a></h4>
+<h3 id="install-pre-commit-hooks">Install pre-commit hooks<a class="headerlink" href="#install-pre-commit-hooks" title="Permanent link">¤</a></h3>
 <p><code>tinydantic</code> uses <a href="https://pre-commit.com/">pre-commit</a> to automatically run a series of quality checks against your code locally before it is committed to the repository. (The <code>pre-commit</code> command was installed into the virtual environment when you ran <code>uv sync --all-groups</code> above.)</p>
 <p>Install the pre-commit hook scripts into your local git repository.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>uv<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> </span>install
@@ -2442,11 +2442,11 @@
 <p>Normally, pre-commit only checks the files that were modified as part of the commit. A poe task is provided to run <code>pre-commit</code> manually on all the files if needed.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>uv<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </span>pre-commit
 </span></code></pre></div>
-<h4 id="make-your-changes">Make your changes<a class="headerlink" href="#make-your-changes" title="Permanent link">¤</a></h4>
+<h3 id="make-your-changes">Make your changes<a class="headerlink" href="#make-your-changes" title="Permanent link">¤</a></h3>
 <p>Create a new branch for your changes.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>my-new-feature-branch
 </span></code></pre></div>
-<h4 id="run-tests">Run tests<a class="headerlink" href="#run-tests" title="Permanent link">¤</a></h4>
+<h3 id="run-tests">Run tests<a class="headerlink" href="#run-tests" title="Permanent link">¤</a></h3>
 <p>While you are making changes in your new branch, you can run the test suite to make sure you didn't break anything.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>uv<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </span><span class="nb">test</span>
 </span></code></pre></div>
@@ -2463,14 +2463,14 @@
 <p>After running <code>uv run poe test-cov</code>, you can also generate an interactive HTML coverage report.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>uv<span class="w"> </span>run<span class="w"> </span>coverage<span class="w"> </span>html
 </span></code></pre></div>
-<h4 id="run-formatters-and-linters">Run formatters and linters<a class="headerlink" href="#run-formatters-and-linters" title="Permanent link">¤</a></h4>
+<h3 id="run-formatters-and-linters">Run formatters and linters<a class="headerlink" href="#run-formatters-and-linters" title="Permanent link">¤</a></h3>
 <p>Before committing your changes, you should format your code and run the project's checks. First, format your code and apply autofixes with the <a href="https://docs.astral.sh/ruff/">Ruff</a> formatter and linter.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>uv<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </span>fmt
 </span></code></pre></div>
 <p>Then run the full suite of checks (linting, license/SBOM checks, spell-checking, and type-checking).</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>uv<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </span>check
 </span></code></pre></div>
-<h4 id="build-documentation">Build Documentation<a class="headerlink" href="#build-documentation" title="Permanent link">¤</a></h4>
+<h3 id="build-documentation">Build Documentation<a class="headerlink" href="#build-documentation" title="Permanent link">¤</a></h3>
 <p>If you have made any changes to the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure it builds successfully.</p>
 <p>The following command will build and serve the documentation locally on your machine. While the server is running, it will watch for any changes to the documentation files, rebuild the site, and refresh your browser automatically.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>uv<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </span>docs-serve
@@ -2481,7 +2481,7 @@
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The documentation build downloads Sphinx object inventories so that cross-references to external documentation (Python, Pydantic, TinyDB) resolve to links.</p>
-<p>However, <a href="https://about.readthedocs.com/">Read the Docs</a> has put the site behind a Cloudflare bot challenge which blocks mkdocstrings' <code>mkdocstrings/0.15.0</code> user agent, rejecting the TinyDB inventory download (this shows up as <code>mkdocstrings: Couldn't load inventory ... HTTP Error 429: Too Many Requests</code>).</p>
+<p>However, <a href="https://about.readthedocs.com/">Read the Docs</a> has put the site behind a Cloudflare bot challenge which blocks mkdocstrings' <code>mkdocstrings/0.15.0</code> user agent, rejecting the TinyDB inventory download (this shows up as <code>mkdocstrings: Couldn't load inventory ... HTTP Error 429: Too Many Requests</code>). This workaround is tracked in <a href="https://github.com/tinydantic/tinydantic/issues/146">#146</a>.</p>
 <p>If that happens (to any of the inventories), set the corresponding environment variable in your shell to point the build at a downloaded copy of the <code>objects.inv</code> inventory instead, then run the docs task as usual (from the repo root). The <code>file:</code> URL is resolved against the current working directory, so build from the repo root (the <code>poe docs...</code> tasks already require this).</p>
 <table>
 <thead>
@@ -2514,7 +2514,7 @@
 </span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>uv<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </span>docs-serve
 </span></code></pre></div>
 </div>
-<h4 id="commit-your-changes">Commit your changes<a class="headerlink" href="#commit-your-changes" title="Permanent link">¤</a></h4>
+<h3 id="commit-your-changes">Commit your changes<a class="headerlink" href="#commit-your-changes" title="Permanent link">¤</a></h3>
 <p>When you are done making changes, commit them to your new branch.</p>
 <p><code>tinydantic</code> follows the <a href="https://www.conventionalcommits.org/en/v1.0.0/">Conventional Commits</a> specification to enforce some consistency across commit messages.</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;&lt;type&gt;[optional scope]: &lt;description&gt;&quot;</span>
@@ -2535,10 +2535,10 @@
 </span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>uv<span class="w"> </span>run<span class="w"> </span>cz<span class="w"> </span>commit
 </span></code></pre></div>
 </div>
-<h4 id="create-a-pr-on-github">Create a PR on GitHub<a class="headerlink" href="#create-a-pr-on-github" title="Permanent link">¤</a></h4>
+<h3 id="create-a-pr-on-github">Create a PR on GitHub<a class="headerlink" href="#create-a-pr-on-github" title="Permanent link">¤</a></h3>
 <p>When your changes are ready for review, push your branch to GitHub and <a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request">create a pull request</a>. Link to any relevant issues and include a description of your changes.</p>
 <p>Creating a pull request will kick off a series of automated checks that run as part of workflows in GitHub Actions. If any of the checks fail, fix the issues locally in your PR branch, create a new commit (or amend your existing commits), and push the changes to the remote PR branch. GitHub will automatically run the checks again when changes are pushed to the PR branch. Repeat this process until all checks have passed.</p>
-<h3 id="release-process">Release Process<a class="headerlink" href="#release-process" title="Permanent link">¤</a></h3>
+<h2 id="release-process">Release Process<a class="headerlink" href="#release-process" title="Permanent link">¤</a></h2>
 <p>The release process is automated using workflows in GitHub Actions. New releases are created and build artifacts are published automatically when a compliant <a href="https://semver.org/">SemVer</a> release tag of the form <code>v&lt;MAJOR&gt;.&lt;MINOR&gt;.&lt;PATCH&gt;</code> is pushed to GitHub.</p>
 <p>Because the <code>main</code> branch is protected (no direct pushes), the version bump travels in a pull request like any other change, and the release tag is pushed afterward — git tags are not governed by branch protection.</p>
 <ol>
@@ -2571,7 +2571,7 @@
 </div>
 <!-- prettier-ignore-end -->
 
-<h3 id="editor-setup">Editor Setup<a class="headerlink" href="#editor-setup" title="Permanent link">¤</a></h3>
+<h2 id="editor-setup">Editor Setup<a class="headerlink" href="#editor-setup" title="Permanent link">¤</a></h2>
 <div class="admonition todo">
 <p class="admonition-title">Todo</p>
 <p>Add VS Code setup instructions</p>
