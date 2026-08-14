@@ -63,6 +63,19 @@ Book(id=1, title='Dune', author='Herbert', year=1965, in_stock=True)
 
 ```
 
+When nothing matches, the insert honors the instance's own `id` exactly as `insert()` does: a set `id` says "put it here", so the document lands at that id — and an id that is already taken is refused with [DocumentAlreadyExistsError][tinydantic.DocumentAlreadyExistsError] rather than silently duplicated at a fresh one. (The _condition's_ id value is never adopted: `upsert(book, Book.id == 7)` matching nothing inserts at `book.id` — or a fresh id if `book.id` is `None` — not at 7.)
+
+```pycon
+>>> Book.upsert(
+...     Book(id=1, title="Hyperion", author="Simmons", year=1989),
+...     Book.title == "Nonesuch",
+... )
+Traceback (most recent call last):
+  ...
+tinydantic._errors.DocumentAlreadyExistsError: Document with id 1 already exists in table 'books' (model 'Book'). Omit id to let TinyDB assign one, or use save()/upsert() to update the existing document.
+
+```
+
 ## Read
 
 The table now holds four books. Read methods return validated model instances with `id` set from the stored document id.

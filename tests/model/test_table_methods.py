@@ -13,6 +13,7 @@ import pytest
 from pydantic import ValidationError, model_validator
 
 from tinydantic import (
+    DocumentAlreadyExistsError,
     DocumentNotFoundError,
     SelectorError,
     TinydanticModel,
@@ -259,6 +260,52 @@ class TestUpsert:
         ids = user_class.upsert(user)
         assert ids == [user.id]
         assert user.id == ids[0]
+
+    def test_upsert_no_match_inserts_at_documents_free_id(
+        self,
+        user_class: type[UserBase],
+    ):
+        """When nothing matches, the insert honors a preset free id."""
+        document = user_class(id=7, name="Alice", age=37)
+        ids = user_class.upsert(
+            document,
+            user_class.name == "Nobody",  # type: ignore[arg-type]
+        )
+        assert ids == [7]
+        assert document.id == 7
+        fetched = user_class.get_by_id(7)
+        assert fetched.name == "Alice"
+
+    def test_upsert_no_match_taken_id_raises(
+        self,
+        user_class: type[UserBase],
+    ):
+        """When nothing matches and the preset id is taken, refuse."""
+        user_class(name="Alice", age=37).insert()
+        document = user_class(id=1, name="Bob", age=24)
+        with pytest.raises(DocumentAlreadyExistsError, match="id 1"):
+            user_class.upsert(
+                document,
+                user_class.name == "Nobody",  # type: ignore[arg-type]
+            )
+        assert document.id == 1
+        assert user_class.count() == 1
+        assert user_class.get_by_id(1).name == "Alice"
+
+    def test_upsert_match_wins_over_preset_id(
+        self,
+        user_class: type[UserBase],
+    ):
+        """A matching condition updates the match, not the preset id."""
+        user_class(name="Alice", age=37).insert()
+        document = user_class(id=7, name="Alice", age=99)
+        ids = user_class.upsert(
+            document,
+            user_class.name == "Alice",  # type: ignore[arg-type]
+        )
+        assert ids == [1]
+        assert document.id == 1
+        assert user_class.count() == 1
 
 
 class TestRemove:

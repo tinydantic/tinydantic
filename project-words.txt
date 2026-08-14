@@ -53,6 +53,7 @@ htmlcov
 httpx
 hynek
 inlinehilite
+inlines
 ints
 ipython
 isinstance
