@@ -671,3 +671,20 @@ class TestTableVerbsRotate:
         ids = Book.upsert(book, q(Book.title) == "Dune")
         assert book.id == ids[0]
         assert isinstance(book.revision_id, UUID)
+
+    def test_upsert_insert_branch_honors_preset_id(self, db: TinyDB):
+        """An upsert that inserts at a preset id still mints a token."""
+
+        class Book(TinydanticModel, database=db, use_revision=True):
+            """Test model."""
+
+            title: str
+
+        book = Book(id=7, title="Dune")
+        ids = Book.upsert(book, q(Book.title) == "Dune")
+        assert ids == [7]
+        assert book.id == 7
+        assert isinstance(book.revision_id, UUID)
+        loaded = Book.get_by_id(7)
+        assert loaded is not None
+        assert loaded.revision_id == book.revision_id

@@ -17,6 +17,7 @@ from tinydb.table import Table
 
 from tests.model.models import UserBase
 from tinydantic import (
+    DocumentAlreadyExistsError,
     DocumentIDConditionError,
     DocumentIDUpdateError,
     DocumentNotFoundError,
@@ -402,6 +403,28 @@ class TestIdConditionWrites:
         assert ids == [4]
         assert document.id == 4
         assert users.count() == 4
+
+    def test_upsert_no_match_inserts_at_documents_id(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """The no-match insert honors the document's own free id."""
+        document = users(id=7, name="Dave", age=40)
+        ids = users.upsert(document, q(users.id) == 999)
+        assert ids == [7]
+        assert document.id == 7
+        assert users.count() == 4
+
+    def test_upsert_no_match_taken_id_raises(
+        self,
+        users: type[UserBase],
+    ) -> None:
+        """A no-match insert at a taken id is refused whole."""
+        document = users(id=2, name="Dave", age=40)
+        with pytest.raises(DocumentAlreadyExistsError, match="id 2"):
+            users.upsert(document, q(users.id) == 999)
+        assert users.count() == 3
+        assert users.get_by_id(2).name == "Bob"
 
     def test_update_multiple_by_id_condition(
         self,

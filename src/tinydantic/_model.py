@@ -2444,8 +2444,12 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         Conditions on ``Model.id`` are translated to document-id
         operations. As with TinyDB's own upsert, when nothing
-        matches, the insert does not adopt the condition's id value —
-        the document is inserted with a fresh id.
+        matches, the insert does not adopt the condition's id
+        value. It does honor ``document.id``, exactly like
+        [insert][tinydantic.TinydanticModel.insert]: a set id
+        says "put it here", so the document is inserted at that id
+        — or refused when the id is already taken — and only a
+        document with ``id=None`` is inserted with a fresh id.
 
         When exactly one document is affected — an insert, or an
         update that matched a single document — ``document.id`` is
@@ -2469,6 +2473,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
                 is nothing to select the document to update by.
             QueryTypeError: If ``cond`` is given but is not
                 something TinyDB can evaluate as a condition.
+            DocumentAlreadyExistsError: If nothing matched
+                ``cond`` and ``document.id`` is set to an id that
+                already exists in the table; nothing is written.
             UniqueConstraintError: If the write would duplicate a
                 [Unique][tinydantic.Unique] field value or a
                 [UniqueConstraint][tinydantic.UniqueConstraint]
@@ -2499,18 +2506,27 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         # held tokens elsewhere correctly go stale. One token for
         # the batch: equality is the only comparison tokens face.
         token = uuid4() if cls._uses_revision() else None
-        if selector is not None and has_id_condition(selector):
-            document_dict = document.to_tinydb_document(force_dict=True)
-            if token is not None:
-                document_dict["revision_id"] = str(token)
-            ids = cls._upsert_id_condition(document_dict, selector)
+        # No force_dict: a set id rides along as the Document's
+        # doc_id, so the no-match insert lands at the id the
+        # caller asked for. Matched updates read the payload as a
+        # plain mapping (doc_id is an attribute, not a body key),
+        # so they never adopt it.
+        serialized = document.to_tinydb_document()
+        if token is not None:
+            serialized["revision_id"] = str(token)
+        if selector is None:
+            ids = cls.get_table().upsert(serialized)
+        elif has_id_condition(selector):
+            ids = cls._upsert_id_condition(serialized, selector)
         else:
-            serialized = document.to_tinydb_document(
-                force_dict=selector is not None,
-            )
-            if token is not None:
-                serialized["revision_id"] = str(token)
-            ids = cls.get_table().upsert(serialized, selector)
+            # Not Table.upsert(serialized, selector): handed a
+            # Document *and* a cond, TinyDB silently prefers the
+            # doc_id and never evaluates the cond (see the
+            # Upstream Limitations page), so its update-then-
+            # insert is inlined here.
+            ids = cls.get_table().update(serialized, selector)
+            if not ids:
+                ids = [cls._upsert_insert(serialized)]
         if len(ids) == 1:
             document.id = ids[0]
             if token is not None:
@@ -2528,7 +2544,9 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
         Merges ``document_dict`` into every document matching
         ``cond`` in one read-modify-write cycle, inserting it as a
         new document when nothing matched (TinyDB upsert
-        semantics — the insert does not adopt the condition's id).
+        semantics — the insert does not adopt the condition's id,
+        though it does honor a ``doc_id`` carried by
+        ``document_dict`` itself).
         """
         table = cls.get_table()
 
@@ -2550,8 +2568,35 @@ class TinydanticModel(BaseModel, metaclass=TinydanticModelMetaclass):
 
         ids = cls._run_write_cycle(apply_upsert)
         if not ids:
-            ids = [table.insert(document_dict)]
+            ids = [cls._upsert_insert(document_dict)]
         return ids
+
+    @classmethod
+    def _upsert_insert(cls, document_dict: dict[str, Any]) -> int:
+        """Insert upsert()'s payload after nothing matched.
+
+        When ``document_dict`` is a [Document][tinydb.table.Document]
+        (the caller's model had ``id`` set), the insert targets its
+        ``doc_id``, and TinyDB refuses a taken id with a bare
+        ``ValueError`` — translated here to the same
+        [DocumentAlreadyExistsError][tinydantic.DocumentAlreadyExistsError]
+        that [insert][tinydantic.TinydanticModel.insert] raises. A
+        plain dict payload gets a fresh id and cannot collide.
+
+        Raises:
+            DocumentAlreadyExistsError: If the payload's ``doc_id``
+                is already present in the table.
+        """
+        try:
+            return cls.get_table().insert(document_dict)
+        except ValueError as exc:
+            if not isinstance(document_dict, Document):
+                raise
+            raise DocumentAlreadyExistsError(
+                model_name=cls.__name__,
+                table_name=cls.get_table().name,
+                doc_ids=[document_dict.doc_id],
+            ) from exc
 
     @classmethod
     def remove(
