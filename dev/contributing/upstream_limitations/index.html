@@ -1791,6 +1791,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#tableupsert-silently-ignores-the-condition-when-the-document-carries-a-doc_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table.upsert() silently ignores the condition when the document carries a doc_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#querymatches-is-documented-as-whole-value-and-anchors-only-at-the-start" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2224,6 +2235,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#tableupsert-silently-ignores-the-condition-when-the-document-carries-a-doc_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table.upsert() silently ignores the condition when the document carries a doc_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#querymatches-is-documented-as-whole-value-and-anchors-only-at-the-start" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2482,6 +2504,16 @@
 <li>Accept an optional per-pair id selector, e.g. <code>update_multiple(updates: Iterable[tuple[fields, cond | None, doc_ids | None]])</code> (or a parallel <code>update_multiple_by_ids()</code>), mirroring the <code>update()</code>/<code>remove()</code> signatures.</li>
 <li>Ship the <code>needs_doc_id</code>/<code>DocId</code> improvement above, which subsumes this: id conditions would then work in <code>update_multiple()</code>'s existing signature.</li>
 </ul>
+<h3 id="tableupsert-silently-ignores-the-condition-when-the-document-carries-a-doc_id"><code>Table.upsert()</code> silently ignores the condition when the document carries a <code>doc_id</code><a class="headerlink" href="#tableupsert-silently-ignores-the-condition-when-the-document-carries-a-doc_id" title="Permanent link">¤</a></h3>
+<p><strong>Tracking issue:</strong> <a href="https://github.com/tinydantic/tinydantic/issues/148">#148</a></p>
+<p><strong>Limitation.</strong> <code>Table.upsert(document, cond)</code> treats its two selectors as either/or: when <code>document</code> is a <a href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.table.Document"><code>Document</code></a> carrying a <code>doc_id</code>, the implementation extracts that id and calls <code>Table.update(document, cond, doc_ids=[doc_id])</code> — and <code>update()</code> checks <code>doc_ids</code> before <code>cond</code>, so a condition passed alongside a <code>Document</code> is <strong>never evaluated</strong>. Nothing raises or warns; the call simply performs a different operation (upsert by id) than the one written (upsert by condition). Consequently the public API cannot express "update the documents matching this condition; if none match, insert at this specific id": passing both selects by id and silently drops the condition, while a plain dict body cannot carry an id into the fall-through insert.</p>
+<p><strong>Why it matters to an ODM.</strong> <code>tinydantic</code> maps its <code>id</code> field to <code>doc_id</code>, and its <a class="autorefs autorefs-internal" title="            upsert
+
+
+  
+      classmethod
+  " href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.upsert"><code>upsert()</code></a> honors a set <code>document.id</code> on the no-match insert exactly as <a class="autorefs autorefs-internal" title="            insert" href="../../reference/api/tinydantic/#tinydantic.TinydanticModel.insert"><code>insert()</code></a> does — a set id says "put it here" (tinydantic <a href="https://github.com/tinydantic/tinydantic/issues/120">#120</a> fixed the earlier behavior of silently discarding it). Expressing that means serializing the model as a <code>Document</code> so its id survives to the insert — and handing that <code>Document</code> plus the user's condition to <code>Table.upsert()</code> would silently turn every condition-upsert into an id-upsert. <code>TinydanticModel.upsert()</code> (<code>src/tinydantic/_model.py</code>) therefore inlines upstream's own update-then-insert instead of delegating: <code>Table.update(document, cond)</code> first, and when nothing matched, <code>Table.insert(document)</code> with the id-bearing <code>Document</code> — public API throughout, the same two storage cycles <code>Table.upsert()</code> itself spends, with the insert's "id already taken" <code>ValueError</code> translated to <a class="autorefs autorefs-internal" title="            DocumentAlreadyExistsError" href="../../reference/api/tinydantic/#tinydantic.DocumentAlreadyExistsError"><code>DocumentAlreadyExistsError</code></a>. (Id-bearing <em>conditions</em> take the atomic private-API path recorded in the <a href="#tinydb-private-api-usage-registry">registry below</a> for other reasons.)</p>
+<p><strong>Suggested improvement.</strong> When both selectors are supplied, either honor the condition — evaluate <code>cond</code>, with the <code>doc_id</code> seeding only the fall-through insert, which is strictly more expressive and is what the call reads as — or refuse the combination with a <code>ValueError</code>, as the doc_id-less-and-cond-less call already does. Either is better than the silent precedence; at minimum, the docstring ("optional if you've passed a Document with a doc_id") should state that a <code>Document</code>'s id does not merely make <code>cond</code> optional but overrides it entirely.</p>
 <h3 id="querymatches-is-documented-as-whole-value-and-anchors-only-at-the-start"><code>Query.matches()</code> is documented as whole-value and anchors only at the start<a class="headerlink" href="#querymatches-is-documented-as-whole-value-and-anchors-only-at-the-start" title="Permanent link">¤</a></h3>
 <p><strong>Tracking issue:</strong> <a href="https://github.com/tinydantic/tinydantic/issues/144">#144</a></p>
 <p><strong>Limitation.</strong> <a href="https://tinydb.readthedocs.io/en/latest/api.html#tinydb.queries.Query.matches"><code>Query.matches()</code></a> documents itself as "Run a regex test against a dict value (whole string has to match)" and implements the test with <code>re.match</code>, which anchors at the start of the value only. <code>matches(r".*@example\.com")</code> therefore matches <code>"alice@example.com.evil"</code>. <code>re.fullmatch</code> is the function the docstring describes; <code>Query.search()</code> (the deliberately unanchored spelling) uses <code>re.search</code>.</p>
