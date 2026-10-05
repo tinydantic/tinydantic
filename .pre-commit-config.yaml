@@ -42,11 +42,11 @@ repos:
       - id: reuse-lint-file
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.12.3
+    rev: 0.12.23
     hooks:
       - id: uv-lock
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.2
+    rev: v0.16.10
     hooks:
       - id: ruff
         args:
@@ -63,11 +63,11 @@ repos:
     hooks:
       - id: check-pre-commit-ci-config
   - repo: https://github.com/henryiii/validate-pyproject-schema-store
-    rev: 2026.08.08
+    rev: 2026.10.02
     hooks:
       - id: validate-pyproject
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.38.0
+    rev: 0.38.2
     hooks:
       - id: check-github-workflows
         args:
@@ -76,7 +76,7 @@ repos:
   # doesn't allow network access for free tier) and keeps formatting
   # and linting deterministic across environments.
   - repo: https://github.com/tombi-toml/tombi-pre-commit
-    rev: v1.2.10
+    rev: v1.7.2
     hooks:
       - id: tombi-format
         args:
@@ -85,7 +85,7 @@ repos:
         args:
           - --offline
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.17.0
+    rev: v4.19.1
     hooks:
       - id: commitizen
       - id: commitizen-branch
@@ -98,7 +98,7 @@ repos:
   # https://github.com/pre-commit/mirrors-prettier was archived Apr 11, 2024
   # See also https://github.com/prettier/prettier/issues/15742
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.9.6
+    rev: v3.9.9
     hooks:
       - id: prettier
         stages:
@@ -111,11 +111,11 @@ repos:
         args:
           - --strict
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.23.2
+    rev: v0.23.3
     hooks:
       - id: markdownlint-cli2
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v10.0.1
+    rev: v10.3.0
     hooks:
       - id: cspell
         exclude: LICENSES
