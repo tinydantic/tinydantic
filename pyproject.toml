@@ -9,7 +9,7 @@ name = "tinydantic"
 version = "0.4.0"
 description = "A Pydantic-powered ODM (object-document mapper) for TinyDB"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 license-files = [
   "LICENSES/*",
@@ -30,7 +30,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -170,7 +169,7 @@ style = "google"
 verbose = 2
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 
 # The static-typing contract pins rejections as well as inferences,
 # and it can only do that if an ignore that stops being needed is
@@ -201,7 +200,6 @@ test-cov = "pytest --cov --cov-branch"
 # runs test-cov in it, writing a per-version COVERAGE_FILE that the
 # final coverage steps merge into one cross-version report.
 test-matrix = [
-  "_test-py310",
   "_test-py311",
   "_test-py312",
   "_test-py313",
@@ -220,7 +218,7 @@ types = [
   "_types-pyright",
 ]
 
-_coverage-combine = "coverage combine .coverage.py310 .coverage.py311 .coverage.py312 .coverage.py313 .coverage.py314"
+_coverage-combine = "coverage combine .coverage.py311 .coverage.py312 .coverage.py313 .coverage.py314"
 _coverage-report = "coverage report"
 _ruff-check = "ruff check ."
 _ruff-fix = "ruff check --fix ."
@@ -261,10 +259,6 @@ env = { PYTHONUNBUFFERED = "1", SOURCE_DATE_EPOCH = "1580601600" }
 cmd = "properdocs serve --config-file mkdocs.yaml --dev-addr localhost:8000"
 env = { PYTHONUNBUFFERED = "1" }
 
-[tool.poe.tasks._test-py310]
-cmd = "uv run --isolated --python 3.10 --group test poe test-cov"
-env = { COVERAGE_FILE = ".coverage.py310" }
-
 [tool.poe.tasks._test-py311]
 cmd = "uv run --isolated --python 3.11 --group test poe test-cov"
 env = { COVERAGE_FILE = ".coverage.py311" }
@@ -282,7 +276,7 @@ cmd = "uv run --isolated --python 3.14 --group test poe test-cov"
 env = { COVERAGE_FILE = ".coverage.py314" }
 
 [tool.pyright]
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 typeCheckingMode = "standard"
 venv = ".venv"
 venvPath = "."

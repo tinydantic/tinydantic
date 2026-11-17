@@ -13,11 +13,11 @@ tinydantic — a Pydantic v2 ODM for TinyDB. `TinydanticModel` subclasses are py
 - Conventional commits (commit-msg hook enforces).
 - uv + poethepoet: `uv run poe test | lint | types | check | docs-build`. Also `fmt` (ruff autofix + format) and `pre-commit` (all hooks, all files). `check` is lint + sbom-check + spell-check + types — it does **not** run tests, so `poe test` is a separate call before claiming a change is green.
 - Windows/macOS/Linux are all first-class; no shell-isms in poe tasks.
-- Python 3.10 is the floor (`requires-python`; mypy and ruff target py310) — no syntax newer than 3.10.
+- Python 3.11 is the floor (`requires-python`; mypy, pyright, and ruff target 3.11) — no syntax newer than 3.11.
 - Ruff runs with `select = ALL`: 79-char code lines, Google-style docstrings wrapped at 72 chars (W505 `max-doc-length`), relative imports banned.
 - Tests include doctests in README, CONTRIBUTING, and docs — a lying example fails CI.
 - Tests run shuffled (pytest-randomly, on by default) — don't write order-dependent tests. CI adds `--numprocesses auto` (pytest-xdist) and `--reruns 2`; local `poe test` is serial and single-version, so a test that depends on process-local state or on a newer Python can pass locally and fail in CI.
-- **Run `poe test-matrix` before pushing a PR.** It runs the suite under every supported Python (3.10–3.14) and combines coverage, which is what CI does across 15 job combinations — catching a version-specific break locally is far cheaper than a red PR. `poe test` alone only proves the interpreter you happen to be on.
+- **Run `poe test-matrix` before pushing a PR.** It runs the suite under every supported Python (3.11–3.14) and combines coverage, which is what CI does across 12 job combinations — catching a version-specific break locally is far cheaper than a red PR. `poe test` alone only proves the interpreter you happen to be on.
 - Markdown: prettier enforces `proseWrap: never` (don't hard-wrap prose); markdownlint requires an H1 on line 1.
 - REUSE licensing: new code files need SPDX headers; `**.md` and listed files are covered by `REUSE.toml` aggregates.
 - cspell gates commits: new legit words go in `project-words.txt`, which must stay globally case-insensitive sorted. `poe update-project-words` helps, but it _appends_ a sorted batch to the end rather than merging — re-sort the whole file afterwards, and read what it added. Only words that appear in checked-in files belong there — cspell skips `untracked/`, so never add a word for scratch or agent collateral.
