@@ -98,7 +98,7 @@ repos:
   # https://github.com/pre-commit/mirrors-prettier was archived Apr 11, 2024
   # See also https://github.com/prettier/prettier/issues/15742
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.9.6
+    rev: v3.10.1
     hooks:
       - id: prettier
         stages:
