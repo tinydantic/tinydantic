@@ -110,7 +110,7 @@ class TestPatchWrites:
             when: dt.datetime | None = None
 
         event = Event(name="launch").insert()
-        when = dt.datetime(2027, 1, 1, 12, 0, tzinfo=dt.timezone.utc)
+        when = dt.datetime(2027, 1, 1, 12, 0, tzinfo=dt.UTC)
         event.patch(when=when)
         assert event.when == when
         assert event.id is not None

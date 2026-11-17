@@ -10,11 +10,12 @@ holding fails the type check instead of silently drifting away from
 what `docs/usage/queries.md` promises.
 """
 
+from typing import assert_type
+
 from pydantic import BaseModel
 from tinydb import TinyDB
 from tinydb.queries import QueryInstance, QueryLike
 from tinydb.storages import MemoryStorage
-from typing_extensions import assert_type
 
 from tinydantic import FindQuery, TinydanticModel, field, q
 

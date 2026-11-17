@@ -91,7 +91,7 @@ class TestRoundTrip:
         """JSON-mode dump out, validation back in."""
         original = rich_class(
             name="Alice",
-            created_at=dt.datetime(2026, 7, 6, 12, 0, tzinfo=dt.timezone.utc),
+            created_at=dt.datetime(2026, 7, 6, 12, 0, tzinfo=dt.UTC),
             token=uuid.UUID("12345678-1234-5678-1234-567812345678"),
             address=Address(city="Oakland", zip_code="94601"),
         )
@@ -107,7 +107,7 @@ class TestRoundTrip:
         """What hits storage is JSON-safe (str, not datetime)."""
         original = rich_class(
             name="Alice",
-            created_at=dt.datetime(2026, 7, 6, 12, 0, tzinfo=dt.timezone.utc),
+            created_at=dt.datetime(2026, 7, 6, 12, 0, tzinfo=dt.UTC),
             token=uuid.uuid4(),
             address=Address(city="Oakland", zip_code="94601"),
         )
@@ -127,12 +127,12 @@ class TestUpdateSerialization:
         """A datetime lands in storage as a JSON-safe string."""
         original = rich_class(
             name="Alice",
-            created_at=dt.datetime(2026, 7, 6, 12, 0, tzinfo=dt.timezone.utc),
+            created_at=dt.datetime(2026, 7, 6, 12, 0, tzinfo=dt.UTC),
             token=uuid.uuid4(),
             address=Address(city="Oakland", zip_code="94601"),
         ).insert()
         assert original.id is not None
-        new_time = dt.datetime(2027, 1, 1, 12, 0, tzinfo=dt.timezone.utc)
+        new_time = dt.datetime(2027, 1, 1, 12, 0, tzinfo=dt.UTC)
         rich_class.update_by_ids({"created_at": new_time}, [original.id])
         raw = rich_class.get_table().get(doc_id=original.id)
         assert isinstance(raw, Document)
@@ -148,7 +148,7 @@ class TestUpdateSerialization:
         """A nested BaseModel value is stored as a plain dict."""
         original = rich_class(
             name="Alice",
-            created_at=dt.datetime(2026, 7, 6, 12, 0, tzinfo=dt.timezone.utc),
+            created_at=dt.datetime(2026, 7, 6, 12, 0, tzinfo=dt.UTC),
             token=uuid.uuid4(),
             address=Address(city="Oakland", zip_code="94601"),
         ).insert()
@@ -193,11 +193,11 @@ class TestUpdateSerialization:
         """update_many() serializes each update's mapping too."""
         original = rich_class(
             name="Alice",
-            created_at=dt.datetime(2026, 7, 6, 12, 0, tzinfo=dt.timezone.utc),
+            created_at=dt.datetime(2026, 7, 6, 12, 0, tzinfo=dt.UTC),
             token=uuid.uuid4(),
             address=Address(city="Oakland", zip_code="94601"),
         ).insert()
-        new_time = dt.datetime(2028, 1, 1, 12, 0, tzinfo=dt.timezone.utc)
+        new_time = dt.datetime(2028, 1, 1, 12, 0, tzinfo=dt.UTC)
         rich_class.update_many(
             [({"created_at": new_time}, field(rich_class, "name") == "Alice")],
         )
