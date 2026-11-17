@@ -77,7 +77,12 @@ repos:
     hooks:
       - id: validate-pyproject
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.39.0
+    # Held at 0.38.0: 0.39.0 requires Python >= 3.11, and pre-commit
+    # builds hook environments with the interpreter it runs under — the
+    # project venv, which .python-version pins to 3.10. pre-commit.ci
+    # runs a newer Python, so its autoupdate PR passes there while the
+    # hook fails to install locally.
+    rev: 0.38.0
     hooks:
       - id: check-github-workflows
         args:
