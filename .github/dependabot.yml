@@ -6,17 +6,38 @@
 
 version: 2
 updates:
+  # Each ecosystem batches its minor and patch updates into one weekly PR,
+  # so CI runs once per ecosystem instead of once per dependency (and once
+  # more per rebase, since updates in one ecosystem share a lockfile).
+  # Major updates stay out of the group and get a PR each, so one breaking
+  # release cannot hold up the routine ones. Security updates are not
+  # grouped either: `groups` applies to version updates only by default.
   - package-ecosystem: uv
     directory: /
     schedule:
       interval: weekly
+    groups:
+      uv:
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
+    groups:
+      npm:
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        update-types:
+          - minor
+          - patch
