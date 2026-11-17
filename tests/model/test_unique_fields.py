@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 
 from typing import TYPE_CHECKING, Annotated
 
@@ -99,11 +99,9 @@ class TestInsertPaths:
         class Event(TinydanticModel, database=db):
             """Test model."""
 
-            at: Annotated[datetime.datetime, Unique()]
+            at: Annotated[dt.datetime, Unique()]
 
-        when = datetime.datetime(
-            2027, 1, 1, 12, 0, tzinfo=datetime.timezone.utc
-        )
+        when = dt.datetime(2027, 1, 1, 12, 0, tzinfo=dt.timezone.utc)
         Event(at=when).insert()
         with pytest.raises(UniqueConstraintError):
             Event(at=when).insert()

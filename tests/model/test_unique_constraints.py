@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 
 from typing import Annotated, cast
 
@@ -340,20 +340,20 @@ class TestCompositeEnforcement:
             """Test model unique per user per calendar day."""
 
             user_id: int
-            at: datetime.datetime
+            at: dt.datetime
 
         Entry(
             user_id=1,
-            at=datetime.datetime(2026, 8, 5, 9, 0),  # noqa: DTZ001
+            at=dt.datetime(2026, 8, 5, 9, 0),  # noqa: DTZ001
         ).insert()
         with pytest.raises(UniqueConstraintError):
             Entry(
                 user_id=1,
-                at=datetime.datetime(2026, 8, 5, 17, 30),  # noqa: DTZ001
+                at=dt.datetime(2026, 8, 5, 17, 30),  # noqa: DTZ001
             ).insert()
         Entry(
             user_id=1,
-            at=datetime.datetime(2026, 8, 6, 9, 0),  # noqa: DTZ001
+            at=dt.datetime(2026, 8, 6, 9, 0),  # noqa: DTZ001
         ).insert()
 
     def test_exact_and_normalized_coexist(self, db: TinyDB) -> None:
