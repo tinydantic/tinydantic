@@ -188,7 +188,7 @@ AttributeError: property 'price_band' of 'Product' object has no setter
 
 ```
 
-The wording is CPython's own, not tinydantic's: the assignment is handed to the property, so the property raises. That also means the message varies by interpreter — Python 3.10 says `can't set attribute 'price_band'` instead. A computed field that _does_ define a setter still runs it.
+The wording is CPython's own, not tinydantic's: the assignment is handed to the property, so the property raises. A computed field that _does_ define a setter still runs it.
 
 ## Escaping to a raw TinyDB query
 

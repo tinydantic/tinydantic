@@ -94,7 +94,7 @@ This project is written in [Python](https://www.python.org/) and requires a Pyth
 
     The simplest way to install Python is to [download an official installer](https://www.python.org/downloads/). Check out [this article](https://realpython.com/installing-python/#macos-how-to-install-python-using-the-official-installer) for an overview of some alternative installation options.
 
-    NOTE: The version of Python used for development is pinned in the `.python-version` file at the project root, but as long as you have Python 3.10 or later installed, you should be able to follow the remainder of this guide.
+    NOTE: The version of Python used for development is pinned in the `.python-version` file at the project root, but as long as you have Python 3.11 or later installed, you should be able to follow the remainder of this guide.
 
 #### uv
 
@@ -190,7 +190,7 @@ uv run poe test-cov
 
 > [!NOTE]
 >
-> The `test` and `test-cov` tasks run against the single Python version installed in your `.venv`. The full test matrix — every supported Python version (3.10–3.14) across Linux, macOS, and Windows — runs automatically in CI when you open a pull request, which can catch issues that only show up with a specific version of Python or a specific operating system.
+> The `test` and `test-cov` tasks run against the single Python version installed in your `.venv`. The full test matrix — every supported Python version (3.11–3.14) across Linux, macOS, and Windows — runs automatically in CI when you open a pull request, which can catch issues that only show up with a specific version of Python or a specific operating system.
 
 To run the test suite against every supported Python version locally, use the `test-matrix` task. It uses [uv](https://docs.astral.sh/uv/) to build a temporary environment from `uv.lock` for each Python version (downloading any missing interpreters automatically) and runs `test-cov` in each one, without touching your `.venv`. After the per-version runs, it combines their coverage data and prints a single report spanning all versions, so version-specific branches aren't flagged as missed — you can also follow up with `uv run coverage html` for a combined HTML report. This covers the Python-version axis of the CI matrix; the operating-system axis still only runs in CI.
 
