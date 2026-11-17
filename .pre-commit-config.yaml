@@ -6,6 +6,16 @@ default_install_hook_types:
   - pre-commit
   - commit-msg
 
+# https://pre-commit.ci/#configuration
+ci:
+  skip:
+    # `uv lock` needs an interpreter matching .python-version; when
+    # the pre-commit.ci runner has none, uv tries to download one,
+    # and pre-commit.ci allows no network access while hooks run.
+    # CI runs `uv lock --check` instead (the online-checks job in
+    # .github/workflows/ci.yaml).
+    - uv-lock
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
