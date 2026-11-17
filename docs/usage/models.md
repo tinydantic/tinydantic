@@ -258,7 +258,7 @@ Two overridable no-op methods mark the storage boundary. [before_write()][tinyda
 ...
 ...     def before_write(self, fields):
 ...         """Stamp audit timestamps."""
-...         now = datetime.datetime.now(tz=datetime.timezone.utc)
+...         now = datetime.datetime.now(tz=datetime.UTC)
 ...         if self.id is None:
 ...             return {"created_at": now, "updated_at": now}
 ...         return {"updated_at": now}

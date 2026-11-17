@@ -101,7 +101,7 @@ class TestInsertPaths:
 
             at: Annotated[dt.datetime, Unique()]
 
-        when = dt.datetime(2027, 1, 1, 12, 0, tzinfo=dt.timezone.utc)
+        when = dt.datetime(2027, 1, 1, 12, 0, tzinfo=dt.UTC)
         Event(at=when).insert()
         with pytest.raises(UniqueConstraintError):
             Event(at=when).insert()

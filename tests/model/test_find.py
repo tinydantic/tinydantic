@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated, cast
 
 import pytest
@@ -413,9 +413,9 @@ class TestReadTerminals:
 
             at: datetime
 
-        early = datetime(2026, 1, 2, tzinfo=timezone.utc)
-        late = datetime(2026, 11, 1, tzinfo=timezone.utc)
-        mid = datetime(2026, 3, 5, tzinfo=timezone.utc)
+        early = datetime(2026, 1, 2, tzinfo=UTC)
+        late = datetime(2026, 11, 1, tzinfo=UTC)
+        mid = datetime(2026, 3, 5, tzinfo=UTC)
         for at in (late, early, mid):
             Event(at=at).insert()
         got = [e.at for e in Event.find().sort("at")]
