@@ -21,6 +21,12 @@ updates:
         update-types:
           - minor
           - patch
+    # Dependabot takes the cspell word list for a pip requirements
+    # file: it looked every word up on PyPI as a package, and the
+    # words that are also transitive dependencies (pygments,
+    # Starlette) made the run fail with an error.
+    exclude-paths:
+      - project-words.txt
 
   - package-ecosystem: npm
     directory: /
