@@ -197,8 +197,11 @@ test = "pytest"
 test-cov = "pytest --cov --cov-branch"
 # Each step syncs an ephemeral environment from uv.lock for one
 # supported Python version (--isolated leaves .venv untouched) and
-# runs test-cov in it, writing a per-version COVERAGE_FILE that the
-# final coverage steps merge into one cross-version report.
+# runs pytest in it, writing a per-version COVERAGE_FILE that the
+# final coverage steps merge into one cross-version report. The steps
+# call pytest directly rather than `poe test-cov`: a nested poe runs
+# its task on the project's .venv interpreter, not the isolated one,
+# so every step would test the same Python.
 test-matrix = [
   "_test-py311",
   "_test-py312",
@@ -260,19 +263,19 @@ cmd = "properdocs serve --config-file mkdocs.yaml --dev-addr localhost:8000"
 env = { PYTHONUNBUFFERED = "1" }
 
 [tool.poe.tasks._test-py311]
-cmd = "uv run --isolated --python 3.11 --group test poe test-cov"
+cmd = "uv run --isolated --python 3.11 --group test pytest --cov --cov-branch"
 env = { COVERAGE_FILE = ".coverage.py311" }
 
 [tool.poe.tasks._test-py312]
-cmd = "uv run --isolated --python 3.12 --group test poe test-cov"
+cmd = "uv run --isolated --python 3.12 --group test pytest --cov --cov-branch"
 env = { COVERAGE_FILE = ".coverage.py312" }
 
 [tool.poe.tasks._test-py313]
-cmd = "uv run --isolated --python 3.13 --group test poe test-cov"
+cmd = "uv run --isolated --python 3.13 --group test pytest --cov --cov-branch"
 env = { COVERAGE_FILE = ".coverage.py313" }
 
 [tool.poe.tasks._test-py314]
-cmd = "uv run --isolated --python 3.14 --group test poe test-cov"
+cmd = "uv run --isolated --python 3.14 --group test pytest --cov --cov-branch"
 env = { COVERAGE_FILE = ".coverage.py314" }
 
 [tool.pyright]
