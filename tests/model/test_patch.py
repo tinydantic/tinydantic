@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 
 from typing import TYPE_CHECKING
 
@@ -107,12 +107,10 @@ class TestPatchWrites:
             """Test model."""
 
             name: str
-            when: datetime.datetime | None = None
+            when: dt.datetime | None = None
 
         event = Event(name="launch").insert()
-        when = datetime.datetime(
-            2027, 1, 1, 12, 0, tzinfo=datetime.timezone.utc
-        )
+        when = dt.datetime(2027, 1, 1, 12, 0, tzinfo=dt.timezone.utc)
         event.patch(when=when)
         assert event.when == when
         assert event.id is not None
